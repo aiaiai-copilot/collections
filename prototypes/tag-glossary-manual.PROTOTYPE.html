@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ручной глоссарий тегов · UI prototype</title>
+  <!-- Three mobile-first variants of the manual glossary, switchable via ?variant=A|B|C. -->
+  <style>
+    :root {
+      --paper: #efeee8;
+      --surface: #fbfaf4;
+      --surface-2: #f3f3ed;
+      --ink: #16221b;
+      --muted: #667269;
+      --line: #ccd4cc;
+      --green: #246347;
+      --green-soft: #e4f1e7;
+      --amber: #855b13;
+      --amber-soft: #fff1cc;
+      --red: #963d34;
+      --red-soft: #f9e7e3;
+      --blue: #315d86;
+      --radius: 18px;
+      --shadow: 0 20px 64px rgba(23, 32, 27, .16);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: #dfe4dc;
+      color: var(--ink);
+      font: 14px/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    .phone {
+      width: min(460px, 100%);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding-bottom: 154px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .topbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(251, 250, 244, .96);
+      backdrop-filter: blur(14px);
+    }
+    .back {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: white;
+      color: var(--ink);
+      font-size: 18px;
+      text-decoration: none;
+    }
+    .topbar-copy { min-width: 0; flex: 1; }
+    .topbar-copy strong, .topbar-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .topbar-copy strong { font-size: 15px; }
+    .topbar-copy small { color: var(--muted); font-size: 10px; }
+    .proto-mark { color: var(--red); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+    .screen { padding: 15px 14px 26px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 5px; font-size: 25px; line-height: 1.08; letter-spacing: -.03em; }
+    h2 { font-size: 17px; }
+    .lede { margin-bottom: 16px; color: var(--muted); font-size: 12px; }
+    .row { display: flex; align-items: center; gap: 9px; }
+    .row.between { justify-content: space-between; }
+    .stack { display: grid; gap: 9px; }
+    .search {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 13px;
+      border: 1px solid #bfc9c1;
+      border-radius: 14px;
+      outline: 0;
+      background: white;
+      color: var(--ink);
+    }
+    .search:focus, .field:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(36, 99, 71, .13); }
+    .primary, .secondary, .danger, .quiet {
+      min-height: 40px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 780;
+    }
+    .primary { border: 1px solid var(--green); background: var(--green); color: white; }
+    .secondary { border: 1px solid #afbbb1; background: white; color: var(--ink); }
+    .danger { border: 1px solid #d5a19a; background: white; color: var(--red); }
+    .quiet { border: 0; background: transparent; color: var(--green); }
+    .small-button { min-height: 34px; padding: 7px 10px; font-size: 11px; }
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border-radius: 13px; background: #e8ebe6; }
+    .segment { padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .segment.active { background: white; color: var(--ink); box-shadow: 0 2px 7px rgba(23, 32, 27, .08); }
+    .section-title { margin: 18px 2px 9px; }
+    .section-title h2 { margin: 0; }
+    .section-title span { color: var(--muted); font-size: 10px; }
+    .tag-list { display: grid; gap: 8px; }
+    .tag-row {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d4dad4;
+      border-radius: 15px;
+      background: white;
+      color: inherit;
+      text-align: left;
+    }
+    .tag-row:active { background: var(--green-soft); }
+    .tag-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .tag-main strong { font-size: 13px; }
+    .meta { color: var(--muted); font-size: 10px; }
+    .description { margin: 5px 0 0; color: #4f5c53; font-size: 11px; }
+    .synonyms { margin-top: 7px; color: var(--blue); font-size: 10px; }
+    .badge { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; background: #edf0ec; color: #546058; font-size: 9px; font-weight: 800; }
+    .badge.archive { background: var(--red-soft); color: var(--red); }
+    .empty { padding: 24px 14px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
+    .notice { margin-bottom: 12px; padding: 10px 12px; border-radius: 13px; background: var(--green-soft); color: var(--green); font-size: 11px; }
+    .notice.error { background: var(--red-soft); color: var(--red); }
+
+    /* A: catalogue */
+    .catalog-tools { display: grid; gap: 9px; }
+    .catalog-create { width: 100%; }
+
+    /* B: search first */
+    .search-hero { margin: -15px -14px 16px; padding: 23px 14px 18px; border-bottom: 1px solid #bcd0c0; background: linear-gradient(145deg, #edf6ee, #faf9f2); }
+    .search-hero .search { min-height: 52px; border-color: #9fb5a5; font-size: 16px; }
+    .quick-tags { display: flex; gap: 7px; overflow-x: auto; margin: 11px -14px 0; padding: 0 14px 3px; }
+    .quick-tag { flex: 0 0 auto; padding: 7px 10px; border: 1px solid #b9c7bc; border-radius: 999px; background: white; color: var(--ink); font-size: 10px; }
+    .create-result { width: 100%; margin-bottom: 9px; padding: 13px; border: 1px dashed var(--green); border-radius: 15px; background: var(--green-soft); color: var(--green); font-weight: 820; text-align: left; }
+    .search-result { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 13px 2px; border-bottom: 1px solid #dde2dc; }
+    .search-result button { border: 0; background: transparent; color: var(--green); font-weight: 820; }
+
+    /* C: record inspector */
+    .inspector-nav { margin-bottom: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #eef0eb; }
+    .inspector-select { width: 100%; margin-top: 7px; padding: 10px; border: 1px solid #bdc7be; border-radius: 12px; background: white; }
+    .inspector-card { padding: 15px; border: 1px solid #b9c8bc; border-radius: 20px; background: white; }
+    .impact-box { margin: 10px 0; padding: 10px 11px; border-radius: 13px; background: var(--amber-soft); color: var(--amber); font-size: 10px; }
+    .form-grid { display: grid; gap: 11px; }
+    label { display: grid; gap: 5px; color: #4d5a51; font-size: 10px; font-weight: 760; }
+    .field { width: 100%; padding: 10px 11px; border: 1px solid #c2cbc3; border-radius: 12px; outline: 0; background: white; color: var(--ink); }
+    textarea.field { min-height: 78px; resize: vertical; }
+    .form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .form-actions .wide { grid-column: 1 / -1; }
+
+    .overlay {
+      position: fixed;
+      z-index: 60;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      background: rgba(20, 29, 23, .45);
+    }
+    .overlay.sheet { align-items: flex-end; }
+    .overlay.full { align-items: stretch; background: #dfe4dc; }
+    .dialog {
+      width: min(460px, 100%);
+      max-height: 92dvh;
+      overflow-y: auto;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .sheet .dialog { border-radius: 24px 24px 0 0; }
+    .full .dialog { min-height: 100dvh; border-radius: 0; }
+    .dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .dialog-head h2 { margin: 0; }
+    .close { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; background: #ecefe9; font-size: 18px; }
+    .confirm-box { padding: 12px; border-radius: 15px; background: var(--red-soft); color: var(--red); }
+    .merge-preview { margin: 12px 0; padding: 12px; border-radius: 15px; background: var(--amber-soft); color: var(--amber); }
+
+    .product-nav {
+      position: fixed;
+      z-index: 40;
+      bottom: 0;
+      left: 50%;
+      display: grid;
+      width: min(460px, 100%);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      border-top: 1px solid #c6cec7;
+      background: rgba(250, 249, 243, .98);
+      box-shadow: 0 -8px 25px rgba(23, 32, 27, .11);
+    }
+    .nav-item { display: grid; min-width: 0; gap: 2px; place-items: center; border: 0; background: transparent; color: #606c63; font-size: 9px; font-weight: 780; text-decoration: none; }
+    .nav-item b { font-size: 16px; line-height: 1; }
+    .nav-item.active { color: var(--green); }
+    .variant-switch {
+      position: fixed;
+      z-index: 50;
+      bottom: calc(69px + env(safe-area-inset-bottom));
+      left: 50%;
+      display: grid;
+      width: min(330px, calc(100% - 28px));
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: #17211b;
+      color: white;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .3);
+    }
+    .variant-switch button { height: 42px; border: 0; background: transparent; color: white; font-size: 18px; }
+    .variant-label { overflow: hidden; font-size: 10px; font-weight: 800; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlayRoot"></div>
+  <div class="variant-switch" aria-label="Переключатель вариантов прототипа">
+    <button type="button" data-action="previous-variant" aria-label="Предыдущий вариант">←</button>
+    <div id="variantLabel" class="variant-label"></div>
+    <button type="button" data-action="next-variant" aria-label="Следующий вариант">→</button>
+  </div>
+
+  <script>
+    const variants = [
+      { id: 'A', name: 'Каталог' },
+      { id: 'B', name: 'Поиск первым' },
+      { id: 'C', name: 'Инспектор' }
+    ];
+
+    const seedTags = [
+      { id: 'calm', name: 'спокойное', description: 'Ровный темп и мягкая эмоциональная нагрузка.', synonyms: ['тихое', 'медитативное'], status: 'active', objects: 8, filters: 3 },
+      { id: 'slow', name: 'медленное', description: 'Неспешное развитие и длинные наблюдательные сцены.', synonyms: ['неторопливое'], status: 'active', objects: 5, filters: 2 },
+      { id: 'japan', name: 'Япония', description: 'Место действия или значимый культурный контекст Японии.', synonyms: ['японское'], status: 'active', objects: 4, filters: 1 },
+      { id: 'poetry', name: 'поэзия', description: 'Поэзия является темой или способом повествования.', synonyms: ['стихи'], status: 'active', objects: 3, filters: 1 },
+      { id: 'family', name: 'семья', description: 'Семейные отношения находятся в центре истории.', synonyms: [], status: 'active', objects: 6, filters: 2 },
+      { id: 'architecture', name: 'архитектура', description: 'Архитектура определяет пространство истории или отношения героев.', synonyms: ['здания'], status: 'active', objects: 2, filters: 0 },
+      { id: 'europe', name: 'Европа', description: 'Европейский географический или культурный контекст.', synonyms: [], status: 'archived', objects: 2, filters: 1 }
+    ];
+
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru');
+    const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
+    const variantFromURL = () => {
+      const id = new URLSearchParams(location.search).get('variant')?.toUpperCase();
+      return variants.some(item => item.id === id) ? id : 'A';
+    };
+
+    let variant = variantFromURL();
+    let state = {
+      tags: clone(seedTags),
+      query: '',
+      status: 'active',
+      selectedId: 'calm',
+      overlay: null,
+      notice: null
+    };
+
+    const tagById = id => state.tags.find(tag => tag.id === id);
+    const activeTags = () => state.tags.filter(tag => tag.status === 'active');
+    const matches = (tag, query) => {
+      const token = normalize(query);
+      return !token || [tag.name, ...tag.synonyms].some(value => normalize(value).includes(token)) || normalize(tag.description).includes(token);
+    };
+    const visibleTags = status => state.tags.filter(tag => tag.status === status && matches(tag, state.query)).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    const tokenOwner = (value, excludeId = null) => {
+      const token = normalize(value);
+      return state.tags.find(tag => tag.status === 'active' && tag.id !== excludeId && [tag.name, ...tag.synonyms].some(label => normalize(label) === token));
+    };
+
+    function topbar() {
+      return `<header class="topbar">
+        <a class="back" href="collection-workspace.PROTOTYPE.html?variant=A" aria-label="Вернуться к коллекции">←</a>
+        <div class="topbar-copy"><strong>Глоссарий тегов</strong><small>Фильмы на вечер · ручное управление</small></div>
+        <span class="proto-mark">PoC</span>
+      </header>`;
+    }
+
+    function productNav() {
+      const home = 'collection-workspace.PROTOTYPE.html?variant=A';
+      return `<nav class="product-nav" aria-label="Основное меню">
+        <a class="nav-item" href="${home}"><b>▦</b><span>Коллекции</span></a>
+        <a class="nav-item" href="${home}"><b>◇</b><span>Фильтры</span></a>
+        <span class="nav-item active"><b>#</b><span>Глоссарий</span></span>
+        <a class="nav-item" href="${home}"><b>⇅</b><span>Приоритеты</span></a>
+        <a class="nav-item" href="${home}"><b>⚙</b><span>Настройки</span></a>
+      </nav>`;
+    }
+
+    function notice() {
+      if (!state.notice) return '';
+      return `<div class="notice ${state.notice.kind === 'error' ? 'error' : ''}">${escapeHTML(state.notice.text)}</div>`;
+    }
+
+    function tagRow(tag, mode = 'catalog') {
+      if (mode === 'search') {
+        return `<div class="search-result">
+          <div><strong>#${escapeHTML(tag.name)}</strong><div class="meta">${tag.objects} объектов · ${tag.filters} фильтров${tag.status === 'archived' ? ' · в архиве' : ''}</div></div>
+          <button type="button" data-action="open-tag" data-tag-id="${tag.id}">Открыть</button>
+        </div>`;
+      }
+      return `<button type="button" class="tag-row" data-action="open-tag" data-tag-id="${tag.id}">
+        <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong><span class="badge ${tag.status === 'archived' ? 'archive' : ''}">${tag.status === 'archived' ? 'В архиве' : `${tag.objects} · ${tag.filters}`}</span></span>
+        <span class="description">${escapeHTML(tag.description)}</span>
+        ${tag.synonyms.length ? `<span class="synonyms">Синонимы: ${tag.synonyms.map(escapeHTML).join(', ')}</span>` : ''}
+      </button>`;
+    }
+
+    function renderA() {
+      const tags = visibleTags(state.status);
+      return `<div class="phone">${topbar()}<main class="screen">
+        ${notice()}
+        <h1>Все теги</h1>
+        <p class="lede">Находите записи по названию и синонимам. Тег открывается в карточке снизу.</p>
+        <div class="catalog-tools">
+          <input class="search" data-search type="search" value="${escapeHTML(state.query)}" placeholder="Найти тег или синоним">
+          <div class="segmented">
+            <button type="button" class="segment ${state.status === 'active' ? 'active' : ''}" data-action="set-status" data-status="active">Активные · ${activeTags().length}</button>
+            <button type="button" class="segment ${state.status === 'archived' ? 'active' : ''}" data-action="set-status" data-status="archived">Архив · ${state.tags.filter(tag => tag.status === 'archived').length}</button>
+          </div>
+          <button type="button" class="primary catalog-create" data-action="new-tag">Создать тег в глоссарии</button>
+        </div>
+        <div class="section-title row between"><h2>${state.status === 'active' ? 'Активные записи' : 'Архив'}</h2><span>${tags.length}</span></div>
+        <div class="tag-list">${tags.length ? tags.map(tag => tagRow(tag)).join('') : '<div class="empty">Ничего не найдено</div>'}</div>
+      </main>${productNav()}</div>`;
+    }
+
+    function renderB() {
+      const query = normalize(state.query);
+      const exact = state.tags.some(tag => [tag.name, ...tag.synonyms].some(label => normalize(label) === query));
+      const common = activeTags().sort((a, b) => b.objects - a.objects).slice(0, 4);
+      const tags = query ? state.tags.filter(tag => matches(tag, state.query)).sort((a, b) => b.objects - a.objects) : common;
+      return `<div class="phone">${topbar()}<main class="screen">
+        <section class="search-hero">
+          ${notice()}
+          <h1>Что найти?</h1>
+          <p class="lede">Поиск проверяет названия и синонимы. Неизвестное название можно явно создать в глоссарии.</p>
+          <input class="search" data-search autofocus type="search" value="${escapeHTML(state.query)}" placeholder="Например, тихое">
+          <div class="quick-tags">${common.map(tag => `<button type="button" class="quick-tag" data-action="quick-search" data-query="${escapeHTML(tag.name)}">#${escapeHTML(tag.name)}</button>`).join('')}</div>
+        </section>
+        ${query && !exact ? `<button type="button" class="create-result" data-action="new-from-query">Создать #${escapeHTML(state.query.replace(/^#+/, ''))} в глоссарии</button>` : ''}
+        <div class="section-title row between"><h2>${query ? 'Результаты' : 'Часто используются'}</h2><span>${tags.length}</span></div>
+        <div>${tags.length ? tags.map(tag => tagRow(tag, 'search')).join('') : '<div class="empty">Совпадений нет</div>'}</div>
+      </main>${productNav()}</div>`;
+    }
+
+    function tagForm(tag, context) {
+      const isNew = !tag;
+      const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0 };
+      const archived = !isNew && value.status === 'archived';
+      return `<form class="form-grid" data-form="${isNew ? 'create' : 'edit'}" data-tag-id="${escapeHTML(value.id)}">
+        <label>Название тега<input class="field" name="name" required value="${escapeHTML(value.name)}" placeholder="Без решётки" ${archived ? 'disabled' : ''}></label>
+        <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${archived ? 'disabled' : ''}>${escapeHTML(value.description)}</textarea></label>
+        <label>Синонимы<input class="field" name="synonyms" value="${escapeHTML(value.synonyms.join(', '))}" placeholder="Через запятую; не являются отдельными тегами" ${archived ? 'disabled' : ''}></label>
+        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : !isNew ? `<div class="impact-box">Изменение названия обновит ${value.objects} объектов и ${value.filters} сохранённых фильтров. Идентичность тега сохранится.</div>` : '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>'}
+        <div class="form-actions">
+          ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
+          ${!isNew && !archived ? `<button type="button" class="secondary" data-action="merge-tag" data-tag-id="${value.id}">Объединить</button>
+          <button type="button" class="danger" data-action="archive-tag" data-tag-id="${value.id}">В архив</button>` : ''}
+        </div>
+      </form>`;
+    }
+
+    function renderC() {
+      const tag = tagById(state.selectedId) || activeTags()[0];
+      const options = [...state.tags].sort((a, b) => a.name.localeCompare(b.name, 'ru')).map(item => `<option value="${item.id}" ${item.id === tag.id ? 'selected' : ''}>#${escapeHTML(item.name)}${item.status === 'archived' ? ' · в архиве' : ''}</option>`).join('');
+      return `<div class="phone">${topbar()}<main class="screen">
+        ${notice()}
+        <h1>Запись глоссария</h1>
+        <p class="lede">Выберите тег и сразу работайте с его полями и последствиями изменений.</p>
+        <section class="inspector-nav">
+          <div class="row between"><strong>${state.tags.length} записей</strong><button type="button" class="quiet small-button" data-action="new-tag">Новый тег</button></div>
+          <select class="inspector-select" data-inspector-select aria-label="Выбрать тег">${options}</select>
+        </section>
+        <section class="inspector-card">
+          <div class="row between"><h2>#${escapeHTML(tag.name)}</h2><span class="badge ${tag.status === 'archived' ? 'archive' : ''}">${tag.status === 'archived' ? 'В архиве' : 'Активен'}</span></div>
+          ${tagForm(tag, 'inspector')}
+        </section>
+      </main>${productNav()}</div>`;
+    }
+
+    function renderOverlay() {
+      if (!state.overlay) return '';
+      const type = state.overlay.type;
+      if (type === 'detail' || type === 'new') {
+        const tag = type === 'detail' ? tagById(state.overlay.tagId) : null;
+        const full = variant === 'B';
+        return `<div class="overlay ${full ? 'full' : 'sheet'}" data-action="overlay-backdrop">
+          <section class="dialog" role="dialog" aria-modal="true">
+            <div class="dialog-head"><div><div class="proto-mark">Ручной глоссарий</div><h2>${tag ? `#${escapeHTML(tag.name)}` : 'Новый тег'}</h2></div><button type="button" class="close" data-action="close-overlay" aria-label="Закрыть">×</button></div>
+            ${notice()}${tagForm(tag, full ? 'full' : 'sheet')}
+          </section>
+        </div>`;
+      }
+      if (type === 'archive') {
+        const tag = tagById(state.overlay.tagId);
+        return `<div class="overlay sheet"><section class="dialog" role="dialog" aria-modal="true">
+          <div class="dialog-head"><h2>Архивировать #${escapeHTML(tag.name)}?</h2><button type="button" class="close" data-action="close-overlay">×</button></div>
+          <div class="confirm-box">Тег останется виден у ${tag.objects} объектов и в ${tag.filters} фильтрах с отметкой «В архиве», но его нельзя будет назначать заново.</div>
+          <div class="form-actions"><button type="button" class="secondary" data-action="close-overlay">Отмена</button><button type="button" class="danger" data-action="confirm-archive" data-tag-id="${tag.id}">В архив</button></div>
+        </section></div>`;
+      }
+      if (type === 'merge') {
+        const source = tagById(state.overlay.tagId);
+        const targets = activeTags().filter(tag => tag.id !== source.id);
+        const target = tagById(state.overlay.targetId) || targets[0];
+        return `<div class="overlay sheet"><section class="dialog" role="dialog" aria-modal="true">
+          <div class="dialog-head"><h2>Объединить #${escapeHTML(source.name)}</h2><button type="button" class="close" data-action="close-overlay">×</button></div>
+          <label>С какой записью<select class="field" data-merge-target>${targets.map(tag => `<option value="${tag.id}" ${tag.id === target.id ? 'selected' : ''}>#${escapeHTML(tag.name)}</option>`).join('')}</select></label>
+          <div class="merge-preview">${source.objects} объектов и ${source.filters} фильтров перейдут к #${escapeHTML(target.name)}. Название «${escapeHTML(source.name)}» станет синонимом, исходная запись уйдёт в архив.</div>
+          <div class="form-actions"><button type="button" class="secondary" data-action="close-overlay">Отмена</button><button type="button" class="primary" data-action="confirm-merge" data-source-id="${source.id}" data-target-id="${target.id}">Объединить</button></div>
+        </section></div>`;
+      }
+      return '';
+    }
+
+    function render() {
+      document.querySelector('#app').innerHTML = variant === 'A' ? renderA() : variant === 'B' ? renderB() : renderC();
+      document.querySelector('#overlayRoot').innerHTML = renderOverlay();
+      const current = variants.find(item => item.id === variant);
+      document.querySelector('#variantLabel').textContent = `${current.id} · ${current.name}`;
+    }
+
+    function setVariant(next) {
+      variant = next;
+      state.overlay = null;
+      state.notice = null;
+      const url = new URL(location.href);
+      url.searchParams.set('variant', variant);
+      history.replaceState(null, '', url);
+      render();
+    }
+
+    function cycleVariant(direction) {
+      const index = variants.findIndex(item => item.id === variant);
+      setVariant(variants[(index + direction + variants.length) % variants.length].id);
+    }
+
+    function openTag(id) {
+      state.selectedId = id;
+      state.notice = null;
+      state.overlay = { type: 'detail', tagId: id };
+      render();
+    }
+
+    function saveTag(form) {
+      const data = new FormData(form);
+      const id = form.dataset.tagId;
+      const name = String(data.get('name') || '').trim().replace(/^#+/, '');
+      const synonyms = String(data.get('synonyms') || '').split(',').map(item => item.trim().replace(/^#+/, '')).filter(Boolean);
+      const labels = [name, ...synonyms];
+      const collision = labels.map(label => tokenOwner(label, id || null)).find(Boolean);
+      if (!name || collision || new Set(labels.map(normalize)).size !== labels.length) {
+        state.notice = { kind: 'error', text: collision ? `Название или синоним уже принадлежит #${collision.name}.` : 'Название и синонимы должны быть заполнены без дублей.' };
+        render();
+        return;
+      }
+      if (id) {
+        const tag = tagById(id);
+        tag.name = name;
+        tag.description = String(data.get('description') || '').trim();
+        tag.synonyms = synonyms;
+        state.notice = { kind: 'success', text: `Изменения #${name} сохранены во всех связанных объектах и фильтрах.` };
+      } else {
+        const created = { id: `created-${Date.now()}`, name, description: String(data.get('description') || '').trim(), synonyms, status: 'active', objects: 0, filters: 0 };
+        state.tags.push(created);
+        state.selectedId = created.id;
+        state.notice = { kind: 'success', text: `#${name} создан в глоссарии, но пока нигде не используется.` };
+      }
+      state.overlay = null;
+      state.query = '';
+      state.status = 'active';
+      render();
+    }
+
+    document.addEventListener('submit', event => {
+      const form = event.target.closest('[data-form]');
+      if (!form) return;
+      event.preventDefault();
+      saveTag(form);
+    });
+
+    document.addEventListener('input', event => {
+      if (!event.target.matches('[data-search]')) return;
+      state.query = event.target.value;
+      const position = event.target.selectionStart;
+      render();
+      const input = document.querySelector('[data-search]');
+      input?.focus();
+      input?.setSelectionRange(position, position);
+    });
+
+    document.addEventListener('change', event => {
+      if (event.target.matches('[data-inspector-select]')) {
+        state.selectedId = event.target.value;
+        state.notice = null;
+        render();
+      }
+      if (event.target.matches('[data-merge-target]')) {
+        state.overlay.targetId = event.target.value;
+        render();
+      }
+    });
+
+    document.addEventListener('click', event => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === 'previous-variant') return cycleVariant(-1);
+      if (action === 'next-variant') return cycleVariant(1);
+      if (action === 'open-tag') return openTag(button.dataset.tagId);
+      if (action === 'set-status') { state.status = button.dataset.status; state.notice = null; return render(); }
+      if (action === 'quick-search') { state.query = button.dataset.query; return render(); }
+      if (action === 'new-tag') { state.notice = null; state.overlay = { type: 'new', prefill: '' }; return render(); }
+      if (action === 'new-from-query') { state.notice = null; state.overlay = { type: 'new', prefill: state.query.replace(/^#+/, '') }; return render(); }
+      if (action === 'close-overlay') { state.overlay = null; state.notice = null; return render(); }
+      if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; return render(); }
+      if (action === 'archive-tag') { state.overlay = { type: 'archive', tagId: button.dataset.tagId }; return render(); }
+      if (action === 'confirm-archive') {
+        const tag = tagById(button.dataset.tagId);
+        tag.status = 'archived';
+        state.overlay = null;
+        state.notice = { kind: 'success', text: `#${tag.name} перемещён в архив; прежние ссылки сохранены.` };
+        return render();
+      }
+      if (action === 'restore-tag') {
+        const tag = tagById(button.dataset.tagId);
+        const collision = [tag.name, ...tag.synonyms].map(label => tokenOwner(label, tag.id)).find(Boolean);
+        if (collision) state.notice = { kind: 'error', text: `Восстановление невозможно: обозначение занято #${collision.name}.` };
+        else { tag.status = 'active'; state.notice = { kind: 'success', text: `#${tag.name} восстановлен.` }; }
+        state.overlay = null;
+        return render();
+      }
+      if (action === 'merge-tag') {
+        const sourceId = button.dataset.tagId;
+        const target = activeTags().find(tag => tag.id !== sourceId);
+        state.overlay = { type: 'merge', tagId: sourceId, targetId: target?.id };
+        return render();
+      }
+      if (action === 'confirm-merge') {
+        const source = tagById(button.dataset.sourceId);
+        const target = tagById(button.dataset.targetId);
+        target.objects += source.objects;
+        target.filters += source.filters;
+        target.synonyms = [...new Set([...target.synonyms, source.name, ...source.synonyms])];
+        source.status = 'archived';
+        source.objects = 0;
+        source.filters = 0;
+        state.selectedId = target.id;
+        state.overlay = null;
+        state.notice = { kind: 'success', text: `#${source.name} объединён с #${target.name}; прежнее название стало синонимом.` };
+        return render();
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName) || event.target.isContentEditable) return;
+      if (event.key === 'ArrowLeft') cycleVariant(-1);
+      if (event.key === 'ArrowRight') cycleVariant(1);
+    });
+
+    render();
+  </script>
+</body>
+</html>
