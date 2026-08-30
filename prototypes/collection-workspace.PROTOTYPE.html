@@ -238,10 +238,14 @@
     .slice-condition { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 11px; }
     .slice-condition .tag { background: var(--green-2); color: var(--green); font-size: 11px; }
     .slice-condition .empty-filter-state { border: 1px solid #d7bd68; background: #fff2bf; color: #745715; font-weight: 880; }
+    .filter-tag-remove { display: grid; width: 18px; height: 18px; margin: -2px -4px -2px 0; padding: 0; place-items: center; border: 0; border-radius: 99px; background: rgba(35,104,75,.12); color: var(--green); cursor: pointer; font-size: 13px; font-weight: 900; line-height: 1; }
+    .filter-tag-remove:active { background: rgba(35,104,75,.24); }
     .filter-tag-edit-group { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
     .edit-filter-icon { display: grid; width: 25px; height: 25px; padding: 0; place-items: center; border: 1px solid #cbd2ca; border-radius: 8px; background: transparent; cursor: pointer; font-size: 14px; line-height: 1; }
     .more-tags-button { padding: 5px 8px; border: 1px solid #c6d2c8; border-radius: 999px; background: transparent; color: var(--green); cursor: pointer; font-size: 10px; font-weight: 850; }
     .edit-filter-button { padding: 7px 10px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; font-size: 11px; font-weight: 820; }
+    .current-filter-name { overflow: hidden; max-width: 180px; color: var(--ink); font-size: 12px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+    button.current-filter-name { padding: 6px 9px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; }
     .filter-editor { margin: 15px 0 0; padding: 15px; border: 1px solid #bfc9bf; border-radius: 17px; background: #f8faf5; }
     .filter-editor-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .filter-editor-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
@@ -838,8 +842,14 @@
       const limit = state.expandedTags ? filter.tags.length : 3;
       const visible = filter.tags.slice(0, limit);
       const hiddenCount = filter.tags.length - visible.length;
-      const tags = visible.map((tag, index) => index === visible.length - 1 ? `<span class="filter-tag-edit-group"><span class="tag">#${escapeHTML(tag)}</span>${editButton}</span>` : `<span class="tag">#${escapeHTML(tag)}</span>`).join('');
+      const tagMarkup = tag => `<span class="tag">#${escapeHTML(tag)}<button class="filter-tag-remove" type="button" data-remove-slice-tag="${escapeHTML(tag)}" aria-label="Удалить тег ${escapeHTML(tag)} из фильтра" title="Удалить тег">×</button></span>`;
+      const tags = visible.map((tag, index) => index === visible.length - 1 ? `<span class="filter-tag-edit-group">${tagMarkup(tag)}${editButton}</span>` : tagMarkup(tag)).join('');
       return `<div class="slice-condition">${tags}${hiddenCount ? `<button class="more-tags-button" type="button" data-toggle-all-tags>ещё ${hiddenCount}</button>` : state.expandedTags && filter.tags.length > 3 ? '<button class="more-tags-button" type="button" data-toggle-all-tags>свернуть</button>' : ''}</div>`;
+    }
+    function currentFilterNameMarkup(filter) {
+      if (!filter.showName) return filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : '';
+      if (filter.dirty) return `<button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}</button>`;
+      return `<strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}</strong>`;
     }
     function filterStatusMarkup(filter, withLabel = false) {
       const unorderedCount = state.draftUnordered[filter.id]?.length ?? 0;
@@ -902,7 +912,7 @@
     function filterEditorMarkup(filter) {
       if (!state.filterEditorOpen) return '';
       const availableTags = [...new Set(objects.flatMap(item => item.tags))].sort((left, right) => left.localeCompare(right, 'ru'));
-      const editorTitle = filter.dirty ? 'Текущий фильтр' : filter.sourceId === 'all' ? 'Без фильтра' : `Фильтр «${escapeHTML(filter.name)}»`;
+      const editorTitle = filter.dirty ? filter.showName ? `Фильтр «${escapeHTML(filter.name)}»` : 'Текущий фильтр' : filter.sourceId === 'all' ? 'Без фильтра' : `Фильтр «${escapeHTML(filter.name)}»`;
       return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div><strong>${editorTitle}</strong><p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div>${filter.dirty ? `<label class="filter-name-field"><span>Название текущего фильтра</span><input type="text" value="${escapeHTML(filter.name)}" data-current-filter-name aria-label="Название текущего фильтра"><small>Оно будет использовано при сохранении; исходный сохранённый фильтр не изменится.</small></label>` : ''}<div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
     }
 
@@ -931,7 +941,7 @@
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span>${filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : ''}</div>${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span>${currentFilterNameMarkup(filter)}</div>${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
             ${continueBanner(filter)}
@@ -1189,7 +1199,7 @@
         variant: state.variant,
         layoutFocus: state.variant === 'A' ? 'mobile-first' : 'historical-variant',
         collection: 'Фильмы на вечер',
-        currentFilter: { sourceId: filter.sourceId, dirty: filter.dirty, name: filter.name, tags: filter.tags },
+        currentFilter: { sourceId: filter.sourceId, dirty: filter.dirty, name: filter.name, showName: Boolean(filter.showName), tags: filter.tags },
         savedFilterNavigation: {
           orderMode: state.filterOrderMode,
           order: orderedSavedFilters().map(item => item.id),
@@ -1293,6 +1303,7 @@
       if (!filter.dirty) return;
       const name = value.trim();
       filter.name = name || 'Несохранённый фильтр';
+      filter.showName = Boolean(name);
     }
 
     function saveCurrentFilter() {
@@ -1304,6 +1315,7 @@
       const saved = {
         id,
         name: filter.name,
+        showName: Boolean(filter.showName),
         tags: [...filter.tags],
         objectIds: [...filter.objectIds],
         unorderedIds: [...state.draftUnordered[filter.id]],
@@ -1342,8 +1354,10 @@
       filter.dirty = !sameTags(filter.tags, source.tags);
       if (!filter.dirty) {
         filter.name = source.name;
+        filter.showName = Boolean(source.showName);
       } else if (!wasDirty) {
         filter.name = 'Несохранённый фильтр';
+        filter.showName = false;
       }
       if (!filter.dirty) {
         filter.objectIds = [...source.objectIds];
@@ -1534,6 +1548,7 @@
           field?.select();
         });
       }
+      else if (target.matches('[data-remove-slice-tag]')) toggleActiveFilterTag(target.dataset.removeSliceTag);
       else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
       else if (target.matches('[data-save-current-filter]')) saveCurrentFilter();
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
@@ -1576,7 +1591,7 @@
       if (!event.target.matches('[data-current-filter-name]')) return;
       renameCurrentFilter(event.target.value);
       const filter = activeFilter();
-      document.querySelector('.filter-editor-head strong')?.replaceChildren(`Фильтр «${filter.name}»`);
+      document.querySelector('.filter-editor-head strong')?.replaceChildren(filter.showName ? `Фильтр «${filter.name}»` : 'Текущий фильтр');
       renderState();
     });
 
