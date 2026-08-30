@@ -157,6 +157,14 @@
     label { display: grid; gap: 5px; color: #4d5a51; font-size: 10px; font-weight: 760; }
     .field { width: 100%; padding: 10px 11px; border: 1px solid #c2cbc3; border-radius: 12px; outline: 0; background: white; color: var(--ink); }
     textarea.field { min-height: 78px; resize: vertical; }
+    .synonym-editor { display: grid; gap: 8px; padding: 9px; border: 1px solid #c2cbc3; border-radius: 14px; background: #f7f8f3; }
+    .synonym-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .synonym-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 999px; background: var(--blue-soft, #e8f0fa); color: var(--blue); font-size: 10px; font-weight: 760; }
+    .synonym-chip button { display: grid; width: 18px; height: 18px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: rgba(49, 93, 134, .12); color: var(--blue); line-height: 1; }
+    .synonym-add-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+    .synonym-add-row .field { min-width: 0; }
+    .synonym-help { color: var(--muted); font-size: 9px; font-weight: 600; }
+    .synonym-empty { color: var(--muted); font-size: 10px; font-weight: 600; }
     .form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     .form-actions .wide { grid-column: 1 / -1; }
 
@@ -264,7 +272,11 @@
       status: 'active',
       selectedId: 'calm',
       overlay: null,
-      notice: null
+      notice: null,
+      formTagId: null,
+      formName: '',
+      formDescription: '',
+      formSynonyms: []
     };
 
     const tagById = id => state.tags.find(tag => tag.id === id);
@@ -370,10 +382,22 @@
       const isNew = !tag;
       const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0 };
       const archived = !isNew && value.status === 'archived';
+      const formTagId = value.id || '__new__';
+      if (state.formTagId !== formTagId) {
+        state.formTagId = formTagId;
+        state.formName = value.name;
+        state.formDescription = value.description;
+        state.formSynonyms = [...value.synonyms];
+      }
       return `<form class="form-grid" data-form="${isNew ? 'create' : 'edit'}" data-tag-id="${escapeHTML(value.id)}">
-        <label>Название тега<input class="field" name="name" required value="${escapeHTML(value.name)}" placeholder="Без решётки" ${archived ? 'disabled' : ''}></label>
-        <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${archived ? 'disabled' : ''}>${escapeHTML(value.description)}</textarea></label>
-        <label>Синонимы<input class="field" name="synonyms" value="${escapeHTML(value.synonyms.join(', '))}" placeholder="Через запятую; не являются отдельными тегами" ${archived ? 'disabled' : ''}></label>
+        <label>Название тега<input class="field" name="name" required value="${escapeHTML(state.formName)}" placeholder="Без решётки" ${archived ? 'disabled' : ''}></label>
+        <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${archived ? 'disabled' : ''}>${escapeHTML(state.formDescription)}</textarea></label>
+        <label>Синонимы
+          <span class="synonym-editor">
+            <span class="synonym-chips">${state.formSynonyms.length ? state.formSynonyms.map((synonym, index) => `<span class="synonym-chip">${escapeHTML(synonym)}${archived ? '' : `<button type="button" data-action="remove-synonym" data-index="${index}" aria-label="Удалить синоним ${escapeHTML(synonym)}">×</button>`}</span>`).join('') : '<span class="synonym-empty">Пока нет</span>'}</span>
+            ${archived ? '' : `<span class="synonym-add-row"><input class="field" data-synonym-input type="text" placeholder="Одно обозначение"><button type="button" class="secondary small-button" data-action="add-synonym">Добавить</button></span><span class="synonym-help">Пробелы допустимы; завершите ввод кнопкой или Enter.</span>`}
+          </span>
+        </label>
         ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : !isNew ? `<div class="impact-box">Изменение названия обновит ${value.objects} объектов и ${value.filters} сохранённых фильтров. Идентичность тега сохранится.</div>` : '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>'}
         <div class="form-actions">
           ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
@@ -447,6 +471,10 @@
       variant = next;
       state.overlay = null;
       state.notice = null;
+      state.formTagId = null;
+      state.formName = '';
+      state.formDescription = '';
+      state.formSynonyms = [];
       const url = new URL(location.href);
       url.searchParams.set('variant', variant);
       history.replaceState(null, '', url);
@@ -461,15 +489,46 @@
     function openTag(id) {
       state.selectedId = id;
       state.notice = null;
+      state.formTagId = id;
+      state.formName = tagById(id).name;
+      state.formDescription = tagById(id).description;
+      state.formSynonyms = [...tagById(id).synonyms];
       state.overlay = { type: 'detail', tagId: id };
       render();
+    }
+
+    function beginNewTag(prefill) {
+      state.notice = null;
+      state.formTagId = '__new__';
+      state.formName = prefill;
+      state.formDescription = '';
+      state.formSynonyms = [];
+      state.overlay = { type: 'new', prefill };
+      render();
+    }
+
+    function addSynonym(form, rawValue) {
+      const value = String(rawValue || '').trim().replace(/^#+/, '');
+      const id = form.dataset.tagId || null;
+      const name = String(state.formName || '').trim().replace(/^#+/, '');
+      const collision = value ? tokenOwner(value, id) : null;
+      const duplicate = [name, ...state.formSynonyms].some(label => normalize(label) === normalize(value));
+      if (!value || collision || duplicate) {
+        state.notice = { kind: 'error', text: collision ? `Обозначение уже принадлежит #${collision.name}.` : duplicate ? 'Такое обозначение уже есть в этой записи.' : 'Введите один синоним.' };
+        render();
+        return;
+      }
+      state.formSynonyms.push(value);
+      state.notice = null;
+      render();
+      document.querySelector('[data-synonym-input]')?.focus();
     }
 
     function saveTag(form) {
       const data = new FormData(form);
       const id = form.dataset.tagId;
       const name = String(data.get('name') || '').trim().replace(/^#+/, '');
-      const synonyms = String(data.get('synonyms') || '').split(',').map(item => item.trim().replace(/^#+/, '')).filter(Boolean);
+      const synonyms = [...state.formSynonyms];
       const labels = [name, ...synonyms];
       const collision = labels.map(label => tokenOwner(label, id || null)).find(Boolean);
       if (!name || collision || new Set(labels.map(normalize)).size !== labels.length) {
@@ -492,6 +551,10 @@
       state.overlay = null;
       state.query = '';
       state.status = 'active';
+      state.formTagId = null;
+      state.formName = '';
+      state.formDescription = '';
+      state.formSynonyms = [];
       render();
     }
 
@@ -503,6 +566,8 @@
     });
 
     document.addEventListener('input', event => {
+      if (event.target.matches('[name="name"]')) { state.formName = event.target.value; return; }
+      if (event.target.matches('[name="description"]')) { state.formDescription = event.target.value; return; }
       if (!event.target.matches('[data-search]')) return;
       state.query = event.target.value;
       const position = event.target.selectionStart;
@@ -516,6 +581,10 @@
       if (event.target.matches('[data-inspector-select]')) {
         state.selectedId = event.target.value;
         state.notice = null;
+        state.formTagId = null;
+        state.formName = '';
+        state.formDescription = '';
+        state.formSynonyms = [];
         render();
       }
       if (event.target.matches('[data-merge-target]')) {
@@ -533,10 +602,19 @@
       if (action === 'open-tag') return openTag(button.dataset.tagId);
       if (action === 'set-status') { state.status = button.dataset.status; state.notice = null; return render(); }
       if (action === 'quick-search') { state.query = button.dataset.query; return render(); }
-      if (action === 'new-tag') { state.notice = null; state.overlay = { type: 'new', prefill: '' }; return render(); }
-      if (action === 'new-from-query') { state.notice = null; state.overlay = { type: 'new', prefill: state.query.replace(/^#+/, '') }; return render(); }
-      if (action === 'close-overlay') { state.overlay = null; state.notice = null; return render(); }
-      if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; return render(); }
+      if (action === 'new-tag') return beginNewTag('');
+      if (action === 'new-from-query') return beginNewTag(state.query.replace(/^#+/, ''));
+      if (action === 'add-synonym') {
+        const form = button.closest('[data-form]');
+        return addSynonym(form, form?.querySelector('[data-synonym-input]')?.value);
+      }
+      if (action === 'remove-synonym') {
+        state.formSynonyms.splice(Number(button.dataset.index), 1);
+        state.notice = null;
+        return render();
+      }
+      if (action === 'close-overlay') { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
+      if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
       if (action === 'archive-tag') { state.overlay = { type: 'archive', tagId: button.dataset.tagId }; return render(); }
       if (action === 'confirm-archive') {
         const tag = tagById(button.dataset.tagId);
@@ -576,6 +654,10 @@
     });
 
     document.addEventListener('keydown', event => {
+      if (event.target.matches('[data-synonym-input]') && event.key === 'Enter') {
+        event.preventDefault();
+        return addSynonym(event.target.closest('[data-form]'), event.target.value);
+      }
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName) || event.target.isContentEditable) return;
       if (event.key === 'ArrowLeft') cycleVariant(-1);
       if (event.key === 'ArrowRight') cycleVariant(1);
