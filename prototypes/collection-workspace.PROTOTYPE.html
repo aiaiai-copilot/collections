@@ -457,6 +457,10 @@
     .filter-panel .a-filter-list { display: grid; overflow-x: hidden; overflow-y: auto; max-height: none; flex: 1; gap: 6px; padding: 4px 16px 14px; }
     .filter-panel .a-filter-row { width: 100%; }
     .filter-panel .a-filter-list .filter-button { width: 100%; padding: 12px; }
+    .filter-panel .fixed-filter { margin-bottom: 7px; }
+    .filter-panel .fixed-filter .filter-button { border-color: #cbd2ca; background: white; }
+    .filter-panel-section-label { margin: 7px 2px 3px; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .filter-order-toggle:disabled { cursor: not-allowed; opacity: .4; }
     .filter-panel .a-new-filter { display: block; width: auto; margin: 0 16px 16px; padding: 12px; border: 1px solid #cbd2ca; text-align: center; }
 
     /* Collection tag glossary */
@@ -715,7 +719,7 @@
     ];
 
     const savedFilters = [
-      { id: 'all', name: 'Вся коллекция', tags: [], objectIds: objects.map(item => item.id), unorderedIds: [4, 7, 10, 11], activity: 98, task: { progress: 38, comparisons: 12 } },
+      { id: 'all', name: 'Все фильмы', tags: [], objectIds: objects.map(item => item.id), unorderedIds: [4, 7, 10, 11], activity: 100, system: true, task: { progress: 38, comparisons: 12 } },
       { id: 'friends', name: 'Для компании', tags: ['компания'], objectIds: [4, 5, 8, 10, 11, 12], unorderedIds: [10, 11], activity: 84, task: { progress: 63, comparisons: 7 } },
       { id: 'quiet', name: 'Тихий вечер', tags: ['спокойное', 'до 130 минут', 'одному', 'медленное', 'после работы'], objectIds: [3, 6, 7], unorderedIds: [6, 7], activity: 71, task: { progress: 22, comparisons: 3 } },
       { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'], objectIds: [4, 9, 10], unorderedIds: [10], activity: 62, task: null },
@@ -728,22 +732,24 @@
     ];
 
     const requestedVariant = new URLSearchParams(location.search).get('variant')?.toUpperCase();
+    const initialFilter = savedFilters.find(filter => filter.id === 'all');
     const state = {
       variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
       activeFilterId: 'all',
+      currentFilter: currentFilterFrom(initialFilter),
       criterion: 'Пересмотреть первым',
       filterOrderMode: 'activity',
-      filterOrder: savedFilters.map(filter => filter.id),
+      filterOrder: savedFilters.filter(filter => !filter.system).map(filter => filter.id),
       filterMovePanelOpen: false,
       filterEditorOpen: false,
       expandedTags: false,
       glossaryOpen: false,
       collectionMenuOpen: false,
       filterPanelOpen: false,
-      draftOrders: Object.fromEntries(savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))])),
-      draftUnordered: Object.fromEntries(savedFilters.map(filter => [filter.id, [...filter.unorderedIds]])),
+      draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
+      draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
-      taskProgress: Object.fromEntries(savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]))
+      taskProgress: Object.fromEntries([...savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]), ['current', initialFilter.task?.progress ?? null]])
     };
 
     const app = document.querySelector('#app');
@@ -758,10 +764,14 @@
     let draggedId = null;
     let draggedSavedFilterId = null;
 
-    function activeFilter() { return savedFilters.find(filter => filter.id === state.activeFilterId); }
+    function currentFilterFrom(source) {
+      return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null };
+    }
+    function activeFilter() { return state.currentFilter; }
+    function userSavedFilters() { return savedFilters.filter(filter => !filter.system); }
     function objectById(id) { return objects.find(item => item.id === Number(id)); }
-    function orderedObjects() { return state.draftOrders[state.activeFilterId].map(objectById); }
-    function unorderedObjects() { return state.draftUnordered[state.activeFilterId].map(objectById); }
+    function orderedObjects() { return state.draftOrders[activeFilter().id].map(objectById); }
+    function unorderedObjects() { return state.draftUnordered[activeFilter().id].map(objectById); }
     function escapeHTML(value = '') {
       return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
     }
@@ -792,12 +802,12 @@
       return `<div class="prototype-warning"><strong>◇</strong><span>Здесь проверяется место прямой расстановки. Как она дополняет общий порядок и влияет на скрытые объекты, пока не решено.</span></div>`;
     }
     function filterRule(filter) {
-      if (!filter.tags.length) return 'Все объекты коллекции';
+      if (!filter.tags.length) return 'Без фильтра · все фильмы';
       const visible = filter.tags.slice(0, 2).map(tag => `#${tag}`).join(' ∩ ');
       return filter.tags.length > 2 ? `${visible} · ещё ${filter.tags.length - 2}` : visible;
     }
     function filterConditionMarkup(filter) {
-      if (!filter.tags.length) return `<div class="slice-condition"><span class="slice-condition-label">Условие среза</span><span class="tag">Все объекты коллекции</span><button class="edit-filter-button" type="button" data-toggle-filter-editor>Изменить фильтр</button></div>`;
+      if (!filter.tags.length) return `<div class="slice-condition"><span class="slice-condition-label">Условие среза</span><span class="tag">Без фильтра · все фильмы</span><button class="edit-filter-button" type="button" data-toggle-filter-editor>Изменить фильтр</button></div>`;
       const limit = state.expandedTags ? filter.tags.length : 3;
       const visible = filter.tags.slice(0, limit);
       const hiddenCount = filter.tags.length - visible.length;
@@ -809,14 +819,15 @@
       return `<span class="slice-state incomplete ${withLabel ? 'with-label' : ''}" aria-label="Срез не завершён: ${unorderedCount} без места">◔${withLabel ? `<span>Не завершено · ${unorderedCount} без места</span>` : ''}</span>`;
     }
     function orderedSavedFilters() {
-      if (state.filterOrderMode === 'activity') return [...savedFilters].sort((left, right) => right.activity - left.activity);
+      if (state.filterOrderMode === 'activity') return [...userSavedFilters()].sort((left, right) => right.activity - left.activity);
       return state.filterOrder.map(id => savedFilters.find(filter => filter.id === id)).filter(Boolean);
     }
     function filterButton(filter, extra = '', detailed = false) {
       const taskProgress = state.taskProgress[filter.id];
       const meta = taskProgress != null ? `${pluralObjects(filter.objectIds.length)} · сравнения ${taskProgress}%` : pluralObjects(filter.objectIds.length);
       const lightness = (96 - filter.activity * .27).toFixed(1);
-      return `<button class="filter-button ${filter.id === state.activeFilterId ? 'active' : ''} ${detailed ? 'activity-reflect' : ''} ${extra}" ${detailed ? `style="--activity-color:hsl(145 31% ${lightness}%)"` : ''} type="button" data-filter-id="${filter.id}" aria-pressed="${filter.id === state.activeFilterId}">
+      const active = filter.id === state.activeFilterId && !state.currentFilter.dirty;
+      return `<button class="filter-button ${active ? 'active' : ''} ${detailed && !filter.system ? 'activity-reflect' : ''} ${extra}" ${detailed && !filter.system ? `style="--activity-color:hsl(145 31% ${lightness}%)"` : ''} type="button" data-filter-id="${filter.id}" aria-pressed="${active}">
         <span class="filter-name-row"><span class="filter-name">${escapeHTML(filter.name)}</span>${detailed ? filterStatusMarkup(filter) : ''}</span>
         <span class="filter-meta">${meta}</span>
         ${detailed ? `<span class="filter-rule">${escapeHTML(filterRule(filter))}</span>` : ''}
@@ -824,7 +835,8 @@
     }
     function filterList(extra = '') { return savedFilters.map(filter => filterButton(filter, extra)).join(''); }
     function filterListA() {
-      return orderedSavedFilters().map(filter => `<div class="a-filter-row" draggable="true" data-saved-filter-id="${filter.id}">${filterButton(filter, '', true)}</div>`).join('');
+      const all = savedFilters.find(filter => filter.system);
+      return `<div class="a-filter-row fixed-filter">${filterButton(all, '', true)}</div><p class="filter-panel-section-label">Сохранённые · ${userSavedFilters().length}</p>${orderedSavedFilters().map(filter => `<div class="a-filter-row" draggable="true" data-saved-filter-id="${filter.id}">${filterButton(filter, '', true)}</div>`).join('')}`;
     }
     function orderedCard(item, index) {
       return `<article class="ordered-card" draggable="true" data-order-id="${item.id}">
@@ -882,7 +894,7 @@
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
           <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="mobile-collection-button" type="button" data-open-collections aria-haspopup="dialog"><span><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></span><span>⌄</span></button></div>
         </header>
-        <div class="mobile-slice-switch"><button class="slice-switch-button" type="button" data-open-filter-panel aria-haspopup="dialog"><span><small>Сохранённый фильтр</small><strong>${escapeHTML(filter.name)}</strong></span><span class="slice-switch-meta">${savedFilters.length} фильтров&nbsp; ☰</span></button></div>
+        <div class="mobile-slice-switch"><button class="slice-switch-button" type="button" data-open-filter-panel aria-haspopup="dialog"><span><small>${filter.dirty ? 'Текущий фильтр не сохранён' : filter.sourceId === 'all' ? 'Без фильтра' : 'Сохранённый фильтр'}</small><strong>${escapeHTML(filter.name)}</strong></span><span class="slice-switch-meta">${userSavedFilters().length} сохранённых&nbsp; ☰</span></button></div>
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
@@ -940,7 +952,7 @@
       const actionTitle = progress != null ? `Продолжить «${filter.name}»` : unordered.length ? `Найти место для ${unordered.length === 1 ? 'одного объекта' : `${unordered.length} объектов`}` : 'Посмотреть полный порядок';
       return `<section class="variant-c">
         <div class="c-shell">
-          <header class="c-header"><div class="brand"><span class="brand-mark">К</span><span>Фильмы на вечер</span></div><select class="c-filter-jump" data-select-filter aria-label="Открыть сохранённый фильтр">${savedFilters.map(item => `<option value="${item.id}" ${item.id === filter.id ? 'selected' : ''}>${escapeHTML(item.name)}</option>`).join('')}</select></header>
+          <header class="c-header"><div class="brand"><span class="brand-mark">К</span><span>Фильмы на вечер</span></div><select class="c-filter-jump" data-select-filter aria-label="Открыть сохранённый фильтр">${savedFilters.map(item => `<option value="${item.id}" ${item.id === state.activeFilterId && !filter.dirty ? 'selected' : ''}>${escapeHTML(item.name)}</option>`).join('')}</select></header>
           <div class="c-grid">
             <main class="c-focus">
               <div class="c-focus-head"><div><p class="eyebrow">Сейчас открыто</p><h1>${escapeHTML(filter.name)}</h1></div>${criterionMarkup()}</div>
@@ -1038,7 +1050,8 @@
         return;
       }
       const filter = activeFilter();
-      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${savedFilters.length} фильтров в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle ${state.filterMovePanelOpen ? 'active' : ''}" type="button" data-toggle-filter-move>Переместить</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание или перемещение закрепляет порядок.</div>${filterMovePanelMarkup(filter)}</div><nav class="a-filter-list" aria-label="Сохранённые фильтры">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      const selectedSavedFilter = !filter.dirty ? savedFilters.find(item => item.id === state.activeFilterId && !item.system) : null;
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${filter.dirty ? 'Текущий фильтр не сохранён' : 'Фильмы на вечер'}</strong><small>${filter.dirty ? filterRule(filter) : 'Коллекция · карточки фильмов'}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle ${state.filterMovePanelOpen ? 'active' : ''}" type="button" data-toggle-filter-move ${selectedSavedFilter ? '' : 'disabled'}>Переместить</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание или перемещение закрепляет порядок.</div>${selectedSavedFilter ? filterMovePanelMarkup(selectedSavedFilter) : ''}</div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
@@ -1050,11 +1063,11 @@
         variant: state.variant,
         layoutFocus: state.variant === 'A' ? 'mobile-first' : 'historical-variant',
         collection: 'Фильмы на вечер',
-        savedFilter: { id: filter.id, name: filter.name, tags: filter.tags },
+        currentFilter: { sourceId: filter.sourceId, dirty: filter.dirty, name: filter.name, tags: filter.tags },
         savedFilterNavigation: {
           orderMode: state.filterOrderMode,
           order: orderedSavedFilters().map(item => item.id),
-          activity: Object.fromEntries(savedFilters.map(item => [item.id, item.activity]))
+          activity: Object.fromEntries(userSavedFilters().map(item => [item.id, item.activity]))
         },
         liveSliceSize: filter.objectIds.length,
         criterion: state.criterion,
@@ -1088,8 +1101,13 @@
     }
 
     function setFilter(id) {
-      if (!savedFilters.some(filter => filter.id === id)) return;
+      const source = savedFilters.find(filter => filter.id === id);
+      if (!source) return;
       state.activeFilterId = id;
+      state.currentFilter = currentFilterFrom(source);
+      state.draftOrders.current = [...state.draftOrders[source.id]];
+      state.draftUnordered.current = [...state.draftUnordered[source.id]];
+      state.taskProgress.current = state.taskProgress[source.id] ?? null;
       state.duel.pairIndex = 0;
       state.filterMovePanelOpen = false;
       state.filterEditorOpen = false;
@@ -1141,9 +1159,38 @@
       render();
     }
 
+    function sameTags(left, right) {
+      return left.length === right.length && left.every(tag => right.includes(tag));
+    }
+
+    function syncCurrentDraftToSource() {
+      const filter = activeFilter();
+      if (filter.dirty) return;
+      state.draftOrders[filter.sourceId] = [...state.draftOrders[filter.id]];
+      state.draftUnordered[filter.sourceId] = [...state.draftUnordered[filter.id]];
+      const source = savedFilters.find(item => item.id === filter.sourceId);
+      if (source) source.unorderedIds = [...state.draftUnordered[filter.id]];
+    }
+
     function toggleActiveFilterTag(tag) {
       const filter = activeFilter();
       filter.tags = filter.tags.includes(tag) ? filter.tags.filter(value => value !== tag) : [...filter.tags, tag];
+      const source = savedFilters.find(item => item.id === filter.sourceId);
+      filter.dirty = !sameTags(filter.tags, source.tags);
+      filter.name = filter.dirty ? 'Несохранённый фильтр' : source.name;
+      state.filterMovePanelOpen = false;
+      if (!filter.dirty) {
+        filter.objectIds = [...source.objectIds];
+        filter.unorderedIds = [...source.unorderedIds];
+        filter.task = source.task ? { ...source.task } : null;
+        state.draftOrders[filter.id] = [...state.draftOrders[source.id]];
+        state.draftUnordered[filter.id] = [...state.draftUnordered[source.id]];
+        state.taskProgress[filter.id] = state.taskProgress[source.id] ?? null;
+        state.expandedTags = false;
+        showToast('Текущий фильтр снова совпадает с исходным');
+        render();
+        return;
+      }
       const newIds = objects.filter(item => filter.tags.every(value => item.tags.includes(value))).map(item => item.id);
       const previousOrdered = state.draftOrders[filter.id] ?? [];
       const nextOrdered = previousOrdered.filter(id => newIds.includes(id));
@@ -1165,34 +1212,38 @@
     }
 
     function moveOrdered(id, direction) {
-      const order = state.draftOrders[state.activeFilterId];
+      const order = state.draftOrders[activeFilter().id];
       const index = order.indexOf(Number(id));
       const target = Math.max(0, Math.min(order.length - 1, index + Number(direction)));
       if (index < 0 || index === target) return;
       const [moved] = order.splice(index, 1);
       order.splice(target, 0, moved);
+      syncCurrentDraftToSource();
       showToast('Черновая расстановка изменена');
       render();
     }
 
     function moveBefore(id, targetId) {
-      const order = state.draftOrders[state.activeFilterId];
+      const order = state.draftOrders[activeFilter().id];
       const from = order.indexOf(Number(id));
       const to = order.indexOf(Number(targetId));
       if (from < 0 || to < 0 || from === to) return;
       const [moved] = order.splice(from, 1);
       order.splice(order.indexOf(Number(targetId)), 0, moved);
+      syncCurrentDraftToSource();
       showToast('Черновая расстановка изменена');
       render();
     }
 
     function placeUnordered(id) {
       const numericId = Number(id);
-      const unordered = state.draftUnordered[state.activeFilterId];
+      const filterId = activeFilter().id;
+      const unordered = state.draftUnordered[filterId];
       const index = unordered.indexOf(numericId);
       if (index < 0) return;
       unordered.splice(index, 1);
-      state.draftOrders[state.activeFilterId].push(numericId);
+      state.draftOrders[filterId].push(numericId);
+      syncCurrentDraftToSource();
       showToast('Объект добавлен в черновую расстановку');
       render();
     }
@@ -1253,8 +1304,10 @@
         const outcome = target.dataset.duelOutcome;
         if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
         else showToast(outcome === 'equal' ? 'Равноценность сохранена' : 'Решение сохранено в общем порядке');
-        const current = state.taskProgress[state.activeFilterId] ?? 0;
-        state.taskProgress[state.activeFilterId] = Math.min(96, current + (outcome === 'defer' ? 0 : 4));
+        const filter = activeFilter();
+        const current = state.taskProgress[filter.id] ?? 0;
+        state.taskProgress[filter.id] = Math.min(96, current + (outcome === 'defer' ? 0 : 4));
+        if (!filter.dirty) state.taskProgress[filter.sourceId] = state.taskProgress[filter.id];
         state.duel.pairIndex += 1;
         renderDuel();
         renderState();
