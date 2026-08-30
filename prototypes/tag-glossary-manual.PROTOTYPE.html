@@ -124,6 +124,8 @@
     .tag-row:active { background: var(--green-soft); }
     .tag-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .tag-main strong { font-size: 13px; }
+    .tag-row > .meta { display: block; margin-top: 4px; }
+    .match-reason { display: block; margin-top: 5px; color: var(--blue); font-size: 10px; }
     .meta { color: var(--muted); font-size: 10px; }
     .description { margin: 5px 0 0; color: #4f5c53; font-size: 11px; }
     .synonyms { margin-top: 7px; color: var(--blue); font-size: 10px; }
@@ -270,13 +272,19 @@
     const activeTags = () => state.tags.filter(tag => tag.status === 'active');
     const matches = (tag, query) => {
       const token = normalize(query);
-      return !token || [tag.name, ...tag.synonyms].some(value => normalize(value).includes(token)) || normalize(tag.description).includes(token);
+      return !token || [tag.name, ...tag.synonyms].some(value => normalize(value).includes(token));
     };
     const visibleTags = status => state.tags.filter(tag => tag.status === status && matches(tag, state.query)).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     const tokenOwner = (value, excludeId = null) => {
       const token = normalize(value);
       return state.tags.find(tag => tag.status === 'active' && tag.id !== excludeId && [tag.name, ...tag.synonyms].some(label => normalize(label) === token));
     };
+    const plural = (value, forms) => {
+      const mod100 = Math.abs(value) % 100;
+      const mod10 = mod100 % 10;
+      return mod100 > 10 && mod100 < 20 ? forms[2] : mod10 === 1 ? forms[0] : mod10 > 1 && mod10 < 5 ? forms[1] : forms[2];
+    };
+    const usageLabel = tag => `${tag.objects} ${plural(tag.objects, ['объект', 'объекта', 'объектов'])} · ${tag.filters} ${plural(tag.filters, ['фильтр', 'фильтра', 'фильтров'])}`;
 
     function topbar() {
       return `<header class="topbar">
@@ -309,10 +317,12 @@
           <button type="button" data-action="open-tag" data-tag-id="${tag.id}">Открыть</button>
         </div>`;
       }
+      const token = normalize(state.query);
+      const synonymMatch = token ? tag.synonyms.find(value => normalize(value).includes(token)) : null;
       return `<button type="button" class="tag-row" data-action="open-tag" data-tag-id="${tag.id}">
-        <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong><span class="badge ${tag.status === 'archived' ? 'archive' : ''}">${tag.status === 'archived' ? 'В архиве' : `${tag.objects} · ${tag.filters}`}</span></span>
-        <span class="description">${escapeHTML(tag.description)}</span>
-        ${tag.synonyms.length ? `<span class="synonyms">Синонимы: ${tag.synonyms.map(escapeHTML).join(', ')}</span>` : ''}
+        <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong>${tag.status === 'archived' ? '<span class="badge archive">В архиве</span>' : ''}</span>
+        <span class="meta">${usageLabel(tag)}</span>
+        ${synonymMatch ? `<span class="match-reason">Найдено по синониму «${escapeHTML(synonymMatch)}»</span>` : ''}
       </button>`;
     }
 
