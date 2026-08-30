@@ -296,7 +296,7 @@
     .current-filter-summary small, .current-filter-summary strong { display: block; }
     .current-filter-summary small { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
     .current-filter-summary strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-    .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(3, minmax(0,1fr)); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
+    .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(4, minmax(0,1fr)); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
     .a-bottom-nav button { position: relative; display: grid; min-width: 0; min-height: 52px; padding: 5px 3px; place-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
     .a-bottom-nav button:active { background: var(--green-2); }
     .a-bottom-nav button:disabled { cursor: default; opacity: .42; }
@@ -886,11 +886,12 @@
     function bottomNavigationMarkup(filter) {
       const progress = state.taskProgress[filter.id];
       const comparisonsAvailable = filter.objectIds.length >= 2;
-      const comparisonMeta = !comparisonsAvailable ? 'Не нужны' : progress == null ? 'Начать' : `Продолжить · ${progress}%`;
+      const priorityMeta = !comparisonsAvailable ? 'Не нужны' : progress == null ? 'Начать' : `Продолжить · ${progress}%`;
       return `<nav class="a-bottom-nav" aria-label="Основные действия">
         <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
         <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span><span class="a-bottom-nav-meta">Теги</span></button>
-        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'}><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Сравнения</span><span class="a-bottom-nav-meta">${comparisonMeta}</span></button>
+        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'}><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Приоритеты</span><span class="a-bottom-nav-meta">${priorityMeta}</span></button>
+        <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span><span class="a-bottom-nav-meta">Коллекция</span></button>
       </nav>`;
     }
 
