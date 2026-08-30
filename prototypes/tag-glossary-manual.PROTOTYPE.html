@@ -132,6 +132,7 @@
     .empty { padding: 24px 14px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
     .notice { margin-bottom: 12px; padding: 10px 12px; border-radius: 13px; background: var(--green-soft); color: var(--green); font-size: 11px; }
     .notice.error { background: var(--red-soft); color: var(--red); }
+    .selected-basis { margin-bottom: 12px; padding: 7px 10px; border: 1px dashed var(--green); border-radius: 999px; color: var(--green); font-size: 9px; font-weight: 850; text-align: center; text-transform: uppercase; }
 
     /* A: catalogue */
     .catalog-tools { display: grid; gap: 9px; }
@@ -316,8 +317,11 @@
 
     function renderA() {
       const tags = visibleTags(state.status);
+      const query = normalize(state.query);
+      const exact = state.tags.some(tag => [tag.name, ...tag.synonyms].some(label => normalize(label) === query));
       return `<div class="phone">${topbar()}<main class="screen">
         ${notice()}
+        <div class="selected-basis">Выбранная основа</div>
         <h1>Все теги</h1>
         <p class="lede">Находите записи по названию и синонимам. Тег открывается в карточке снизу.</p>
         <div class="catalog-tools">
@@ -328,6 +332,7 @@
           </div>
           <button type="button" class="primary catalog-create" data-action="new-tag">Создать тег в глоссарии</button>
         </div>
+        ${query && !exact ? `<button type="button" class="create-result" data-action="new-from-query">Создать #${escapeHTML(state.query.replace(/^#+/, ''))} в глоссарии</button>` : ''}
         <div class="section-title row between"><h2>${state.status === 'active' ? 'Активные записи' : 'Архив'}</h2><span>${tags.length}</span></div>
         <div class="tag-list">${tags.length ? tags.map(tag => tagRow(tag)).join('') : '<div class="empty">Ничего не найдено</div>'}</div>
       </main>${productNav()}</div>`;
