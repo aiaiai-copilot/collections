@@ -252,10 +252,9 @@
     .filter-editor-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .filter-editor-tags button { padding: 7px 9px; border: 1px solid #cbd2ca; border-radius: 999px; background: white; cursor: pointer; font-size: 11px; }
     .filter-editor-tags button.active { border-color: var(--green); background: var(--green-2); color: var(--green); font-weight: 820; }
-    .filter-name-field { display: grid; gap: 5px; margin-bottom: 13px; }
-    .filter-name-field span { font-size: 10px; font-weight: 850; }
-    .filter-name-field input { width: 100%; padding: 10px 11px; border: 1px solid #bfc9bf; border-radius: 11px; background: white; color: var(--ink); font: inherit; font-size: 13px; font-weight: 760; }
-    .filter-name-field small { color: var(--muted); font-size: 9px; }
+    .filter-editor-title-input { width: min(100%, 310px); padding: 4px 0; border: 0; border-bottom: 1px solid #aeb9af; background: transparent; color: var(--ink); font: inherit; font-size: 18px; font-weight: 850; outline: 0; }
+    .filter-editor-title-input:focus { border-bottom-color: var(--green); }
+    .filter-editor-title-input::placeholder { color: #7a847c; opacity: 1; }
     .slice-actions { display: flex; gap: 8px; align-items: center; }
     .continue-banner {
       display: grid;
@@ -847,7 +846,7 @@
       return `<div class="slice-condition">${tags}${hiddenCount ? `<button class="more-tags-button" type="button" data-toggle-all-tags>ещё ${hiddenCount}</button>` : state.expandedTags && filter.tags.length > 3 ? '<button class="more-tags-button" type="button" data-toggle-all-tags>свернуть</button>' : ''}</div>`;
     }
     function currentFilterNameMarkup(filter) {
-      if (!filter.showName) return filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : '';
+      if (!filter.showName) return '';
       if (filter.dirty) return `<button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}</button>`;
       return `<strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}</strong>`;
     }
@@ -912,8 +911,8 @@
     function filterEditorMarkup(filter) {
       if (!state.filterEditorOpen) return '';
       const availableTags = [...new Set(objects.flatMap(item => item.tags))].sort((left, right) => left.localeCompare(right, 'ru'));
-      const editorTitle = filter.dirty ? filter.showName ? `Фильтр «${escapeHTML(filter.name)}»` : 'Текущий фильтр' : filter.sourceId === 'all' ? 'Без фильтра' : `Фильтр «${escapeHTML(filter.name)}»`;
-      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div><strong>${editorTitle}</strong><p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div>${filter.dirty ? `<label class="filter-name-field"><span>Название текущего фильтра</span><input type="text" value="${escapeHTML(filter.name)}" data-current-filter-name aria-label="Название текущего фильтра"><small>Оно будет использовано при сохранении; исходный сохранённый фильтр не изменится.</small></label>` : ''}<div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
+      const editorTitle = filter.dirty ? `<input class="filter-editor-title-input" type="text" value="${filter.showName ? escapeHTML(filter.name) : ''}" placeholder="Название фильтра" data-current-filter-name aria-label="Название текущего фильтра">` : `<strong>${filter.sourceId === 'all' ? 'Без фильтра' : `Фильтр «${escapeHTML(filter.name)}»`}</strong>`;
+      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div>${editorTitle}<p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div><div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
     }
 
     function bottomNavigationMarkup(filter) {
@@ -1590,13 +1589,11 @@
     document.addEventListener('input', event => {
       if (!event.target.matches('[data-current-filter-name]')) return;
       renameCurrentFilter(event.target.value);
-      const filter = activeFilter();
-      document.querySelector('.filter-editor-head strong')?.replaceChildren(filter.showName ? `Фильтр «${filter.name}»` : 'Текущий фильтр');
       renderState();
     });
 
     document.addEventListener('focusout', event => {
-      if (event.target.matches('[data-current-filter-name]') && !event.target.value.trim()) event.target.value = activeFilter().name;
+      if (event.target.matches('[data-current-filter-name]') && !event.target.value.trim()) event.target.value = '';
     });
 
     document.addEventListener('keydown', event => {
