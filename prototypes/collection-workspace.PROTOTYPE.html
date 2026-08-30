@@ -286,8 +286,9 @@
     body[data-variant="A"] .variant-a { display: flex; height: 100%; min-height: 0; flex-direction: column; overflow: hidden; }
     body[data-variant="A"] .a-topbar { position: relative; z-index: 12; display: grid; flex: 0 0 62px; height: 62px; grid-template-columns: 34px minmax(0, 1fr); gap: 9px; padding: 0 12px; }
     body[data-variant="A"] .a-topbar .brand span:last-child { display: none; }
-    body[data-variant="A"] .a-top-filter { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    body[data-variant="A"] .a-top-filter { display: flex; min-width: 0; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; }
     body[data-variant="A"] .a-top-filter::-webkit-scrollbar { display: none; }
+    body[data-variant="A"] .a-top-filter .current-filter-name { flex: 0 0 auto; }
     body[data-variant="A"] .a-top-filter .slice-condition { width: max-content; margin-top: 0; flex-wrap: nowrap; }
     body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
     body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
@@ -847,8 +848,8 @@
     }
     function currentFilterNameMarkup(filter) {
       if (!filter.showName) return '';
-      if (filter.dirty) return `<button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}</button>`;
-      return `<strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}</strong>`;
+      if (filter.dirty) return `<button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}:</button>`;
+      return `<strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}:</strong>`;
     }
     function filterStatusMarkup(filter, withLabel = false) {
       const unorderedCount = state.draftUnordered[filter.id]?.length ?? 0;
@@ -935,12 +936,12 @@
       return `<section class="variant-a">
         <header class="a-topbar">
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
-          <div class="a-top-filter" aria-label="Текущий фильтр">${filterConditionMarkup(filter)}</div>
+          <div class="a-top-filter" aria-label="Текущий фильтр">${currentFilterNameMarkup(filter)}${filterConditionMarkup(filter)}</div>
         </header>
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span>${currentFilterNameMarkup(filter)}</div>${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span></div>${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
             ${continueBanner(filter)}
