@@ -14,3 +14,11 @@ Status: claimed
 - Незавершённые задачи являются контекстными действиями продолжения, а не постоянными пунктами основной навигации.
 - Все срезы одной коллекции и критерия используют общий порядок; неупорядоченные объекты текущего среза видимы.
 - Старый прототип коллекции является только историческим референсом.
+
+## Prototype
+
+- Branch: `codex/collection-workspace-prototype`
+- Artifact: [`collection-workspace.PROTOTYPE.html`](../../../prototypes/collection-workspace.PROTOTYPE.html)
+- Run: `python3 -m http.server 4174 --bind 127.0.0.1`, then open `http://127.0.0.1:4174/prototypes/collection-workspace.PROTOTYPE.html?variant=A`.
+- Variants: сохранённые фильтры как боковой маршрут; порядок как горизонтальная лента; заметное продолжение как центр интерфейса.
+- Open feedback: выбрать основу или комбинацию частей после проверки на компьютере и телефоне.

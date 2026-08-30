@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>PROTOTYPE — основной интерфейс коллекции</title>
+  <!-- Three variants of the collection workspace, switchable via ?variant=, in one standalone throwaway file. -->
+  <style>
+    :root {
+      --ink: #17201b;
+      --muted: #657067;
+      --paper: #f5f2ea;
+      --panel: #fffdf8;
+      --line: #d9ddd5;
+      --green: #23684b;
+      --green-2: #d8eadf;
+      --lime: #dff26f;
+      --peach: #f0c9af;
+      --blue: #c9ddec;
+      --yellow: #f5de85;
+      --shadow: 0 18px 55px rgba(27, 43, 34, .10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--paper); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 0 0, rgba(223, 242, 111, .22), transparent 28rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-rendering: optimizeLegibility;
+    }
+
+    button, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(35, 104, 75, .32);
+      outline-offset: 3px;
+    }
+
+    .prototype-page { min-height: 100vh; padding-bottom: 106px; }
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .muted { color: var(--muted); }
+    .dot { padding: 0 .25em; color: #a3aaa4; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: clamp(28px, 4vw, 48px); line-height: .98; letter-spacing: -.045em; }
+    h2 { margin-bottom: 7px; font-size: clamp(20px, 2.3vw, 30px); line-height: 1.05; letter-spacing: -.025em; }
+    h3 { margin-bottom: 4px; font-size: 16px; }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 850; }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--ink);
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 19px;
+    }
+
+    .icon-button, .ghost-button, .soft-button, .primary-button, .dark-button {
+      border: 0;
+      border-radius: 13px;
+      cursor: pointer;
+      font-weight: 780;
+      transition: transform .16s ease, background .16s ease, opacity .16s ease;
+    }
+    .icon-button:hover, .ghost-button:hover, .soft-button:hover, .primary-button:hover, .dark-button:hover { transform: translateY(-1px); }
+    .icon-button { width: 38px; height: 38px; background: #eceee8; }
+    .ghost-button { padding: 10px 13px; background: transparent; }
+    .soft-button { padding: 10px 14px; background: #e9ece5; }
+    .primary-button { padding: 12px 17px; background: var(--green); color: white; }
+    .dark-button { padding: 12px 17px; background: var(--ink); color: white; }
+    .primary-button.large, .dark-button.large { min-height: 52px; padding-inline: 22px; }
+
+    .criterion-pill, .tag, .count-pill, .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .criterion-pill { padding: 7px 10px; background: #e8ece5; font-size: 12px; font-weight: 780; }
+    .tag { padding: 4px 7px; background: #edf0ea; color: #536057; font-size: 10px; font-weight: 750; }
+    .count-pill { padding: 5px 8px; background: #e8ece5; font-size: 11px; font-weight: 800; }
+    .status-pill { padding: 6px 9px; background: var(--yellow); font-size: 11px; font-weight: 820; }
+    .status-pill.good { background: var(--green-2); color: var(--green); }
+
+    .progress-track { overflow: hidden; height: 7px; border-radius: 999px; background: rgba(23, 32, 27, .12); }
+    .progress-fill { width: var(--progress); height: 100%; border-radius: inherit; background: currentColor; transition: width .2s ease; }
+
+    .filter-button {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 15px;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+    .filter-button.active { border-color: rgba(35, 104, 75, .25); background: var(--green-2); }
+    .filter-name { display: flex; align-items: center; gap: 7px; font-weight: 820; }
+    .filter-meta { color: var(--muted); font-size: 11px; }
+    .pin { color: var(--green); font-size: 10px; }
+
+    .poster {
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      overflow: hidden;
+      min-height: 150px;
+      align-items: flex-end;
+      border-radius: 16px;
+      background: var(--poster, #d9ddd5);
+      color: #101612;
+    }
+    .poster::before, .poster::after { content: ""; position: absolute; z-index: -1; border-radius: 999px; }
+    .poster::before { inset: 10% 45% 38% -15%; background: rgba(255, 255, 255, .6); transform: rotate(-18deg); }
+    .poster::after { right: -15%; bottom: -20%; width: 70%; aspect-ratio: 1; background: rgba(23, 32, 27, .16); }
+    .poster-index { position: absolute; top: 11px; left: 12px; font-size: 11px; font-weight: 900; }
+    .poster-copy { width: 100%; padding: 22px 13px 13px; background: linear-gradient(transparent, rgba(255,255,255,.87) 34%); }
+    .poster-copy strong { display: block; font-family: Georgia, serif; font-size: 17px; line-height: 1.03; }
+    .poster-copy small { display: block; margin-top: 5px; color: #4e5a52; font-size: 10px; font-weight: 700; }
+
+    .ordered-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 32px minmax(72px, 96px) 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: var(--panel);
+      box-shadow: 0 5px 16px rgba(23, 32, 27, .045);
+    }
+    .ordered-card[draggable="true"] { cursor: grab; }
+    .ordered-card.is-dragging { opacity: .42; }
+    .ordered-rank { color: var(--green); font-family: Georgia, serif; font-size: 22px; font-weight: 800; text-align: center; }
+    .ordered-card .poster { min-height: 88px; border-radius: 11px; }
+    .ordered-card .poster-copy { padding: 25px 8px 8px; }
+    .ordered-card .poster-copy strong { font-size: 11px; }
+    .ordered-card .poster-copy small { display: none; }
+    .ordered-copy { min-width: 0; }
+    .ordered-copy strong { display: block; overflow: hidden; margin-bottom: 7px; text-overflow: ellipsis; white-space: nowrap; }
+    .ordered-copy .tags { display: flex; overflow: hidden; gap: 4px; }
+    .move-actions { display: grid; gap: 4px; }
+    .move-actions button { width: 30px; height: 27px; border: 0; border-radius: 8px; background: #edf0ea; cursor: pointer; }
+
+    .unordered-card {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px dashed #aeb7ae;
+      border-radius: 16px;
+      background: rgba(255, 253, 248, .72);
+    }
+    .unordered-card .poster { min-height: 76px; border-radius: 11px; }
+    .unordered-card .poster-copy { padding: 26px 7px 7px; }
+    .unordered-card .poster-copy strong { font-size: 10px; }
+    .unordered-card .poster-copy small { display: none; }
+    .unordered-copy strong { display: block; margin-bottom: 7px; font-size: 13px; }
+    .place-button { padding: 7px 9px; border: 0; border-radius: 9px; background: var(--green-2); color: var(--green); cursor: pointer; font-size: 11px; font-weight: 800; }
+
+    .prototype-warning {
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border: 1px solid #e8d59a;
+      border-radius: 13px;
+      background: #fff7d9;
+      color: #655728;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    /* Variant A — route rail */
+    .variant-a { min-height: calc(100vh - 106px); }
+    .a-topbar {
+      display: flex;
+      height: 66px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, .84);
+      backdrop-filter: blur(16px);
+    }
+    .a-top-actions { display: flex; align-items: center; gap: 10px; }
+    .a-shell { display: grid; grid-template-columns: 285px minmax(0, 1fr); min-height: calc(100vh - 172px); }
+    .a-rail { padding: 28px 18px; border-right: 1px solid var(--line); background: rgba(246, 245, 238, .82); }
+    .a-rail-heading { padding: 0 10px 20px; }
+    .a-rail-heading h2 { font-size: 22px; }
+    .a-filter-list { display: grid; gap: 5px; }
+    .a-filter-list .filter-button { padding: 11px 10px; }
+    .a-filter-list .filter-button.active { padding-block: 13px; }
+    .a-filter-list .filter-meta { margin: 5px 0 0 21px; }
+    .a-new-filter { width: 100%; margin-top: 12px; text-align: left; }
+    .a-main { min-width: 0; padding: 34px clamp(20px, 4vw, 58px) 58px; }
+    .slice-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+    .slice-head-copy p { max-width: 680px; margin-bottom: 0; color: var(--muted); font-size: 13px; }
+    .slice-actions { display: flex; gap: 8px; align-items: center; }
+    .continue-banner {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 15px;
+      align-items: center;
+      margin: 26px 0;
+      padding: 15px;
+      border-radius: 18px;
+      background: var(--ink);
+      color: white;
+    }
+    .continue-symbol { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--lime); color: var(--ink); font-size: 19px; }
+    .continue-banner strong { display: block; font-size: 14px; }
+    .continue-banner p { margin: 4px 0 0; color: #bcc8bf; font-size: 11px; }
+    .continue-banner .progress-track { width: min(200px, 26vw); margin-top: 8px; color: var(--lime); background: rgba(255,255,255,.15); }
+    .a-workspace { display: grid; grid-template-columns: minmax(360px, 1.35fr) minmax(245px, .65fr); gap: 18px; align-items: start; }
+    .a-order, .a-unordered { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.7); }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .section-head p { margin-bottom: 0; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .ordered-list, .unordered-list { display: grid; gap: 9px; }
+    .a-unordered .unordered-list { margin-bottom: 12px; }
+
+    /* Variant B — horizontal workbench */
+    .variant-b { min-height: calc(100vh - 106px); background: #e7ebe4; }
+    .b-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px clamp(18px, 4vw, 52px); background: var(--ink); color: white; }
+    .b-header .brand-mark { background: var(--lime); color: var(--ink); }
+    .b-collection { text-align: center; }
+    .b-collection strong { display: block; }
+    .b-collection small { color: #aebbb2; }
+    .b-collection .criterion-pill { color: var(--ink); }
+    .b-header-actions { display: flex; align-items: center; gap: 7px; }
+    .b-header .icon-button { background: rgba(255,255,255,.12); color: white; }
+    .b-tabs-wrap { padding: 18px clamp(18px, 4vw, 52px) 0; background: var(--panel); }
+    .b-tabs {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 15px;
+      scrollbar-width: none;
+    }
+    .b-tabs::-webkit-scrollbar { display: none; }
+    .b-tabs .filter-button { flex: 0 0 auto; width: auto; min-width: 136px; padding: 10px 13px; background: #eff1ec; }
+    .b-tabs .filter-button.active { background: var(--green); color: white; }
+    .b-tabs .filter-button.active .filter-meta { color: #cfdfd4; }
+    .b-main { padding: 22px clamp(18px, 4vw, 52px) 56px; }
+    .b-titlebar { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    .b-titlebar h1 { font-size: clamp(27px, 3vw, 40px); }
+    .b-actions { display: flex; gap: 8px; }
+    .b-board { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 15px; min-height: 570px; }
+    .b-lane { overflow: hidden; border-radius: 26px; background: var(--panel); box-shadow: var(--shadow); }
+    .b-lane-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .b-lane-head p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .b-ribbon { display: grid; grid-template-columns: repeat(3, minmax(155px, 1fr)); gap: 1px; background: var(--line); }
+    .b-ribbon-item { position: relative; min-width: 0; padding: 18px; background: var(--panel); }
+    .b-ribbon-rank { position: absolute; z-index: 2; top: 26px; left: 26px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 99px; background: white; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+    .b-ribbon .poster { min-height: 190px; }
+    .b-ribbon-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+    .b-ribbon-actions button { padding: 6px 9px; border: 0; border-radius: 9px; background: #ecefe9; cursor: pointer; font-size: 11px; font-weight: 800; }
+    .b-queue { display: flex; flex-direction: column; padding: 18px; border-radius: 26px; background: #d5dbd3; }
+    .b-queue .unordered-list { overflow: auto; max-height: 465px; padding-right: 2px; }
+    .b-queue .unordered-card { grid-template-columns: 58px 1fr; background: rgba(255,255,255,.66); }
+    .b-queue .unordered-card .poster { min-height: 62px; }
+    .b-task-card { margin-top: auto; padding-top: 14px; }
+    .b-task-card-inner { padding: 14px; border-radius: 17px; background: var(--ink); color: white; }
+    .b-task-card-inner p { margin: 5px 0 10px; color: #bcc8bf; font-size: 11px; }
+    .b-task-card-inner .progress-track { margin-bottom: 11px; color: var(--lime); background: rgba(255,255,255,.15); }
+    .b-task-card-inner button { width: 100%; background: var(--lime); color: var(--ink); }
+
+    /* Variant C — action first */
+    .variant-c { min-height: calc(100vh - 106px); padding: 20px; background: #fffaf0; }
+    .c-shell { overflow: hidden; max-width: 1180px; margin: 0 auto; border: 1px solid #1b251f; border-radius: 28px; background: var(--panel); box-shadow: 9px 9px 0 #1b251f; }
+    .c-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--ink); }
+    .c-filter-jump { max-width: 190px; border: 0; background: transparent; font-weight: 820; }
+    .c-grid { display: grid; grid-template-columns: minmax(0, 1.28fr) minmax(320px, .72fr); }
+    .c-focus { padding: clamp(24px, 5vw, 64px); border-right: 1px solid var(--ink); }
+    .c-focus-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+    .c-focus h1 { max-width: 700px; font-family: Georgia, serif; font-size: clamp(37px, 5.2vw, 70px); font-weight: 500; letter-spacing: -.055em; }
+    .c-focus > p { max-width: 630px; color: var(--muted); line-height: 1.5; }
+    .c-next {
+      position: relative;
+      overflow: hidden;
+      margin: 30px 0;
+      padding: clamp(22px, 4vw, 42px);
+      border: 1px solid var(--ink);
+      border-radius: 28px;
+      background: var(--lime);
+    }
+    .c-next::after { content: "↗"; position: absolute; top: -34px; right: 14px; color: rgba(23,32,27,.12); font-size: 160px; font-weight: 200; }
+    .c-next h2 { position: relative; z-index: 1; max-width: 500px; font-family: Georgia, serif; font-size: clamp(29px, 3.2vw, 44px); font-weight: 500; }
+    .c-next p { position: relative; z-index: 1; max-width: 480px; }
+    .c-next-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+    .c-next .progress-track { flex: 1; max-width: 240px; background: rgba(23,32,27,.18); color: var(--ink); }
+    .c-compact-order { border-top: 1px solid var(--ink); }
+    .c-compact-row {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 2px;
+      border-bottom: 1px solid #d7dbd4;
+    }
+    .c-compact-rank { font-family: Georgia, serif; font-size: 24px; }
+    .c-compact-copy strong { display: block; }
+    .c-compact-copy small { color: var(--muted); }
+    .c-compact-actions { display: flex; gap: 4px; }
+    .c-compact-actions button { width: 31px; height: 31px; border: 1px solid #cfd5cd; border-radius: 99px; background: transparent; cursor: pointer; }
+    .c-route { padding: 28px; background: #f2cdb8; }
+    .c-route h2 { font-family: Georgia, serif; font-size: 30px; font-weight: 500; }
+    .c-route-list { display: grid; gap: 8px; margin: 20px 0 32px; }
+    .c-route .filter-button { padding: 13px; border-color: rgba(23,32,27,.2); background: rgba(255,255,255,.22); }
+    .c-route .filter-button.active { background: var(--panel); box-shadow: 4px 4px 0 var(--ink); }
+    .c-route .filter-meta { margin-top: 5px; }
+    .c-unordered { padding-top: 24px; border-top: 1px solid var(--ink); }
+    .c-unordered-count { display: grid; width: 52px; height: 52px; margin-bottom: 12px; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-family: Georgia, serif; font-size: 24px; }
+    .c-unordered p { color: #63574f; font-size: 12px; line-height: 1.4; }
+    .c-unordered-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .c-unordered-list button { padding: 8px 10px; border: 1px solid rgba(23,32,27,.28); border-radius: 99px; background: rgba(255,255,255,.3); cursor: pointer; font-size: 11px; font-weight: 750; }
+    .c-warning { margin-top: 28px; }
+
+    /* Pairwise overlay */
+    .duel-backdrop {
+      position: fixed;
+      z-index: 50;
+      inset: 0;
+      display: none;
+      overflow: auto;
+      padding: 18px;
+      background: rgba(13, 18, 15, .89);
+      backdrop-filter: blur(14px);
+    }
+    .duel-backdrop.open { display: grid; place-items: center; }
+    .duel {
+      width: min(1050px, 100%);
+      min-height: min(720px, calc(100vh - 36px));
+      overflow: hidden;
+      border-radius: 26px;
+      background: #f2f0e9;
+      box-shadow: 0 28px 90px rgba(0,0,0,.4);
+    }
+    .duel-header { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+    .duel-title { text-align: center; }
+    .duel-title strong { display: block; }
+    .duel-title small { color: var(--muted); }
+    .duel-progress { min-width: 130px; color: var(--green); }
+    .duel-progress-copy { display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--ink); font-size: 11px; font-weight: 800; }
+    .duel-stage { display: grid; grid-template-columns: 1fr 86px 1fr; min-height: 540px; }
+    .duel-choice { position: relative; display: flex; padding: 28px; border: 0; background: transparent; cursor: pointer; }
+    .duel-choice:first-child { background: #dce8db; }
+    .duel-choice:last-child { background: #e6d7c9; }
+    .duel-object { display: flex; width: 100%; max-width: 350px; margin: auto; flex-direction: column; }
+    .duel-object .poster { min-height: 390px; border: 1px solid rgba(23,32,27,.35); border-radius: 24px; box-shadow: 9px 9px 0 rgba(23,32,27,.82); }
+    .duel-object .poster-copy { padding: 70px 24px 24px; }
+    .duel-object .poster-copy strong { font-size: 30px; }
+    .duel-object > strong { margin-top: 18px; font-size: 16px; text-align: center; }
+    .duel-rail { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-inline: 1px solid var(--line); background: #f2f0e9; }
+    .duel-rail span { font-family: Georgia, serif; font-size: 22px; font-style: italic; }
+    .duel-rail button { width: 50px; height: 50px; border: 1px solid var(--line); border-radius: 50%; background: white; cursor: pointer; font-weight: 900; }
+    .duel-footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+
+    /* Prototype-only chrome */
+    .switcher {
+      position: fixed;
+      z-index: 70;
+      right: 50%;
+      bottom: 15px;
+      display: grid;
+      grid-template-columns: 43px minmax(170px, auto) 43px;
+      align-items: center;
+      transform: translateX(50%);
+      border: 1px solid rgba(255,255,255,.17);
+      border-radius: 999px;
+      background: #111713;
+      color: white;
+      box-shadow: 0 12px 40px rgba(0,0,0,.28);
+    }
+    .switcher button { width: 43px; height: 43px; border: 0; border-radius: 50%; background: transparent; color: white; cursor: pointer; font-size: 19px; }
+    .switcher-label { padding: 0 10px; text-align: center; }
+    .switcher-label strong { display: block; font-size: 12px; }
+    .switcher-label small { display: block; margin-top: 1px; color: #97a49b; font-size: 9px; }
+    .state-debug {
+      position: fixed;
+      z-index: 69;
+      bottom: 18px;
+      left: 18px;
+      width: min(310px, calc(100vw - 36px));
+      border-radius: 14px;
+      background: rgba(255,255,255,.95);
+      box-shadow: 0 9px 32px rgba(0,0,0,.15);
+      font-size: 10px;
+    }
+    .state-debug summary { padding: 9px 12px; cursor: pointer; font-weight: 850; }
+    .state-debug pre { overflow: auto; max-height: 240px; margin: 0; padding: 0 12px 12px; white-space: pre-wrap; }
+    .prototype-stamp { position: fixed; z-index: 65; top: 8px; right: 8px; padding: 5px 7px; border-radius: 7px; background: rgba(23,32,27,.82); color: white; font-size: 8px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+    .toast {
+      position: fixed;
+      z-index: 80;
+      top: 20px;
+      left: 50%;
+      padding: 11px 15px;
+      transform: translate(-50%, -18px);
+      border-radius: 13px;
+      background: var(--ink);
+      color: white;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    body.duel-open .switcher, body.duel-open .state-debug { display: none; }
+
+    @media (max-width: 930px) {
+      .a-shell { grid-template-columns: 220px minmax(0, 1fr); }
+      .a-workspace { grid-template-columns: 1fr; }
+      .a-unordered .unordered-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .b-board { grid-template-columns: 1fr; }
+      .b-queue { min-height: 310px; }
+      .b-queue .unordered-list { display: grid; grid-template-columns: repeat(2, 1fr); max-height: none; }
+      .b-task-card { margin-top: 14px; }
+      .b-ribbon { grid-template-columns: repeat(2, minmax(155px, 1fr)); }
+      .c-grid { grid-template-columns: 1fr; }
+      .c-focus { border-right: 0; border-bottom: 1px solid var(--ink); }
+    }
+
+    @media (max-width: 700px) {
+      .prototype-page { padding-bottom: 92px; }
+      .a-topbar { height: 58px; padding: 0 14px; }
+      .a-topbar .brand span:last-child, .a-top-actions .ghost-button { display: none; }
+      .a-shell { display: block; min-height: auto; }
+      .a-rail { overflow: hidden; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .a-rail-heading { display: none; }
+      .a-filter-list { display: flex; overflow-x: auto; gap: 7px; padding: 2px; scrollbar-width: none; }
+      .a-filter-list .filter-button { flex: 0 0 auto; width: auto; min-width: 130px; padding: 9px 10px; background: #e9ece5; }
+      .a-filter-list .filter-meta { margin: 4px 0 0; }
+      .a-new-filter { display: none; }
+      .a-main { padding: 24px 14px 40px; }
+      .slice-head { display: block; }
+      .slice-actions { margin-top: 14px; }
+      .continue-banner { grid-template-columns: auto 1fr; }
+      .continue-banner > button { grid-column: 1 / -1; width: 100%; }
+      .continue-banner .progress-track { width: 100%; }
+      .a-order, .a-unordered { padding: 14px; }
+      .a-unordered .unordered-list { grid-template-columns: 1fr; }
+      .ordered-card { grid-template-columns: 26px 66px minmax(0,1fr) auto; gap: 8px; }
+      .ordered-card .poster { min-height: 68px; }
+      .ordered-copy .tags { display: none; }
+
+      .b-header { padding: 12px 14px; }
+      .b-collection { text-align: left; }
+      .b-header .brand span:last-child, .b-header-actions .icon-button:first-child { display: none; }
+      .b-tabs-wrap { padding: 12px 12px 0; }
+      .b-main { padding: 18px 12px 40px; }
+      .b-titlebar { display: block; }
+      .b-actions { margin-top: 13px; }
+      .b-ribbon { grid-template-columns: 1fr 1fr; }
+      .b-ribbon-item { padding: 10px; }
+      .b-ribbon .poster { min-height: 150px; }
+      .b-ribbon-rank { top: 17px; left: 17px; }
+      .b-queue .unordered-list { grid-template-columns: 1fr; }
+
+      .variant-c { padding: 10px; }
+      .c-shell { border-radius: 20px; box-shadow: 5px 5px 0 #1b251f; }
+      .c-header { padding: 11px 13px; }
+      .c-header .brand span:last-child { display: none; }
+      .c-filter-jump { width: 150px; }
+      .c-focus { padding: 28px 18px; }
+      .c-focus-head { display: block; }
+      .c-focus-head .criterion-pill { margin-bottom: 15px; }
+      .c-next { margin: 23px 0; padding: 22px; border-radius: 20px; }
+      .c-next-row { align-items: stretch; flex-direction: column; }
+      .c-next-row .dark-button { width: 100%; }
+      .c-route { padding: 24px 18px; }
+      .c-compact-row { grid-template-columns: 32px 1fr auto; }
+      .c-compact-copy small { display: none; }
+
+      .duel-backdrop { padding: 0; }
+      .duel { min-height: 100vh; border-radius: 0; }
+      .duel-header { grid-template-columns: auto 1fr; }
+      .duel-progress { grid-column: 1 / -1; }
+      .duel-stage { grid-template-columns: 1fr 1fr; min-height: calc(100vh - 190px); }
+      .duel-choice { padding: 12px; }
+      .duel-object .poster { min-height: 45vh; border-radius: 17px; box-shadow: 5px 5px 0 rgba(23,32,27,.82); }
+      .duel-object .poster-copy { padding: 50px 12px 14px; }
+      .duel-object .poster-copy strong { font-size: 19px; }
+      .duel-rail { position: absolute; z-index: 3; right: 50%; bottom: 68px; flex-direction: row; transform: translateX(50%); border: 0; border-radius: 99px; background: rgba(242,240,233,.93); box-shadow: 0 7px 25px rgba(0,0,0,.18); }
+      .duel-rail span { display: none; }
+      .duel-footer { padding-bottom: 17px; }
+      .state-debug { bottom: 68px; left: 10px; }
+      .switcher { bottom: 10px; grid-template-columns: 39px minmax(145px, auto) 39px; }
+      .switcher button { width: 39px; height: 39px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" class="prototype-page"></main>
+
+  <section id="duelBackdrop" class="duel-backdrop" aria-hidden="true"></section>
+
+  <details class="state-debug">
+    <summary>Состояние прототипа</summary>
+    <pre id="stateOutput"></pre>
+  </details>
+
+  <nav class="switcher" aria-label="Переключатель вариантов прототипа">
+    <button type="button" data-cycle="-1" aria-label="Предыдущий вариант">←</button>
+    <div class="switcher-label"><strong id="variantLabel"></strong><small>Prototype · ← варианты →</small></div>
+    <button type="button" data-cycle="1" aria-label="Следующий вариант">→</button>
+  </nav>
+
+  <div class="prototype-stamp">Не production</div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const variants = [
+      { id: 'A', name: 'Фильтры как маршрут' },
+      { id: 'B', name: 'Лента порядка' },
+      { id: 'C', name: 'Сначала продолжение' }
+    ];
+
+    const objects = [
+      { id: 1, title: 'Перед рассветом', year: 1995, tags: ['романтика', 'разговоры', 'Европа'], color: '#e7bf91' },
+      { id: 2, title: 'Любовное настроение', year: 2000, tags: ['романтика', 'классика', 'спокойное'], color: '#d68b72' },
+      { id: 3, title: 'Идеальные дни', year: 2023, tags: ['спокойное', 'Япония', 'до 130 минут'], color: '#b9d1bf' },
+      { id: 4, title: 'Милая Фрэнсис', year: 2012, tags: ['компания', 'лёгкое', 'до 100 минут'], color: '#d9d4c7' },
+      { id: 5, title: 'Прибытие', year: 2016, tags: ['фантастика', 'серьёзное', 'компания'], color: '#b4cbd4' },
+      { id: 6, title: 'Коламбус', year: 2017, tags: ['архитектура', 'спокойное', 'до 130 минут'], color: '#c5cfb5' },
+      { id: 7, title: 'Патерсон', year: 2016, tags: ['спокойное', 'поэзия', 'до 130 минут'], color: '#d9c9a8' },
+      { id: 8, title: 'Отель «Гранд Будапешт»', year: 2014, tags: ['компания', 'комедия', 'Европа'], color: '#e6a9b3' },
+      { id: 9, title: 'Солнце моё', year: 2022, tags: ['семья', 'серьёзное', 'до 100 минут'], color: '#e8d584' },
+      { id: 10, title: 'Маленькая мисс Счастье', year: 2006, tags: ['компания', 'семья', 'до 100 минут'], color: '#f0c863' },
+      { id: 11, title: 'Ла-Ла Ленд', year: 2016, tags: ['романтика', 'музыка', 'компания'], color: '#9fb7db' },
+      { id: 12, title: 'Оставленные', year: 2023, tags: ['компания', 'зима', 'серьёзное'], color: '#c3aa82' }
+    ];
+
+    const savedFilters = [
+      { id: 'all', name: 'Вся коллекция', tags: [], objectIds: objects.map(item => item.id), unorderedIds: [4, 7, 10, 11], activity: 98, pinned: true, task: { progress: 38, comparisons: 12 } },
+      { id: 'friends', name: 'Для компании', tags: ['компания'], objectIds: [4, 5, 8, 10, 11, 12], unorderedIds: [10, 11], activity: 84, pinned: false, task: { progress: 63, comparisons: 7 } },
+      { id: 'quiet', name: 'Тихий вечер', tags: ['спокойное'], objectIds: [2, 3, 6, 7], unorderedIds: [6, 7], activity: 71, pinned: false, task: { progress: 22, comparisons: 3 } },
+      { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'], objectIds: [4, 9, 10], unorderedIds: [10], activity: 62, pinned: true, task: null },
+      { id: 'romance', name: 'Романтика', tags: ['романтика'], objectIds: [1, 2, 11], unorderedIds: [], activity: 39, pinned: false, task: null }
+    ];
+
+    const requestedVariant = new URLSearchParams(location.search).get('variant')?.toUpperCase();
+    const state = {
+      variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
+      activeFilterId: 'all',
+      criterion: 'Пересмотреть первым',
+      draftOrders: Object.fromEntries(savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))])),
+      draftUnordered: Object.fromEntries(savedFilters.map(filter => [filter.id, [...filter.unorderedIds]])),
+      duel: { open: false, pairIndex: 0 },
+      taskProgress: Object.fromEntries(savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]))
+    };
+
+    const app = document.querySelector('#app');
+    const duelBackdrop = document.querySelector('#duelBackdrop');
+    const stateOutput = document.querySelector('#stateOutput');
+    const variantLabel = document.querySelector('#variantLabel');
+    const toast = document.querySelector('#toast');
+    let toastTimer;
+    let draggedId = null;
+
+    function activeFilter() { return savedFilters.find(filter => filter.id === state.activeFilterId); }
+    function objectById(id) { return objects.find(item => item.id === Number(id)); }
+    function orderedObjects() { return state.draftOrders[state.activeFilterId].map(objectById); }
+    function unorderedObjects() { return state.draftUnordered[state.activeFilterId].map(objectById); }
+    function escapeHTML(value = '') {
+      return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
+    }
+    function pluralObjects(count) {
+      const tail = count % 10;
+      const teens = count % 100 >= 11 && count % 100 <= 14;
+      if (!teens && tail === 1) return `${count} объект`;
+      if (!teens && tail >= 2 && tail <= 4) return `${count} объекта`;
+      return `${count} объектов`;
+    }
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1900);
+    }
+    function poster(item, index = '') {
+      return `<div class="poster" style="--poster:${item.color}">
+        <span class="poster-index">${index || String(item.id).padStart(2, '0')}</span>
+        <div class="poster-copy"><strong>${escapeHTML(item.title)}</strong><small>${item.year} · ${escapeHTML(item.tags[0])}</small></div>
+      </div>`;
+    }
+    function tagsMarkup(tags, limit = 2) {
+      return `<span class="tags">${tags.slice(0, limit).map(tag => `<span class="tag">${escapeHTML(tag)}</span>`).join('')}</span>`;
+    }
+    function criterionMarkup() { return `<span class="criterion-pill">Критерий · ${escapeHTML(state.criterion)}</span>`; }
+    function prototypeWarning() {
+      return `<div class="prototype-warning"><strong>◇</strong><span>Здесь проверяется место прямой расстановки. Как она дополняет общий порядок и влияет на скрытые объекты, пока не решено.</span></div>`;
+    }
+    function filterButton(filter, extra = '') {
+      const taskProgress = state.taskProgress[filter.id];
+      const meta = taskProgress != null ? `${pluralObjects(filter.objectIds.length)} · продолжить ${taskProgress}%` : pluralObjects(filter.objectIds.length);
+      return `<button class="filter-button ${filter.id === state.activeFilterId ? 'active' : ''} ${extra}" type="button" data-filter-id="${filter.id}" aria-pressed="${filter.id === state.activeFilterId}">
+        <span class="filter-name">${filter.pinned ? '<span class="pin" title="Порядок закреплён">◆</span>' : ''}${escapeHTML(filter.name)}</span>
+        <span class="filter-meta">${meta}</span>
+      </button>`;
+    }
+    function filterList(extra = '') { return savedFilters.map(filter => filterButton(filter, extra)).join(''); }
+    function orderedCard(item, index) {
+      return `<article class="ordered-card" draggable="true" data-order-id="${item.id}">
+        <span class="ordered-rank">${index + 1}</span>
+        ${poster(item, String(index + 1).padStart(2, '0'))}
+        <div class="ordered-copy"><strong>${escapeHTML(item.title)}</strong>${tagsMarkup(item.tags)}</div>
+        <div class="move-actions" aria-label="Изменить черновую позицию">
+          <button type="button" data-move-id="${item.id}" data-direction="-1" aria-label="Поднять">↑</button>
+          <button type="button" data-move-id="${item.id}" data-direction="1" aria-label="Опустить">↓</button>
+        </div>
+      </article>`;
+    }
+    function unorderedCard(item) {
+      return `<article class="unordered-card">
+        ${poster(item)}
+        <div class="unordered-copy"><strong>${escapeHTML(item.title)}</strong><button class="place-button" type="button" data-place-id="${item.id}">Поставить в конец</button></div>
+      </article>`;
+    }
+    function continueBanner(filter) {
+      const progress = state.taskProgress[filter.id];
+      if (progress == null) {
+        return `<div class="continue-banner">
+          <span class="continue-symbol">↗</span>
+          <div><strong>Срез готов к упорядочиванию</strong><p>Можно расставить обозримую часть здесь или начать попарную сортировку.</p></div>
+          <button class="primary-button" type="button" data-open-duel>Начать попарно</button>
+        </div>`;
+      }
+      return `<div class="continue-banner">
+        <span class="continue-symbol">↗</span>
+        <div><strong>Продолжить сортировку этого среза</strong><p>${filter.task.comparisons} решений сохранено · общий порядок уже учтён</p><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>
+        <button class="primary-button" type="button" data-open-duel>Продолжить · ${progress}%</button>
+      </div>`;
+    }
+
+    function renderVariantA() {
+      const filter = activeFilter();
+      const ordered = orderedObjects();
+      const unordered = unorderedObjects();
+      return `<section class="variant-a">
+        <header class="a-topbar">
+          <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
+          <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="soft-button" type="button">Фильмы на вечер⌄</button></div>
+        </header>
+        <div class="a-shell">
+          <aside class="a-rail">
+            <div class="a-rail-heading"><p class="eyebrow">Коллекция</p><h2>Фильмы на вечер</h2>${criterionMarkup()}</div>
+            <nav class="a-filter-list" aria-label="Сохранённые фильтры">${filterList()}</nav>
+            <button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">＋ Сохранить текущий фильтр</button>
+          </aside>
+          <main class="a-main">
+            <div class="slice-head">
+              <div class="slice-head-copy"><p class="eyebrow">Живой срез</p><h1>${escapeHTML(filter.name)}</h1><p>${filter.tags.length ? filter.tags.map(tag => `#${escapeHTML(tag)}`).join(' + ') : 'Без тегового ограничения'} <span class="dot">·</span> ${pluralObjects(filter.objectIds.length)} <span class="dot">·</span> ${pluralObjects(unordered.length)} требуют отношений</p></div>
+              <div class="slice-actions">${criterionMarkup()}<button class="icon-button" type="button" data-toast="Редактирование фильтра — отдельное действие" aria-label="Настроить фильтр">•••</button></div>
+            </div>
+            ${continueBanner(filter)}
+            <div class="a-workspace">
+              <section class="a-order">
+                <header class="section-head"><div><p class="eyebrow">Ограничение общего порядка</p><h2>Что уже можно расставить</h2><p>Перетащите объект или используйте стрелки.</p></div><span class="count-pill">${ordered.length}</span></header>
+                <div class="ordered-list" data-order-lane>${ordered.map(orderedCard).join('')}</div>
+              </section>
+              <aside class="a-unordered">
+                <header class="section-head"><div><p class="eyebrow">Неупорядоченная часть</p><h2>Пока без места</h2><p>Отношений недостаточно хотя бы с одним объектом среза.</p></div><span class="status-pill">${unordered.length}</span></header>
+                <div class="unordered-list">${unordered.length ? unordered.map(unorderedCard).join('') : '<p class="muted">Для этого среза порядок уже полный.</p>'}</div>
+                ${prototypeWarning()}
+              </aside>
+            </div>
+          </main>
+        </div>
+      </section>`;
+    }
+
+    function renderVariantB() {
+      const filter = activeFilter();
+      const ordered = orderedObjects();
+      const unordered = unorderedObjects();
+      const progress = state.taskProgress[filter.id];
+      return `<section class="variant-b">
+        <header class="b-header">
+          <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
+          <div class="b-collection"><strong>Фильмы на вечер</strong><small>${criterionMarkup()}</small></div>
+          <div class="b-header-actions"><button class="icon-button" type="button" data-toast="Поиск не реализован" aria-label="Поиск">⌕</button><button class="icon-button" type="button" data-toast="Меню коллекции не реализовано" aria-label="Меню">•••</button></div>
+        </header>
+        <div class="b-tabs-wrap"><nav class="b-tabs" aria-label="Сохранённые фильтры">${filterList()}</nav></div>
+        <main class="b-main">
+          <div class="b-titlebar"><div><p class="eyebrow">Текущий живой срез</p><h1>${escapeHTML(filter.name)}</h1><span class="muted">${pluralObjects(filter.objectIds.length)} · ${unordered.length ? `${unordered.length} пока без места` : 'полный порядок'}</span></div><div class="b-actions"><button class="soft-button" type="button" data-toast="Изменение набора тегов не реализовано">Теги ${filter.tags.length ? `· ${filter.tags.length}` : ''}</button><button class="primary-button" type="button" data-open-duel>${progress != null ? `Продолжить · ${progress}%` : 'Упорядочить попарно'}</button></div></div>
+          <div class="b-board">
+            <section class="b-lane">
+              <header class="b-lane-head"><div><strong>Общий порядок в этом срезе</strong><p>Прямая расстановка обозримой части</p></div><span class="count-pill">${ordered.length} мест</span></header>
+              <div class="b-ribbon" data-order-lane>${ordered.map((item, index) => `<article class="b-ribbon-item" draggable="true" data-order-id="${item.id}"><span class="b-ribbon-rank">${index + 1}</span>${poster(item)}<div class="b-ribbon-actions"><button type="button" data-move-id="${item.id}" data-direction="-1">← выше</button><button type="button" data-move-id="${item.id}" data-direction="1">ниже →</button></div></article>`).join('')}</div>
+            </section>
+            <aside class="b-queue">
+              <header class="section-head"><div><p class="eyebrow">Не хватает отношений</p><h2>Без места</h2></div><span class="status-pill">${unordered.length}</span></header>
+              <div class="unordered-list">${unordered.length ? unordered.map(unorderedCard).join('') : '<p class="muted">Очередь пуста.</p>'}</div>
+              <div class="b-task-card"><div class="b-task-card-inner"><strong>${progress != null ? 'Незавершённая сортировка' : 'Новая сортировка'}</strong><p>${progress != null ? `${filter.task.comparisons} решений уже сохранено.` : 'Пары дополнят общий порядок.'}</p>${progress != null ? `<div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div>` : ''}<button class="primary-button" type="button" data-open-duel>${progress != null ? 'Продолжить' : 'Начать'}</button></div></div>
+            </aside>
+          </div>
+          <div style="margin-top:14px">${prototypeWarning()}</div>
+        </main>
+      </section>`;
+    }
+
+    function renderVariantC() {
+      const filter = activeFilter();
+      const ordered = orderedObjects();
+      const unordered = unorderedObjects();
+      const progress = state.taskProgress[filter.id];
+      const actionTitle = progress != null ? `Продолжить «${filter.name}»` : unordered.length ? `Найти место для ${unordered.length === 1 ? 'одного объекта' : `${unordered.length} объектов`}` : 'Посмотреть полный порядок';
+      return `<section class="variant-c">
+        <div class="c-shell">
+          <header class="c-header"><div class="brand"><span class="brand-mark">К</span><span>Фильмы на вечер</span></div><select class="c-filter-jump" data-select-filter aria-label="Открыть сохранённый фильтр">${savedFilters.map(item => `<option value="${item.id}" ${item.id === filter.id ? 'selected' : ''}>${escapeHTML(item.name)}</option>`).join('')}</select></header>
+          <div class="c-grid">
+            <main class="c-focus">
+              <div class="c-focus-head"><div><p class="eyebrow">Сейчас открыто</p><h1>${escapeHTML(filter.name)}</h1></div>${criterionMarkup()}</div>
+              <p>${filter.tags.length ? `Живой срез по тегам ${filter.tags.map(tag => `«${escapeHTML(tag)}»`).join(' + ')}.` : 'Живой срез всей коллекции.'} Изменения коллекции сразу меняют его состав.</p>
+              <section class="c-next">
+                <p class="eyebrow">Следующее заметное действие</p><h2>${escapeHTML(actionTitle)}</h2>
+                <p>${progress != null ? `${filter.task.comparisons} решений сохранено. Известные отношения из других срезов уже учтены.` : unordered.length ? 'Выберите место прямо в обозримом срезе или перейдите к устойчивым попарным решениям.' : 'Для всех объектов этого среза уже известен полный порядок.'}</p>
+                <div class="c-next-row">${progress != null || unordered.length ? `<button class="dark-button large" type="button" data-open-duel>${progress != null ? `Продолжить · ${progress}%` : 'Начать попарно'}</button>` : '<button class="dark-button large" type="button" data-toast="Открыт полный порядок текущего среза">Открыть порядок</button>'}${progress != null ? `<div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div>` : ''}</div>
+              </section>
+              <section>
+                <header class="section-head"><div><p class="eyebrow">Обозримая часть</p><h2>Расставить прямо здесь</h2><p>Короткий список вместо отдельного режима.</p></div><span class="count-pill">${ordered.length}</span></header>
+                <div class="c-compact-order" data-order-lane>${ordered.map((item, index) => `<article class="c-compact-row" draggable="true" data-order-id="${item.id}"><span class="c-compact-rank">${index + 1}</span><div class="c-compact-copy"><strong>${escapeHTML(item.title)}</strong><small>${item.year} · ${escapeHTML(item.tags.join(', '))}</small></div><div class="c-compact-actions"><button type="button" data-move-id="${item.id}" data-direction="-1" aria-label="Поднять">↑</button><button type="button" data-move-id="${item.id}" data-direction="1" aria-label="Опустить">↓</button></div></article>`).join('')}</div>
+              </section>
+              <div class="c-warning">${prototypeWarning()}</div>
+            </main>
+            <aside class="c-route">
+              <p class="eyebrow">Возвращаться сюда</p><h2>Сохранённые фильтры</h2>
+              <nav class="c-route-list" aria-label="Сохранённые фильтры">${filterList()}</nav>
+              <section class="c-unordered"><span class="c-unordered-count">${unordered.length}</span><h2>Пока без места</h2><p>У этих объектов не хватает отношений хотя бы с одним объектом текущего среза.</p><div class="c-unordered-list">${unordered.length ? unordered.map(item => `<button type="button" data-place-id="${item.id}">＋ ${escapeHTML(item.title)}</button>`).join('') : '<span class="status-pill good">Срез полностью упорядочен</span>'}</div></section>
+            </aside>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function renderDuel() {
+      if (!state.duel.open) {
+        document.body.classList.remove('duel-open');
+        duelBackdrop.classList.remove('open');
+        duelBackdrop.setAttribute('aria-hidden', 'true');
+        duelBackdrop.innerHTML = '';
+        return;
+      }
+      const filter = activeFilter();
+      document.body.classList.add('duel-open');
+      const ids = filter.objectIds;
+      const left = objectById(ids[state.duel.pairIndex % ids.length]);
+      const right = objectById(ids[(state.duel.pairIndex + 2) % ids.length]);
+      const progress = state.taskProgress[filter.id] ?? 0;
+      duelBackdrop.innerHTML = `<div class="duel" role="dialog" aria-modal="true" aria-label="Попарная сортировка">
+        <header class="duel-header">
+          <button class="icon-button" type="button" data-close-duel aria-label="Закрыть">×</button>
+          <div class="duel-title"><strong>${escapeHTML(filter.name)}</strong><small>${escapeHTML(state.criterion)}</small></div>
+          <div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>
+        </header>
+        <div class="duel-stage">
+          <button class="duel-choice" type="button" data-duel-outcome="left"><span class="duel-object">${poster(left)}<strong>Выбрать «${escapeHTML(left.title)}»</strong></span></button>
+          <div class="duel-rail"><span>или</span><button type="button" data-duel-outcome="equal" aria-label="Равноценны" title="Равноценны">=</button><button type="button" data-duel-outcome="defer" aria-label="Отложить" title="Отложить">↓</button></div>
+          <button class="duel-choice" type="button" data-duel-outcome="right"><span class="duel-object">${poster(right)}<strong>Выбрать «${escapeHTML(right.title)}»</strong></span></button>
+        </div>
+        <footer class="duel-footer"><span>Выберите, что хочется пересмотреть раньше</span><span>Равноценность — общее место · отложенное вернётся позже</span></footer>
+      </div>`;
+      duelBackdrop.classList.add('open');
+      duelBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function renderState() {
+      const filter = activeFilter();
+      stateOutput.textContent = JSON.stringify({
+        variant: state.variant,
+        collection: 'Фильмы на вечер',
+        savedFilter: { id: filter.id, name: filter.name, tags: filter.tags },
+        liveSliceSize: filter.objectIds.length,
+        criterion: state.criterion,
+        draftVisibleOrder: state.draftOrders[filter.id],
+        unorderedInSlice: state.draftUnordered[filter.id],
+        comparisonTask: state.taskProgress[filter.id] == null ? null : { status: 'unfinished', progress: state.taskProgress[filter.id] }
+      }, null, 2);
+    }
+
+    function render() {
+      app.innerHTML = state.variant === 'A' ? renderVariantA() : state.variant === 'B' ? renderVariantB() : renderVariantC();
+      const descriptor = variants.find(item => item.id === state.variant);
+      variantLabel.textContent = `${descriptor.id} · ${descriptor.name}`;
+      renderDuel();
+      renderState();
+      wireDragAndDrop();
+    }
+
+    function setVariant(direction) {
+      const current = variants.findIndex(item => item.id === state.variant);
+      state.variant = variants[(current + direction + variants.length) % variants.length].id;
+      const url = new URL(location.href);
+      url.searchParams.set('variant', state.variant);
+      history.replaceState({}, '', url);
+      render();
+    }
+
+    function setFilter(id) {
+      if (!savedFilters.some(filter => filter.id === id)) return;
+      state.activeFilterId = id;
+      state.duel.pairIndex = 0;
+      render();
+    }
+
+    function moveOrdered(id, direction) {
+      const order = state.draftOrders[state.activeFilterId];
+      const index = order.indexOf(Number(id));
+      const target = Math.max(0, Math.min(order.length - 1, index + Number(direction)));
+      if (index < 0 || index === target) return;
+      const [moved] = order.splice(index, 1);
+      order.splice(target, 0, moved);
+      showToast('Черновая расстановка изменена');
+      render();
+    }
+
+    function moveBefore(id, targetId) {
+      const order = state.draftOrders[state.activeFilterId];
+      const from = order.indexOf(Number(id));
+      const to = order.indexOf(Number(targetId));
+      if (from < 0 || to < 0 || from === to) return;
+      const [moved] = order.splice(from, 1);
+      order.splice(order.indexOf(Number(targetId)), 0, moved);
+      showToast('Черновая расстановка изменена');
+      render();
+    }
+
+    function placeUnordered(id) {
+      const numericId = Number(id);
+      const unordered = state.draftUnordered[state.activeFilterId];
+      const index = unordered.indexOf(numericId);
+      if (index < 0) return;
+      unordered.splice(index, 1);
+      state.draftOrders[state.activeFilterId].push(numericId);
+      showToast('Объект добавлен в черновую расстановку');
+      render();
+    }
+
+    function wireDragAndDrop() {
+      document.querySelectorAll('[data-order-id]').forEach(card => {
+        card.addEventListener('dragstart', event => {
+          draggedId = Number(card.dataset.orderId);
+          card.classList.add('is-dragging');
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', String(draggedId));
+        });
+        card.addEventListener('dragend', () => { draggedId = null; card.classList.remove('is-dragging'); });
+        card.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+        card.addEventListener('drop', event => { event.preventDefault(); if (draggedId != null) moveBefore(draggedId, Number(card.dataset.orderId)); });
+      });
+    }
+
+    document.addEventListener('click', event => {
+      const target = event.target.closest('button');
+      if (!target) return;
+      if (target.matches('[data-cycle]')) setVariant(Number(target.dataset.cycle));
+      else if (target.matches('[data-filter-id]')) setFilter(target.dataset.filterId);
+      else if (target.matches('[data-move-id]')) moveOrdered(target.dataset.moveId, target.dataset.direction);
+      else if (target.matches('[data-place-id]')) placeUnordered(target.dataset.placeId);
+      else if (target.matches('[data-open-duel]')) { state.duel.open = true; renderDuel(); renderState(); }
+      else if (target.matches('[data-close-duel]')) { state.duel.open = false; renderDuel(); }
+      else if (target.matches('[data-duel-outcome]')) {
+        const outcome = target.dataset.duelOutcome;
+        if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
+        else showToast(outcome === 'equal' ? 'Равноценность сохранена' : 'Решение сохранено в общем порядке');
+        const current = state.taskProgress[state.activeFilterId] ?? 0;
+        state.taskProgress[state.activeFilterId] = Math.min(96, current + (outcome === 'defer' ? 0 : 4));
+        state.duel.pairIndex += 1;
+        renderDuel();
+        renderState();
+      } else if (target.dataset.toast) showToast(target.dataset.toast);
+    });
+
+    document.addEventListener('change', event => {
+      if (event.target.matches('[data-select-filter]')) setFilter(event.target.value);
+    });
+
+    document.addEventListener('keydown', event => {
+      const editing = event.target.matches('input, textarea, select, [contenteditable="true"]');
+      if (!editing && !state.duel.open && event.key === 'ArrowLeft') setVariant(-1);
+      if (!editing && !state.duel.open && event.key === 'ArrowRight') setVariant(1);
+      if (event.key === 'Escape' && state.duel.open) { state.duel.open = false; renderDuel(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>
