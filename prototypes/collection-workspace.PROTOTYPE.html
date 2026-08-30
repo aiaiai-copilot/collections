@@ -40,7 +40,7 @@
 
     button, select { font: inherit; }
     button { color: inherit; }
-    button:focus-visible, select:focus-visible, summary:focus-visible {
+    button:focus-visible, select:focus-visible, summary:focus-visible, [data-open-object-id]:focus-visible {
       outline: 3px solid rgba(35, 104, 75, .32);
       outline-offset: 3px;
     }
@@ -286,10 +286,6 @@
     body[data-variant="A"] .a-topbar .brand span:last-child { display: none; }
     body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
     body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
-    .mobile-collection-button { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; max-width: 265px; padding: 7px 10px; border: 0; border-radius: 12px; background: #e9ece5; cursor: pointer; text-align: left; }
-    .mobile-collection-button strong, .mobile-collection-button small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mobile-collection-button strong { font-size: 12px; }
-    .mobile-collection-button small { margin-top: 2px; color: var(--muted); font-size: 9px; }
     body[data-variant="A"] .a-shell { display: block; min-height: 0; flex: 1 1 auto; overflow: hidden; }
     .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(4, minmax(0,1fr)); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
     .a-bottom-nav button { position: relative; display: grid; min-width: 0; min-height: 52px; padding: 5px 3px; place-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
@@ -309,7 +305,7 @@
     body[data-variant="A"] .continue-actions button, body[data-variant="A"] .continue-banner .progress-track { width: 100%; }
     body[data-variant="A"] .a-workspace { min-height: 0; flex: 1 1 auto; overflow: hidden; }
     body[data-variant="A"] .a-order { height: 100%; overflow-y: auto; padding: 14px; overscroll-behavior: contain; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
-    body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) 32px; gap: 8px; }
+    body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) 32px; gap: 8px; cursor: pointer; }
     body[data-variant="A"] .ordered-card .poster { display: none; }
     body[data-variant="A"] .ordered-copy .tags { display: none; }
     body[data-variant="A"] .ordered-rank { font-size: 19px; }
@@ -323,6 +319,11 @@
     body[data-variant="A"] .duel-progress { grid-column: 1 / -1; }
     body[data-variant="A"] .duel-stage { grid-template-columns: 1fr 1fr; min-height: calc(100vh - 190px); }
     body[data-variant="A"] .duel-choice { padding: 12px; }
+    body[data-variant="A"] .duel-choice-wrap { position: relative; display: flex; min-width: 0; }
+    body[data-variant="A"] .duel-choice-wrap .duel-choice { width: 100%; }
+    body[data-variant="A"] .duel-choice-wrap.left .duel-choice { background: #dce8db; }
+    body[data-variant="A"] .duel-choice-wrap.right .duel-choice { background: #e6d7c9; }
+    body[data-variant="A"] .duel-expand { position: absolute; z-index: 4; top: 20px; right: 20px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(23,32,27,.32); border-radius: 13px; background: rgba(255,253,248,.92); color: var(--ink); cursor: pointer; box-shadow: 0 5px 18px rgba(23,32,27,.16); font-size: 20px; font-weight: 900; }
     body[data-variant="A"] .duel-object .poster { min-height: 45vh; border-radius: 17px; box-shadow: 5px 5px 0 rgba(23,32,27,.82); }
     body[data-variant="A"] .duel-object .poster-copy { padding: 50px 12px 14px; }
     body[data-variant="A"] .duel-object .poster-copy strong { font-size: 19px; }
@@ -454,6 +455,17 @@
     .filter-panel-context strong, .filter-panel-context small { display: block; }
     .filter-panel-context strong { font-size: 12px; }
     .filter-panel-context small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .filter-panel-collections { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .filter-panel-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .filter-panel-section-head strong { font-size: 11px; }
+    .filter-panel-section-head small { color: var(--muted); font-size: 9px; }
+    .filter-collection-list { display: grid; gap: 5px; }
+    .filter-collection-choice { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 11px; background: #f7f7f2; cursor: pointer; text-align: left; }
+    .filter-collection-choice.active { border-color: var(--green); background: var(--green-2); }
+    .filter-collection-choice strong, .filter-collection-choice small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-collection-choice strong { font-size: 11px; }
+    .filter-collection-choice small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .filter-collection-choice > span:last-child { color: var(--green); font-size: 9px; font-weight: 850; }
     .filter-panel .a-filter-toolbar { padding: 12px 16px 8px; }
     .filter-panel .filter-toolbar-actions { grid-template-columns: 1fr 1fr; }
     .filter-panel .glossary-toolbar-button { display: block; grid-column: auto; }
@@ -465,6 +477,24 @@
     .filter-panel-section-label { margin: 7px 2px 3px; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
     .filter-order-toggle:disabled { cursor: not-allowed; opacity: .4; }
     .filter-panel .a-new-filter { display: block; width: auto; margin: 0 16px 16px; padding: 12px; border: 1px solid #cbd2ca; text-align: center; }
+
+    /* Object detail — mobile-first form */
+    .object-detail-backdrop { position: fixed; z-index: 58; inset: 0; display: none; justify-content: center; background: rgba(13,18,15,.64); backdrop-filter: blur(8px); }
+    .object-detail-backdrop.open { display: flex; }
+    .object-detail-panel { display: flex; width: min(460px, 100%); height: 100dvh; min-height: 0; flex-direction: column; background: var(--paper); box-shadow: 0 0 60px rgba(0,0,0,.28); }
+    .object-detail-head { display: flex; flex: 0 0 auto; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 18px 16px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .object-detail-head h2 { margin-bottom: 3px; font-size: 24px; }
+    .object-detail-head p { margin: 0; color: var(--muted); font-size: 10px; }
+    .object-detail-form { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; }
+    .object-detail-fields { display: grid; overflow-y: auto; min-height: 0; flex: 1 1 auto; gap: 14px; padding: 16px; }
+    .object-detail-preview .poster { min-height: 190px; }
+    .object-detail-field { display: grid; gap: 6px; }
+    .object-detail-field > span { font-size: 10px; font-weight: 850; }
+    .object-detail-field input, .object-detail-field textarea { width: 100%; padding: 11px 12px; border: 1px solid #bfc9bf; border-radius: 12px; background: white; color: var(--ink); font: inherit; font-size: 13px; }
+    .object-detail-field textarea { min-height: 90px; resize: vertical; line-height: 1.4; }
+    .object-detail-field small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+    .object-detail-actions { display: grid; flex: 0 0 auto; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); }
+    .object-detail-actions button { min-height: 46px; }
 
     /* Collection tag glossary */
     .glossary-button { width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; text-align: left; font-size: 11px; font-weight: 820; }
@@ -572,7 +602,7 @@
       font-weight: 750;
     }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
-    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug { display: none; }
+    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug, body.object-detail-open .switcher, body.object-detail-open .state-debug { display: none; }
 
     @media (max-width: 1100px) and (min-width: 701px) {
       .continue-banner { grid-template-columns: auto 1fr; }
@@ -677,6 +707,7 @@
   <section id="glossaryBackdrop" class="glossary-backdrop" aria-hidden="true"></section>
   <section id="collectionBackdrop" class="collection-backdrop" aria-hidden="true"></section>
   <section id="filterBackdrop" class="filter-backdrop" aria-hidden="true"></section>
+  <section id="objectDetailBackdrop" class="object-detail-backdrop" aria-hidden="true"></section>
 
   <details class="state-debug">
     <summary>Состояние прототипа</summary>
@@ -747,6 +778,7 @@
       glossaryOpen: false,
       collectionMenuOpen: false,
       filterPanelOpen: false,
+      objectDetailId: null,
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
@@ -758,6 +790,7 @@
     const glossaryBackdrop = document.querySelector('#glossaryBackdrop');
     const collectionBackdrop = document.querySelector('#collectionBackdrop');
     const filterBackdrop = document.querySelector('#filterBackdrop');
+    const objectDetailBackdrop = document.querySelector('#objectDetailBackdrop');
     const stateOutput = document.querySelector('#stateOutput');
     const variantLabel = document.querySelector('#variantLabel');
     const toast = document.querySelector('#toast');
@@ -841,7 +874,7 @@
       return `<div class="a-filter-row fixed-filter">${filterButton({ ...all, name: 'Без фильтра' }, '', true, '')}</div><p class="filter-panel-section-label">Сохранённые · ${userSavedFilters().length}</p>${orderedSavedFilters().map(filter => `<div class="a-filter-row" draggable="true" data-saved-filter-id="${filter.id}"><span class="drag-handle filter-drag-handle" aria-label="Перетащить фильтр «${escapeHTML(filter.name)}»">⠿</span>${filterButton(filter, '', true)}</div>`).join('')}`;
     }
     function orderedCard(item, index) {
-      return `<article class="ordered-card" draggable="true" data-order-id="${item.id}">
+      return `<article class="ordered-card" data-order-id="${item.id}" data-open-object-id="${item.id}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Открыть детали «${escapeHTML(item.title)}»">
         <span class="ordered-rank">${index + 1}</span>
         ${poster(item, String(index + 1).padStart(2, '0'))}
         <div class="ordered-copy"><strong>${escapeHTML(item.title)}</strong>${tagsMarkup(item.tags)}</div>
@@ -885,7 +918,7 @@
       const comparisonsAvailable = filter.objectIds.length >= 2;
       const priorityMeta = !comparisonsAvailable ? 'Не нужны' : progress == null ? 'Начать' : `Продолжить · ${progress}%`;
       return `<nav class="a-bottom-nav" aria-label="Основные действия">
-        <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
+        <button type="button" data-open-filter-panel aria-haspopup="dialog" aria-label="Открыть коллекции и фильтры"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-meta">Фильтры</span><span class="a-bottom-nav-count">${collections.length}</span></button>
         <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span><span class="a-bottom-nav-meta">Теги</span></button>
         <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'}><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Приоритеты</span><span class="a-bottom-nav-meta">${priorityMeta}</span></button>
         <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span><span class="a-bottom-nav-meta">Коллекция</span></button>
@@ -899,7 +932,6 @@
       return `<section class="variant-a">
         <header class="a-topbar">
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
-          <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="mobile-collection-button" type="button" data-open-collections aria-haspopup="dialog"><span><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></span><span>⌄</span></button></div>
         </header>
         <div class="a-shell">
           <main class="a-main">
@@ -984,19 +1016,25 @@
     }
 
     function renderDuel() {
-      if (!state.duel.open) {
+      const filter = activeFilter();
+      if (!state.duel.open || filter.objectIds.length < 2) {
+        state.duel.open = false;
         document.body.classList.remove('duel-open');
         duelBackdrop.classList.remove('open');
         duelBackdrop.setAttribute('aria-hidden', 'true');
         duelBackdrop.innerHTML = '';
         return;
       }
-      const filter = activeFilter();
       document.body.classList.add('duel-open');
       const ids = filter.objectIds;
       const left = objectById(ids[state.duel.pairIndex % ids.length]);
       const right = objectById(ids[(state.duel.pairIndex + 2) % ids.length]);
       const progress = state.taskProgress[filter.id] ?? 0;
+      const choiceMarkup = (item, outcome, side) => {
+        const choice = `<button class="duel-choice" type="button" data-duel-outcome="${outcome}"><span class="duel-object">${poster(item)}<strong>Выбрать «${escapeHTML(item.title)}»</strong></span></button>`;
+        if (state.variant !== 'A') return choice;
+        return `<div class="duel-choice-wrap ${side}">${choice}<button class="duel-expand" type="button" data-open-duel-object-id="${item.id}" aria-label="Открыть детальную форму «${escapeHTML(item.title)}»" title="Открыть детали">⛶</button></div>`;
+      };
       duelBackdrop.innerHTML = `<div class="duel" role="dialog" aria-modal="true" aria-label="Попарная сортировка">
         <header class="duel-header">
           <button class="icon-button" type="button" data-close-duel aria-label="Закрыть">×</button>
@@ -1004,9 +1042,9 @@
           <div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>
         </header>
         <div class="duel-stage">
-          <button class="duel-choice" type="button" data-duel-outcome="left"><span class="duel-object">${poster(left)}<strong>Выбрать «${escapeHTML(left.title)}»</strong></span></button>
+          ${choiceMarkup(left, 'left', 'left')}
           <div class="duel-rail"><span>или</span><button type="button" data-duel-outcome="equal" aria-label="Равноценны" title="Равноценны">=</button><button type="button" data-duel-outcome="defer" aria-label="Отложить" title="Отложить">↓</button></div>
-          <button class="duel-choice" type="button" data-duel-outcome="right"><span class="duel-object">${poster(right)}<strong>Выбрать «${escapeHTML(right.title)}»</strong></span></button>
+          ${choiceMarkup(right, 'right', 'right')}
         </div>
         <footer class="duel-footer"><span>Выберите, что хочется пересмотреть раньше</span><span>Равноценность — общее место · отложенное вернётся позже</span></footer>
       </div>`;
@@ -1057,10 +1095,93 @@
       const filter = activeFilter();
       const contextTitle = filter.tags.length ? 'Текущий фильтр' : 'Без фильтра';
       const contextRule = filter.tags.length ? `${filter.dirty ? 'Не сохранён · ' : ''}${filterRule(filter)}` : 'Показаны все объекты коллекции';
-      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${contextTitle}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      const collectionChoices = collections.map(collection => `<button class="filter-collection-choice ${collection.current ? 'active' : ''}" type="button" ${collection.current ? 'data-close-filter-panel' : `data-toast="Переход в коллекцию «${escapeHTML(collection.name)}» появится в следующей итерации"`}><span><strong>${escapeHTML(collection.name)}</strong><small>${escapeHTML(collection.format)} · ${pluralObjects(collection.count)}</small></span><span>${collection.current ? 'Открыта' : 'Открыть'}</span></button>`).join('');
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Коллекции и сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация</p><h2>Коллекции и фильтры</h2><p>${collections.length} коллекции · ${userSavedFilters().length} сохранённых фильтров</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть коллекции и фильтры">×</button></header><section class="filter-panel-collections" aria-label="Коллекции"><div class="filter-panel-section-head"><strong>Коллекции</strong><small>Выберите пространство сравнения</small></div><div class="filter-collection-list">${collectionChoices}</div></section><div class="filter-panel-context"><strong>${contextTitle}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function renderObjectDetail() {
+      const item = objectById(state.objectDetailId);
+      if (!item || state.variant !== 'A') {
+        document.body.classList.remove('object-detail-open');
+        objectDetailBackdrop.classList.remove('open');
+        objectDetailBackdrop.setAttribute('aria-hidden', 'true');
+        objectDetailBackdrop.innerHTML = '';
+        return;
+      }
+      objectDetailBackdrop.innerHTML = `<aside class="object-detail-panel" role="dialog" aria-modal="true" aria-label="Детальная форма элемента"><header class="object-detail-head"><div><p class="eyebrow">Элемент коллекции</p><h2>Детальная форма</h2><p>Изменения сохраняются только в памяти прототипа.</p></div><button class="icon-button" type="button" data-close-object-detail aria-label="Закрыть детальную форму">×</button></header><form class="object-detail-form" data-object-detail-form data-object-id="${item.id}"><div class="object-detail-fields"><div class="object-detail-preview">${poster(item)}</div><label class="object-detail-field"><span>Название</span><input type="text" name="title" value="${escapeHTML(item.title)}" required></label><label class="object-detail-field"><span>Год</span><input type="number" name="year" value="${item.year}" min="1888" max="2100" required></label><label class="object-detail-field"><span>Теги</span><textarea name="tags" aria-describedby="object-tags-help">${escapeHTML(item.tags.join(', '))}</textarea><small id="object-tags-help">Разделяйте теги запятыми. Изменение тегов может изменить состав текущего и сохранённых фильтров.</small></label></div><footer class="object-detail-actions"><button class="soft-button" type="button" data-close-object-detail>Отмена</button><button class="primary-button" type="submit">Сохранить</button></footer></form></aside>`;
+      document.body.classList.add('object-detail-open');
+      objectDetailBackdrop.classList.add('open');
+      objectDetailBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function openObjectDetail(id) {
+      if (state.variant !== 'A' || !objectById(id)) return;
+      state.objectDetailId = Number(id);
+      renderObjectDetail();
+      renderState();
+    }
+
+    function closeObjectDetail() {
+      state.objectDetailId = null;
+      renderObjectDetail();
+      renderState();
+    }
+
+    function reconcileFilterMembership(filter) {
+      const previousIds = [...filter.objectIds];
+      const nextIds = objects.filter(item => filter.tags.every(tag => item.tags.includes(tag))).map(item => item.id);
+      const previousOrdered = state.draftOrders[filter.id] ?? [];
+      const previousUnordered = state.draftUnordered[filter.id] ?? [];
+      const nextOrdered = previousOrdered.filter(id => nextIds.includes(id));
+      const orderedSet = new Set(nextOrdered);
+      const nextUnordered = previousUnordered.filter(id => nextIds.includes(id) && !orderedSet.has(id));
+      const known = new Set([...nextOrdered, ...nextUnordered]);
+      nextIds.forEach(id => { if (!known.has(id)) nextUnordered.push(id); });
+      if (nextIds.length <= 1) {
+        state.draftOrders[filter.id] = [...nextIds];
+        state.draftUnordered[filter.id] = [];
+      } else {
+        state.draftOrders[filter.id] = nextOrdered;
+        state.draftUnordered[filter.id] = nextUnordered;
+      }
+      filter.objectIds = nextIds;
+      filter.unorderedIds = [...state.draftUnordered[filter.id]];
+      if (previousIds.join(',') !== nextIds.join(',')) {
+        filter.task = null;
+        state.taskProgress[filter.id] = null;
+      }
+    }
+
+    function refreshFilterMemberships() {
+      savedFilters.forEach(reconcileFilterMembership);
+      const filter = activeFilter();
+      if (filter.dirty) {
+        reconcileFilterMembership(filter);
+        return;
+      }
+      const source = savedFilters.find(item => item.id === filter.sourceId);
+      filter.objectIds = [...source.objectIds];
+      filter.unorderedIds = [...source.unorderedIds];
+      filter.task = source.task ? { ...source.task } : null;
+      state.draftOrders[filter.id] = [...state.draftOrders[source.id]];
+      state.draftUnordered[filter.id] = [...state.draftUnordered[source.id]];
+      state.taskProgress[filter.id] = state.taskProgress[source.id] ?? null;
+    }
+
+    function saveObjectDetail(form) {
+      const item = objectById(form.dataset.objectId);
+      if (!item) return;
+      const data = new FormData(form);
+      item.title = String(data.get('title')).trim();
+      item.year = Number(data.get('year'));
+      item.tags = [...new Set(String(data.get('tags')).split(',').map(tag => tag.trim()).filter(Boolean))];
+      refreshFilterMemberships();
+      state.objectDetailId = null;
+      render();
+      showToast('Изменения элемента сохранены в прототипе');
     }
 
     function renderState() {
@@ -1076,6 +1197,7 @@
           activity: Object.fromEntries(userSavedFilters().map(item => [item.id, item.activity]))
         },
         liveSliceSize: filter.objectIds.length,
+        objectDetailId: state.objectDetailId,
         criterion: state.criterion,
         draftVisibleOrder: state.draftOrders[filter.id],
         unorderedInSlice: state.draftUnordered[filter.id],
@@ -1092,6 +1214,7 @@
       renderGlossary();
       renderCollections();
       renderFilterPanel();
+      renderObjectDetail();
       renderState();
       wireDragAndDrop();
       wireSavedFilterDragAndDrop();
@@ -1360,6 +1483,11 @@
 
     document.addEventListener('click', event => {
       if (suppressNextClick) { event.preventDefault(); suppressNextClick = false; return; }
+      const objectCard = event.target.closest('[data-open-object-id]');
+      if (objectCard && !event.target.closest('.drag-handle')) {
+        openObjectDetail(objectCard.dataset.openObjectId);
+        return;
+      }
       const target = event.target.closest('button');
       if (!target) return;
       if (target.matches('[data-cycle]')) setVariant(Number(target.dataset.cycle));
@@ -1379,6 +1507,7 @@
       else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
+      else if (target.matches('[data-close-object-detail]')) closeObjectDetail();
       else if (target.matches('[data-open-glossary]')) { state.filterPanelOpen = false; renderFilterPanel(); state.glossaryOpen = true; renderGlossary(); }
       else if (target.matches('[data-close-glossary]')) { state.glossaryOpen = false; renderGlossary(); }
       else if (target.matches('[data-open-collections]')) { state.collectionMenuOpen = true; renderCollections(); }
@@ -1387,6 +1516,7 @@
       else if (target.matches('[data-place-id]')) placeUnordered(target.dataset.placeId);
       else if (target.matches('[data-open-duel]')) { state.duel.open = true; renderDuel(); renderState(); }
       else if (target.matches('[data-close-duel]')) { state.duel.open = false; renderDuel(); }
+      else if (target.matches('[data-open-duel-object-id]')) openObjectDetail(target.dataset.openDuelObjectId);
       else if (target.matches('[data-duel-outcome]')) {
         const outcome = target.dataset.duelOutcome;
         if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
@@ -1405,6 +1535,12 @@
       if (event.target.matches('[data-select-filter]')) setFilter(event.target.value);
     });
 
+    document.addEventListener('submit', event => {
+      if (!event.target.matches('[data-object-detail-form]')) return;
+      event.preventDefault();
+      saveObjectDetail(event.target);
+    });
+
     document.addEventListener('input', event => {
       if (!event.target.matches('[data-current-filter-name]')) return;
       renameCurrentFilter(event.target.value);
@@ -1419,9 +1555,16 @@
 
     document.addEventListener('keydown', event => {
       const editing = event.target.matches('input, textarea, select, [contenteditable="true"]');
-      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && event.key === 'ArrowLeft') setVariant(-1);
-      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && event.key === 'ArrowRight') setVariant(1);
-      if (event.key === 'Escape' && state.duel.open) { state.duel.open = false; renderDuel(); }
+      const objectCard = event.target.closest('[data-open-object-id]');
+      if (objectCard && !editing && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        openObjectDetail(objectCard.dataset.openObjectId);
+        return;
+      }
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && state.objectDetailId == null && event.key === 'ArrowLeft') setVariant(-1);
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && state.objectDetailId == null && event.key === 'ArrowRight') setVariant(1);
+      if (event.key === 'Escape' && state.objectDetailId != null) closeObjectDetail();
+      else if (event.key === 'Escape' && state.duel.open) { state.duel.open = false; renderDuel(); }
       else if (event.key === 'Escape' && state.glossaryOpen) { state.glossaryOpen = false; renderGlossary(); }
       else if (event.key === 'Escape' && state.collectionMenuOpen) { state.collectionMenuOpen = false; renderCollections(); }
       else if (event.key === 'Escape' && state.filterPanelOpen) { state.filterPanelOpen = false; renderFilterPanel(); }
