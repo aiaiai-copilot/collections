@@ -279,10 +279,10 @@
     .a-unordered .unordered-list { margin-bottom: 12px; }
 
     /* Selected direction — mobile-first workspace at every viewport */
-    body[data-variant="A"] { background: #dfe4dc; }
-    body[data-variant="A"] .prototype-page { width: min(100%, 460px); min-height: 100dvh; margin: 0 auto; padding-bottom: 92px; background: var(--paper); box-shadow: 0 0 55px rgba(23,32,27,.16); }
-    body[data-variant="A"] .variant-a { min-height: 100dvh; }
-    body[data-variant="A"] .a-topbar { position: sticky; z-index: 12; top: 0; height: 62px; padding: 0 12px; }
+    body[data-variant="A"] { height: 100dvh; overflow: hidden; background: #dfe4dc; }
+    body[data-variant="A"] .prototype-page { width: min(100%, 460px); height: 100dvh; min-height: 0; overflow: hidden; margin: 0 auto; padding-bottom: 0; background: var(--paper); box-shadow: 0 0 55px rgba(23,32,27,.16); }
+    body[data-variant="A"] .variant-a { display: flex; height: 100%; min-height: 0; flex-direction: column; overflow: hidden; }
+    body[data-variant="A"] .a-topbar { position: relative; z-index: 12; flex: 0 0 62px; height: 62px; padding: 0 12px; }
     body[data-variant="A"] .a-topbar .brand span:last-child { display: none; }
     body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
     body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
@@ -290,8 +290,8 @@
     .mobile-collection-button strong, .mobile-collection-button small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mobile-collection-button strong { font-size: 12px; }
     .mobile-collection-button small { margin-top: 2px; color: var(--muted); font-size: 9px; }
-    body[data-variant="A"] .a-shell { display: block; min-height: auto; }
-    .mobile-slice-switch { padding: 10px 12px 0; }
+    body[data-variant="A"] .a-shell { display: block; min-height: 0; flex: 1 1 auto; overflow: hidden; }
+    .mobile-slice-switch { flex: 0 0 auto; padding: 10px 12px 0; }
     .current-filter-summary { min-width: 0; padding: 11px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); box-shadow: 0 5px 18px rgba(23,32,27,.05); }
     .current-filter-summary small, .current-filter-summary strong { display: block; }
     .current-filter-summary small { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
@@ -304,7 +304,7 @@
     .a-bottom-nav-label { overflow: hidden; max-width: 100%; font-size: 10px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
     .a-bottom-nav-meta { color: var(--green); font-size: 8px; font-weight: 820; line-height: 1; }
     .a-bottom-nav-count { position: absolute; top: 3px; left: calc(50% + 9px); display: grid; min-width: 18px; height: 18px; padding: 0 4px; place-items: center; border: 2px solid #faf9f3; border-radius: 99px; background: var(--green); color: white; font-size: 8px; font-weight: 900; }
-    body[data-variant="A"] .a-main { padding: 22px 12px 112px; }
+    body[data-variant="A"] .a-main { display: flex; height: 100%; min-height: 0; padding: 22px 12px calc(76px + env(safe-area-inset-bottom)); flex-direction: column; overflow: hidden; }
     body[data-variant="A"] .switcher, body[data-variant="A"] .state-debug { display: none; }
     body[data-variant="A"] .slice-head { display: block; }
     body[data-variant="A"] .slice-head h1 { font-size: 34px; }
@@ -312,7 +312,8 @@
     body[data-variant="A"] .continue-banner { grid-template-columns: auto 1fr; gap: 12px; margin: 20px 0; padding: 14px; }
     body[data-variant="A"] .continue-actions { grid-column: 1 / -1; align-items: stretch; flex-direction: column; }
     body[data-variant="A"] .continue-actions button, body[data-variant="A"] .continue-banner .progress-track { width: 100%; }
-    body[data-variant="A"] .a-order { padding: 14px; }
+    body[data-variant="A"] .a-workspace { min-height: 0; flex: 1 1 auto; overflow: hidden; }
+    body[data-variant="A"] .a-order { height: 100%; overflow-y: auto; padding: 14px; overscroll-behavior: contain; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
     body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) 32px; gap: 8px; }
     body[data-variant="A"] .ordered-card .poster { display: none; }
     body[data-variant="A"] .ordered-copy .tags { display: none; }
@@ -1305,7 +1306,7 @@
           event.preventDefault();
           handle.setPointerCapture(event.pointerId);
           const startY = event.clientY;
-          const scrollArea = row.closest('.a-filter-list');
+          const scrollArea = row.closest('.a-filter-list, .a-order');
           let targetRow = null;
           let after = false;
           let moved = false;
