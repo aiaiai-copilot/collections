@@ -1,6 +1,7 @@
 # Спроектировать разметку и глоссарий тегов
 
 Type: prototype
+Status: claimed
 Blocked by: 01
 
 ## Question
