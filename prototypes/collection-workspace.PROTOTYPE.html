@@ -287,14 +287,13 @@
     body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
     body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
     body[data-variant="A"] .a-shell { display: block; min-height: 0; flex: 1 1 auto; overflow: hidden; }
-    .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(4, minmax(0,1fr)); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
-    .a-bottom-nav button { position: relative; display: grid; min-width: 0; min-height: 52px; padding: 5px 3px; place-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
+    .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(5, minmax(0,1fr)); padding: 7px 6px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
+    .a-bottom-nav button { position: relative; display: grid; min-width: 0; min-height: 52px; padding: 5px 1px; place-items: center; align-content: center; gap: 3px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
     .a-bottom-nav button:active { background: var(--green-2); }
     .a-bottom-nav button:disabled { cursor: default; opacity: .42; }
     .a-bottom-nav-icon { font-size: 19px; font-weight: 900; line-height: 1; }
-    .a-bottom-nav-label { overflow: hidden; max-width: 100%; font-size: 10px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
-    .a-bottom-nav-meta { color: var(--green); font-size: 8px; font-weight: 820; line-height: 1; }
-    .a-bottom-nav-count { position: absolute; top: 3px; left: calc(50% + 9px); display: grid; min-width: 18px; height: 18px; padding: 0 4px; place-items: center; border: 2px solid #faf9f3; border-radius: 99px; background: var(--green); color: white; font-size: 8px; font-weight: 900; }
+    .a-bottom-nav-label { overflow: hidden; max-width: 100%; font-size: 9px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+    .a-bottom-nav-count { position: absolute; top: 3px; left: calc(50% + 6px); display: grid; min-width: 17px; height: 17px; padding: 0 3px; place-items: center; border: 2px solid #faf9f3; border-radius: 99px; background: var(--green); color: white; font-size: 7px; font-weight: 900; }
     body[data-variant="A"] .a-main { display: flex; height: 100%; min-height: 0; padding: 22px 12px calc(76px + env(safe-area-inset-bottom)); flex-direction: column; overflow: hidden; }
     body[data-variant="A"] .switcher, body[data-variant="A"] .state-debug { display: none; }
     body[data-variant="A"] .slice-head { display: block; }
@@ -455,17 +454,6 @@
     .filter-panel-context strong, .filter-panel-context small { display: block; }
     .filter-panel-context strong { font-size: 12px; }
     .filter-panel-context small { margin-top: 3px; color: var(--muted); font-size: 10px; }
-    .filter-panel-collections { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
-    .filter-panel-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-    .filter-panel-section-head strong { font-size: 11px; }
-    .filter-panel-section-head small { color: var(--muted); font-size: 9px; }
-    .filter-collection-list { display: grid; gap: 5px; }
-    .filter-collection-choice { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 11px; background: #f7f7f2; cursor: pointer; text-align: left; }
-    .filter-collection-choice.active { border-color: var(--green); background: var(--green-2); }
-    .filter-collection-choice strong, .filter-collection-choice small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .filter-collection-choice strong { font-size: 11px; }
-    .filter-collection-choice small { margin-top: 2px; color: var(--muted); font-size: 9px; }
-    .filter-collection-choice > span:last-child { color: var(--green); font-size: 9px; font-weight: 850; }
     .filter-panel .a-filter-toolbar { padding: 12px 16px 8px; }
     .filter-panel .filter-toolbar-actions { grid-template-columns: 1fr 1fr; }
     .filter-panel .glossary-toolbar-button { display: block; grid-column: auto; }
@@ -916,12 +904,13 @@
     function bottomNavigationMarkup(filter) {
       const progress = state.taskProgress[filter.id];
       const comparisonsAvailable = filter.objectIds.length >= 2;
-      const priorityMeta = !comparisonsAvailable ? 'Не нужны' : progress == null ? 'Начать' : `Продолжить · ${progress}%`;
+      const priorityLabel = !comparisonsAvailable ? 'Приоритеты недоступны: недостаточно объектов' : progress == null ? 'Начать определение приоритетов' : `Продолжить определение приоритетов, ${progress}%`;
       return `<nav class="a-bottom-nav" aria-label="Основные действия">
-        <button type="button" data-open-filter-panel aria-haspopup="dialog" aria-label="Открыть коллекции и фильтры"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-meta">Фильтры</span><span class="a-bottom-nav-count">${collections.length}</span></button>
-        <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span><span class="a-bottom-nav-meta">Теги</span></button>
-        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'}><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Приоритеты</span><span class="a-bottom-nav-meta">${priorityMeta}</span></button>
-        <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span><span class="a-bottom-nav-meta">Коллекция</span></button>
+        <button type="button" data-open-collections aria-haspopup="dialog"><span class="a-bottom-nav-icon">▱</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-count">${collections.length}</span></button>
+        <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
+        <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></button>
+        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Приоритеты</span>${progress != null && comparisonsAvailable ? `<span class="a-bottom-nav-count">${progress}%</span>` : ''}</button>
+        <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span></button>
       </nav>`;
     }
 
@@ -1095,8 +1084,7 @@
       const filter = activeFilter();
       const contextTitle = filter.tags.length ? 'Текущий фильтр' : 'Без фильтра';
       const contextRule = filter.tags.length ? `${filter.dirty ? 'Не сохранён · ' : ''}${filterRule(filter)}` : 'Показаны все объекты коллекции';
-      const collectionChoices = collections.map(collection => `<button class="filter-collection-choice ${collection.current ? 'active' : ''}" type="button" ${collection.current ? 'data-close-filter-panel' : `data-toast="Переход в коллекцию «${escapeHTML(collection.name)}» появится в следующей итерации"`}><span><strong>${escapeHTML(collection.name)}</strong><small>${escapeHTML(collection.format)} · ${pluralObjects(collection.count)}</small></span><span>${collection.current ? 'Открыта' : 'Открыть'}</span></button>`).join('');
-      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Коллекции и сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация</p><h2>Коллекции и фильтры</h2><p>${collections.length} коллекции · ${userSavedFilters().length} сохранённых фильтров</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть коллекции и фильтры">×</button></header><section class="filter-panel-collections" aria-label="Коллекции"><div class="filter-panel-section-head"><strong>Коллекции</strong><small>Выберите пространство сравнения</small></div><div class="filter-collection-list">${collectionChoices}</div></section><div class="filter-panel-context"><strong>${contextTitle}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${contextTitle}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
