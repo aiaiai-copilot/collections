@@ -258,23 +258,6 @@
     .filter-editor-title-input:focus { border-bottom-color: var(--green); }
     .filter-editor-title-input::placeholder { color: #7a847c; opacity: 1; }
     .slice-actions { display: flex; gap: 8px; align-items: center; }
-    .continue-banner {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 15px;
-      align-items: center;
-      margin: 26px 0;
-      padding: 15px;
-      border-radius: 18px;
-      background: var(--ink);
-      color: white;
-    }
-    .continue-symbol { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--lime); color: var(--ink); font-size: 19px; }
-    .continue-banner strong { display: block; font-size: 14px; }
-    .continue-banner p { margin: 4px 0 0; color: #bcc8bf; font-size: 11px; }
-    .continue-banner .progress-track { width: min(200px, 26vw); margin-top: 8px; color: var(--lime); background: rgba(255,255,255,.15); }
-    .continue-actions { display: flex; gap: 7px; align-items: center; }
-    .continue-actions .soft-button { background: rgba(255,255,255,.12); color: white; }
     .a-workspace { display: block; }
     .a-order, .a-unordered { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.7); }
     .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
@@ -308,11 +291,11 @@
     body[data-variant="A"] .slice-head { display: block; }
     body[data-variant="A"] .slice-condition { margin-top: 0; }
     body[data-variant="A"] .slice-actions { margin-top: 13px; }
-    body[data-variant="A"] .continue-banner { grid-template-columns: auto 1fr; gap: 12px; margin: 20px 0; padding: 14px; }
-    body[data-variant="A"] .continue-actions { grid-column: 1 / -1; align-items: stretch; flex-direction: column; }
-    body[data-variant="A"] .continue-actions button, body[data-variant="A"] .continue-banner .progress-track { width: 100%; }
-    body[data-variant="A"] .a-workspace { min-height: 0; flex: 1 1 auto; overflow: hidden; }
+    body[data-variant="A"] .a-workspace { min-height: 0; flex: 1 1 auto; overflow: hidden; margin-top: 18px; }
     body[data-variant="A"] .a-order { height: 100%; overflow-y: auto; padding: 14px; overscroll-behavior: contain; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+    body[data-variant="A"] .a-order.priorities-incomplete { border-color: #e5aaa3; background: #fff0ee; }
+    body[data-variant="A"] .a-order.priorities-complete { border-color: #b9d8c1; background: #edf8f0; }
+    .remaining-comparisons-counter { position: sticky; z-index: 3; top: 0; width: max-content; margin: 0 0 10px auto; padding: 6px 9px; border: 1px solid #e2a29a; border-radius: 999px; background: #ffd9d4; color: #9d271c; font-size: 10px; font-weight: 880; box-shadow: 0 3px 10px rgba(118,35,27,.08); }
     body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) 32px; gap: 8px; cursor: pointer; }
     body[data-variant="A"] .ordered-card .poster { display: none; }
     body[data-variant="A"] .ordered-copy .tags { display: none; }
@@ -601,12 +584,6 @@
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
     body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug, body.object-detail-open .switcher, body.object-detail-open .state-debug { display: none; }
 
-    @media (max-width: 1100px) and (min-width: 701px) {
-      .continue-banner { grid-template-columns: auto 1fr; }
-      .continue-actions { grid-column: 1 / -1; justify-content: flex-end; }
-      .continue-banner .progress-track { width: 100%; }
-    }
-
     @media (max-width: 930px) {
       .a-shell { grid-template-columns: 220px minmax(0, 1fr); }
       .a-workspace { grid-template-columns: 1fr; }
@@ -637,10 +614,6 @@
       .a-main { padding: 24px 14px 40px; }
       .slice-head { display: block; }
       .slice-actions { margin-top: 14px; }
-      .continue-banner { grid-template-columns: auto 1fr; }
-      .continue-actions { grid-column: 1 / -1; align-items: stretch; flex-direction: column; }
-      .continue-actions button { width: 100%; }
-      .continue-banner .progress-track { width: 100%; }
       .a-order, .a-unordered { padding: 14px; }
       .a-unordered .unordered-list { grid-template-columns: 1fr; }
       .ordered-card { grid-template-columns: 26px 66px minmax(0,1fr) auto; gap: 8px; }
@@ -749,16 +722,16 @@
     ];
 
     const savedFilters = [
-      { id: 'all', name: 'Все фильмы', tags: [], objectIds: objects.map(item => item.id), unorderedIds: [4, 7, 10, 11], activity: 100, system: true, task: { progress: 38, comparisons: 12 } },
-      { id: 'friends', name: 'Для компании', tags: ['компания'], objectIds: [4, 5, 8, 10, 11, 12], unorderedIds: [10, 11], activity: 84, task: { progress: 63, comparisons: 7 } },
-      { id: 'quiet', name: 'Тихий вечер', tags: ['спокойное', 'до 130 минут', 'одному', 'медленное', 'после работы'], objectIds: [3, 6, 7], unorderedIds: [6, 7], activity: 71, task: { progress: 22, comparisons: 3 } },
-      { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'], objectIds: [4, 9, 10], unorderedIds: [10], activity: 62, task: null },
-      { id: 'europe', name: 'Европейское', tags: ['Европа'], objectIds: [1, 8], unorderedIds: [8], activity: 54, task: null },
-      { id: 'family', name: 'С семьёй', tags: ['семья'], objectIds: [9, 10], unorderedIds: [10], activity: 47, task: null },
-      { id: 'romance', name: 'Романтика', tags: ['романтика'], objectIds: [1, 2, 11], unorderedIds: [], activity: 39, task: null },
-      { id: 'serious', name: 'Серьёзное', tags: ['серьёзное'], objectIds: [5, 9, 12], unorderedIds: [12], activity: 28, task: null },
-      { id: 'comedy', name: 'Комедии', tags: ['комедия'], objectIds: [8], unorderedIds: [], activity: 17, task: null },
-      { id: 'music', name: 'Музыкальное', tags: ['музыка'], objectIds: [11], unorderedIds: [], activity: 8, task: null }
+      { id: 'all', name: 'Все фильмы', tags: [], objectIds: objects.map(item => item.id), unorderedIds: [4, 7, 10, 11], maxRemainingComparisons: 20, activity: 100, system: true, task: { progress: 38, comparisons: 12 } },
+      { id: 'friends', name: 'Для компании', tags: ['компания'], objectIds: [4, 5, 8, 10, 11, 12], unorderedIds: [10, 11], maxRemainingComparisons: 5, activity: 84, task: { progress: 63, comparisons: 7 } },
+      { id: 'quiet', name: 'Тихий вечер', tags: ['спокойное', 'до 130 минут', 'одному', 'медленное', 'после работы'], objectIds: [3, 6, 7], unorderedIds: [6, 7], maxRemainingComparisons: 11, activity: 71, task: { progress: 22, comparisons: 3 } },
+      { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'], objectIds: [4, 9, 10], unorderedIds: [10], maxRemainingComparisons: 2, activity: 62, task: null },
+      { id: 'europe', name: 'Европейское', tags: ['Европа'], objectIds: [1, 8], unorderedIds: [8], maxRemainingComparisons: 1, activity: 54, task: null },
+      { id: 'family', name: 'С семьёй', tags: ['семья'], objectIds: [9, 10], unorderedIds: [10], maxRemainingComparisons: 1, activity: 47, task: null },
+      { id: 'romance', name: 'Романтика', tags: ['романтика'], objectIds: [1, 2, 11], unorderedIds: [], maxRemainingComparisons: 0, activity: 39, task: null },
+      { id: 'serious', name: 'Серьёзное', tags: ['серьёзное'], objectIds: [5, 9, 12], unorderedIds: [12], maxRemainingComparisons: 2, activity: 28, task: null },
+      { id: 'comedy', name: 'Комедии', tags: ['комедия'], objectIds: [8], unorderedIds: [], maxRemainingComparisons: 0, activity: 17, task: null },
+      { id: 'music', name: 'Музыкальное', tags: ['музыка'], objectIds: [11], unorderedIds: [], maxRemainingComparisons: 0, activity: 8, task: null }
     ];
 
     const requestedVariant = new URLSearchParams(location.search).get('variant')?.toUpperCase();
@@ -780,7 +753,8 @@
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
-      taskProgress: Object.fromEntries([...savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]), ['current', initialFilter.task?.progress ?? null]])
+      taskProgress: Object.fromEntries([...savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]), ['current', initialFilter.task?.progress ?? null]]),
+      maxRemainingComparisons: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.maxRemainingComparisons]), ['current', initialFilter.maxRemainingComparisons]])
     };
 
     const app = document.querySelector('#app');
@@ -814,6 +788,17 @@
       if (!teens && tail === 1) return `${count} объект`;
       if (!teens && tail >= 2 && tail <= 4) return `${count} объекта`;
       return `${count} объектов`;
+    }
+    function pluralComparisons(count) {
+      const tail = count % 10;
+      const teens = count % 100 >= 11 && count % 100 <= 14;
+      if (!teens && tail === 1) return `${count} сравнение`;
+      if (!teens && tail >= 2 && tail <= 4) return `${count} сравнения`;
+      return `${count} сравнений`;
+    }
+    function estimateRemainingComparisonUpperBound(objectIds, unorderedIds) {
+      if (objectIds.length < 2 || unorderedIds.length === 0) return 0;
+      return Math.max(unorderedIds.length, Math.ceil(unorderedIds.length * Math.log2(objectIds.length)));
     }
     function showToast(message) {
       toast.textContent = message;
@@ -894,25 +879,6 @@
         <div class="unordered-copy"><strong>${escapeHTML(item.title)}</strong><button class="place-button" type="button" data-place-id="${item.id}">Поставить в конец</button></div>
       </article>`;
     }
-    function continueBanner(filter) {
-      if (filter.objectIds.length < 2) {
-        return `<div class="continue-banner"><span class="continue-symbol">✓</span><div><strong>Попарные сравнения не нужны</strong><p>В этом срезе меньше двух объектов. Прямой порядок уже полный.</p></div></div>`;
-      }
-      const progress = state.taskProgress[filter.id];
-      if (progress == null) {
-        return `<div class="continue-banner">
-          <span class="continue-symbol">↗</span>
-          <div><strong>Попарные сравнения</strong><p>Прямая расстановка уже доступна ниже. Этот режим позволяет принимать решения по одной паре и остановиться в любой момент.</p></div>
-          <div class="continue-actions"><button class="primary-button" type="button" data-open-duel>Сравнивать попарно</button></div>
-        </div>`;
-      }
-      return `<div class="continue-banner">
-        <span class="continue-symbol">↗</span>
-        <div><strong>Незавершённые попарные сравнения</strong><p>${filter.task.comparisons} решений сохранено · известные отношения из других срезов уже учтены</p><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>
-        <div class="continue-actions"><button class="primary-button" type="button" data-open-duel>Продолжить сравнения · ${progress}%</button></div>
-      </div>`;
-    }
-
     function filterEditorMarkup(filter) {
       if (!state.filterEditorOpen) return '';
       const availableTags = [...new Set(objects.flatMap(item => item.tags))].sort((left, right) => left.localeCompare(right, 'ru'));
@@ -921,14 +887,14 @@
     }
 
     function bottomNavigationMarkup(filter) {
-      const progress = state.taskProgress[filter.id];
+      const remaining = state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []);
       const comparisonsAvailable = filter.objectIds.length >= 2;
-      const priorityLabel = !comparisonsAvailable ? 'Приоритеты недоступны: недостаточно объектов' : progress == null ? 'Начать определение приоритетов' : `Продолжить определение приоритетов, ${progress}%`;
+      const priorityLabel = !comparisonsAvailable ? 'Приоритеты недоступны: недостаточно объектов' : remaining > 0 ? `Продолжить определение приоритетов, потребуется не более ${pluralComparisons(remaining)}` : 'Приоритеты определены';
       return `<nav class="a-bottom-nav" aria-label="Основные действия">
         <button type="button" data-open-collections aria-haspopup="dialog"><span class="a-bottom-nav-icon">▱</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-count">${collections.length}</span></button>
         <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
         <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></button>
-        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span>${progress != null && comparisonsAvailable ? `<span class="a-bottom-nav-count">${progress}%</span>` : ''}</button>
+        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span></button>
         <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span></button>
       </nav>`;
     }
@@ -936,7 +902,8 @@
     function renderVariantA() {
       const filter = activeFilter();
       const ordered = orderedObjects();
-      const unordered = unorderedObjects();
+      const remaining = state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []);
+      const prioritiesComplete = remaining === 0;
       return `<section class="variant-a">
         <header class="a-topbar">
           <div class="a-top-filter" aria-label="Текущий фильтр">${currentFilterNameMarkup(filter)}${filterConditionMarkup(filter)}</div>
@@ -945,12 +912,12 @@
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span></div>${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><div class="slice-context-meta"><span>${pluralObjects(filter.objectIds.length)}</span></div>${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
-            ${continueBanner(filter)}
             <div class="a-workspace">
-              <section class="a-order" data-order-section>
+              <section class="a-order ${prioritiesComplete ? 'priorities-complete' : 'priorities-incomplete'}" data-order-section>
+                ${prioritiesComplete ? '' : `<div class="remaining-comparisons-counter" aria-label="Потребуется не более ${pluralComparisons(remaining)}">&lt;= ${remaining}</div>`}
                 <div class="ordered-list" data-order-lane>${ordered.map(orderedCard).join('')}</div>
                 <div style="margin-top:14px">${prototypeWarning()}</div>
               </section>
@@ -1039,6 +1006,8 @@
       const left = objectById(ids[state.duel.pairIndex % ids.length]);
       const right = objectById(ids[(state.duel.pairIndex + 2) % ids.length]);
       const progress = state.taskProgress[filter.id] ?? 0;
+      const remaining = state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []);
+      const duelProgress = state.variant === 'A' ? `<div class="duel-progress"><div class="duel-progress-copy"><span>Оценка</span><strong>${remaining > 0 ? `до ${pluralComparisons(remaining)}` : 'Приоритеты определены'}</strong></div></div>` : `<div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>`;
       const choiceMarkup = (item, outcome, side) => {
         const choice = `<button class="duel-choice" type="button" data-duel-outcome="${outcome}"><span class="duel-object">${poster(item)}<strong>Выбрать «${escapeHTML(item.title)}»</strong></span></button>`;
         if (state.variant !== 'A') return choice;
@@ -1048,7 +1017,7 @@
         <header class="duel-header">
           <button class="icon-button" type="button" data-close-duel aria-label="Закрыть">×</button>
           <div class="duel-title"><strong>${escapeHTML(filter.name)}</strong><small>${escapeHTML(state.criterion)}</small></div>
-          <div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>
+          ${duelProgress}
         </header>
         <div class="duel-stage">
           ${choiceMarkup(left, 'left', 'left')}
@@ -1162,6 +1131,9 @@
       if (previousIds.join(',') !== nextIds.join(',')) {
         filter.task = null;
         state.taskProgress[filter.id] = null;
+        const upperBound = estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id]);
+        filter.maxRemainingComparisons = upperBound;
+        state.maxRemainingComparisons[filter.id] = upperBound;
       }
     }
 
@@ -1179,6 +1151,7 @@
       state.draftOrders[filter.id] = [...state.draftOrders[source.id]];
       state.draftUnordered[filter.id] = [...state.draftUnordered[source.id]];
       state.taskProgress[filter.id] = state.taskProgress[source.id] ?? null;
+      state.maxRemainingComparisons[filter.id] = state.maxRemainingComparisons[source.id] ?? 0;
     }
 
     function saveObjectDetail(form) {
@@ -1215,7 +1188,7 @@
         criterion: state.criterion,
         draftVisibleOrder: state.draftOrders[filter.id],
         unorderedInSlice: state.draftUnordered[filter.id],
-        comparisonTask: state.taskProgress[filter.id] == null ? null : { status: 'unfinished', progress: state.taskProgress[filter.id] }
+        comparisonTask: state.variant === 'A' ? { status: state.maxRemainingComparisons[filter.id] > 0 ? 'unfinished' : 'complete', maxRemainingComparisons: state.maxRemainingComparisons[filter.id] ?? 0 } : state.taskProgress[filter.id] == null ? null : { status: 'unfinished', progress: state.taskProgress[filter.id] }
       }, null, 2);
     }
 
@@ -1255,6 +1228,7 @@
       state.draftOrders.current = [...state.draftOrders[source.id]];
       state.draftUnordered.current = [...state.draftUnordered[source.id]];
       state.taskProgress.current = state.taskProgress[source.id] ?? null;
+      state.maxRemainingComparisons.current = state.maxRemainingComparisons[source.id] ?? 0;
       state.duel.pairIndex = 0;
       state.filterEditorOpen = false;
       state.expandedTags = false;
@@ -1323,6 +1297,7 @@
         tags: [...filter.tags],
         objectIds: [...filter.objectIds],
         unorderedIds: [...state.draftUnordered[filter.id]],
+        maxRemainingComparisons: state.maxRemainingComparisons[filter.id] ?? 0,
         activity: Math.min(100, Math.max(0, ...userSavedFilters().map(item => item.activity)) + 1),
         task: filter.task ? { ...filter.task } : null
       };
@@ -1332,10 +1307,12 @@
       state.draftOrders[id] = [...state.draftOrders[filter.id]];
       state.draftUnordered[id] = [...state.draftUnordered[filter.id]];
       state.taskProgress[id] = state.taskProgress[filter.id] ?? null;
+      state.maxRemainingComparisons[id] = state.maxRemainingComparisons[filter.id] ?? 0;
       state.currentFilter = currentFilterFrom(saved);
       state.draftOrders.current = [...state.draftOrders[id]];
       state.draftUnordered.current = [...state.draftUnordered[id]];
       state.taskProgress.current = state.taskProgress[id];
+      state.maxRemainingComparisons.current = state.maxRemainingComparisons[id];
       state.filterEditorOpen = false;
       render();
       showToast(`Фильтр «${saved.name}» сохранён`);
@@ -1346,8 +1323,12 @@
       if (filter.dirty) return;
       state.draftOrders[filter.sourceId] = [...state.draftOrders[filter.id]];
       state.draftUnordered[filter.sourceId] = [...state.draftUnordered[filter.id]];
+      state.maxRemainingComparisons[filter.sourceId] = state.maxRemainingComparisons[filter.id] ?? 0;
       const source = savedFilters.find(item => item.id === filter.sourceId);
-      if (source) source.unorderedIds = [...state.draftUnordered[filter.id]];
+      if (source) {
+        source.unorderedIds = [...state.draftUnordered[filter.id]];
+        source.maxRemainingComparisons = state.maxRemainingComparisons[filter.id] ?? 0;
+      }
     }
 
     function toggleActiveFilterTag(tag) {
@@ -1370,6 +1351,7 @@
         state.draftOrders[filter.id] = [...state.draftOrders[source.id]];
         state.draftUnordered[filter.id] = [...state.draftUnordered[source.id]];
         state.taskProgress[filter.id] = state.taskProgress[source.id] ?? null;
+        state.maxRemainingComparisons[filter.id] = state.maxRemainingComparisons[source.id] ?? 0;
         state.expandedTags = false;
         showToast('Текущий фильтр снова совпадает с исходным');
         render();
@@ -1390,6 +1372,7 @@
       filter.unorderedIds = [...state.draftUnordered[filter.id]];
       filter.task = null;
       state.taskProgress[filter.id] = null;
+      state.maxRemainingComparisons[filter.id] = estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id]);
       state.expandedTags = false;
       showToast('Текущий фильтр изменён; прежняя задача осталась у прежней версии среза');
       render();
@@ -1423,6 +1406,7 @@
       if (index < 0) return;
       unordered.splice(index, 1);
       state.draftOrders[filterId].push(numericId);
+      state.maxRemainingComparisons[filterId] = estimateRemainingComparisonUpperBound(activeFilter().objectIds, unordered);
       syncCurrentDraftToSource();
       showToast('Объект добавлен в черновую расстановку');
       render();
@@ -1569,15 +1553,26 @@
       else if (target.matches('[data-open-duel-object-id]')) openObjectDetail(target.dataset.openDuelObjectId, 'duel');
       else if (target.matches('[data-duel-outcome]')) {
         const outcome = target.dataset.duelOutcome;
-        if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
-        else showToast(outcome === 'equal' ? 'Равноценность сохранена' : 'Решение сохранено в общем порядке');
         const filter = activeFilter();
         const current = state.taskProgress[filter.id] ?? 0;
         state.taskProgress[filter.id] = Math.min(96, current + (outcome === 'defer' ? 0 : 4));
-        if (!filter.dirty) state.taskProgress[filter.sourceId] = state.taskProgress[filter.id];
+        if (outcome !== 'defer') state.maxRemainingComparisons[filter.id] = Math.max(0, (state.maxRemainingComparisons[filter.id] ?? 1) - 1);
+        if (state.maxRemainingComparisons[filter.id] === 0 && state.draftUnordered[filter.id].length) {
+          state.draftOrders[filter.id].push(...state.draftUnordered[filter.id]);
+          state.draftUnordered[filter.id] = [];
+          filter.unorderedIds = [];
+        }
+        if (!filter.dirty) {
+          state.taskProgress[filter.sourceId] = state.taskProgress[filter.id];
+          syncCurrentDraftToSource();
+        }
         state.duel.pairIndex += 1;
-        renderDuel();
-        renderState();
+        if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
+        else if (state.maxRemainingComparisons[filter.id] === 0) {
+          state.duel.open = false;
+          showToast('Приоритеты среза определены');
+        } else showToast(outcome === 'equal' ? 'Равноценность сохранена' : 'Решение сохранено в общем порядке');
+        render();
       } else if (target.dataset.toast) showToast(target.dataset.toast);
     });
 
