@@ -281,8 +281,11 @@
     body[data-variant="A"] { height: 100dvh; overflow: hidden; background: #dfe4dc; }
     body[data-variant="A"] .prototype-page { width: min(100%, 460px); height: 100dvh; min-height: 0; overflow: hidden; margin: 0 auto; padding-bottom: 0; background: var(--paper); box-shadow: 0 0 55px rgba(23,32,27,.16); }
     body[data-variant="A"] .variant-a { display: flex; height: 100%; min-height: 0; flex-direction: column; overflow: hidden; }
-    body[data-variant="A"] .a-topbar { position: relative; z-index: 12; flex: 0 0 62px; height: 62px; padding: 0 12px; }
+    body[data-variant="A"] .a-topbar { position: relative; z-index: 12; display: grid; flex: 0 0 62px; height: 62px; grid-template-columns: 34px minmax(0, 1fr); gap: 9px; padding: 0 12px; }
     body[data-variant="A"] .a-topbar .brand span:last-child { display: none; }
+    body[data-variant="A"] .a-top-filter { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    body[data-variant="A"] .a-top-filter::-webkit-scrollbar { display: none; }
+    body[data-variant="A"] .a-top-filter .slice-condition { width: max-content; margin-top: 0; flex-wrap: nowrap; }
     body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
     body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
     body[data-variant="A"] .a-shell { display: block; min-height: 0; flex: 1 1 auto; overflow: hidden; }
@@ -911,7 +914,7 @@
         <button type="button" data-open-collections aria-haspopup="dialog"><span class="a-bottom-nav-icon">▱</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-count">${collections.length}</span></button>
         <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
         <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></button>
-        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Приоритеты</span>${progress != null && comparisonsAvailable ? `<span class="a-bottom-nav-count">${progress}%</span>` : ''}</button>
+        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span>${progress != null && comparisonsAvailable ? `<span class="a-bottom-nav-count">${progress}%</span>` : ''}</button>
         <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span></button>
       </nav>`;
     }
@@ -923,11 +926,12 @@
       return `<section class="variant-a">
         <header class="a-topbar">
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
+          <div class="a-top-filter" aria-label="Текущий фильтр">${filterConditionMarkup(filter)}</div>
         </header>
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy">${filterConditionMarkup(filter)}<div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span>${filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : ''}</div>${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><div class="slice-context-meta">${filterStatusMarkup(filter, true)}<span>${pluralObjects(filter.objectIds.length)}</span>${filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : ''}</div>${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
             ${continueBanner(filter)}
@@ -1084,9 +1088,9 @@
         return;
       }
       const filter = activeFilter();
-      const contextTitle = filter.tags.length ? 'Текущий фильтр' : 'Без фильтра';
+      const contextTitle = filter.tags.length ? filter.name : 'Без фильтра';
       const contextRule = filter.tags.length ? `${filter.dirty ? 'Не сохранён · ' : ''}${filterRule(filter)}` : 'Показаны все объекты коллекции';
-      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${contextTitle}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${escapeHTML(contextTitle)}</strong><small>${escapeHTML(contextRule)}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav>${filter.dirty ? '<button class="ghost-button a-new-filter" type="button" data-save-current-filter>Сохранить текущий фильтр</button>' : ''}</aside>`;
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
@@ -1289,6 +1293,36 @@
       if (!filter.dirty) return;
       const name = value.trim();
       filter.name = name || 'Несохранённый фильтр';
+    }
+
+    function saveCurrentFilter() {
+      const filter = activeFilter();
+      if (!filter.dirty) return;
+      let suffix = savedFilters.length;
+      while (savedFilters.some(item => item.id === `custom-${suffix}`)) suffix += 1;
+      const id = `custom-${suffix}`;
+      const saved = {
+        id,
+        name: filter.name,
+        tags: [...filter.tags],
+        objectIds: [...filter.objectIds],
+        unorderedIds: [...state.draftUnordered[filter.id]],
+        activity: Math.min(100, Math.max(0, ...userSavedFilters().map(item => item.activity)) + 1),
+        task: filter.task ? { ...filter.task } : null
+      };
+      savedFilters.push(saved);
+      state.activeFilterId = id;
+      state.filterOrder.push(id);
+      state.draftOrders[id] = [...state.draftOrders[filter.id]];
+      state.draftUnordered[id] = [...state.draftUnordered[filter.id]];
+      state.taskProgress[id] = state.taskProgress[filter.id] ?? null;
+      state.currentFilter = currentFilterFrom(saved);
+      state.draftOrders.current = [...state.draftOrders[id]];
+      state.draftUnordered.current = [...state.draftUnordered[id]];
+      state.taskProgress.current = state.taskProgress[id];
+      state.filterEditorOpen = false;
+      render();
+      showToast(`Фильтр «${saved.name}» сохранён`);
     }
 
     function syncCurrentDraftToSource() {
@@ -1501,6 +1535,7 @@
         });
       }
       else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
+      else if (target.matches('[data-save-current-filter]')) saveCurrentFilter();
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
       else if (target.matches('[data-close-object-detail]')) closeObjectDetail();
