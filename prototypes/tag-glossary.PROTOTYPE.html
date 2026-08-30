@@ -26,6 +26,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
+      overflow-x: hidden;
       background: var(--paper);
       color: var(--ink);
       font: 14px/1.45 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -33,7 +34,7 @@
     button, input { font: inherit; }
     button { cursor: pointer; }
     button:disabled { cursor: not-allowed; opacity: .45; }
-    .page { width: min(1120px, 100%); min-height: 100vh; margin: 0 auto; background: var(--surface); box-shadow: var(--shadow); }
+    .page { width: min(460px, 100%); min-height: 100vh; margin: 0 auto; background: var(--surface); box-shadow: var(--shadow); }
     .hero { padding: 22px 18px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(150deg, #fffef9, #edf5ee); }
     .hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
     .eyebrow { margin: 0 0 6px; color: var(--green); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
@@ -107,14 +108,6 @@
     details.debug summary { padding: 11px 13px; cursor: pointer; font-size: 10px; font-weight: 800; }
     details.debug pre { max-height: 420px; margin: 0; padding: 13px; overflow: auto; border-top: 1px solid #46534a; font: 9px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
 
-    @media (min-width: 760px) {
-      .hero { padding: 30px 34px 24px; }
-      .scenario-bar { padding-inline: 30px; }
-      main { padding: 20px 30px 54px; }
-      .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .action-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .action-group:nth-child(2) { padding-top: 0; border-top: 0; }
-    }
   </style>
 </head>
 <body>
