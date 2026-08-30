@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Глоссарий тегов · Logic prototype</title>
+  <style>
+    :root {
+      --paper: #f3f1e9;
+      --surface: #fffef9;
+      --surface-2: #f8f7f1;
+      --ink: #17221c;
+      --muted: #68746c;
+      --line: #cfd7d0;
+      --green: #28674a;
+      --green-soft: #e4f2e8;
+      --amber: #8b5b08;
+      --amber-soft: #fff0c9;
+      --red: #98392f;
+      --red-soft: #fae6e2;
+      --blue: #315f91;
+      --blue-soft: #e8f0fa;
+      --shadow: 0 18px 50px rgba(31, 48, 38, .09);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 14px/1.45 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    .page { width: min(1120px, 100%); min-height: 100vh; margin: 0 auto; background: var(--surface); box-shadow: var(--shadow); }
+    .hero { padding: 22px 18px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(150deg, #fffef9, #edf5ee); }
+    .hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .eyebrow { margin: 0 0 6px; color: var(--green); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: clamp(24px, 5vw, 38px); line-height: 1.05; letter-spacing: -.035em; }
+    .question { max-width: 750px; margin: 0; color: #465249; }
+    .prototype-mark { flex: 0 0 auto; padding: 6px 9px; border: 1px dashed var(--red); border-radius: 999px; color: var(--red); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+    .back-link { display: inline-block; margin-top: 14px; color: var(--green); font-weight: 750; text-decoration: none; }
+
+    .scenario-bar { position: sticky; z-index: 10; top: 0; display: flex; gap: 7px; padding: 10px 12px; overflow-x: auto; border-bottom: 1px solid var(--line); background: rgba(255, 254, 249, .96); backdrop-filter: blur(12px); }
+    .scenario-tab { flex: 0 0 auto; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 11px; font-weight: 760; }
+    .scenario-tab.active { border-color: var(--green); background: var(--green); color: white; }
+
+    main { padding: 14px 12px 40px; }
+    .walkthrough { padding: 14px; border: 1px solid #b8cebd; border-radius: var(--radius); background: var(--green-soft); }
+    .walkthrough h2 { margin-bottom: 5px; font-size: 17px; }
+    .walkthrough p { margin-bottom: 12px; color: #536158; font-size: 12px; }
+    .steps { display: flex; flex-wrap: wrap; gap: 8px; }
+    .step-button { padding: 9px 11px; border: 1px solid #95b59e; border-radius: 12px; background: white; color: var(--ink); font-size: 11px; font-weight: 760; text-align: left; }
+    .step-button.current { outline: 3px solid rgba(40, 103, 74, .17); border-color: var(--green); }
+    .step-button.done { background: #d4e8da; }
+
+    .notice { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--blue-soft); color: #244c72; }
+    .notice strong { display: block; margin-bottom: 3px; }
+    .notice.error { background: var(--red-soft); color: var(--red); }
+    .notice.success { background: var(--green-soft); color: var(--green); }
+    .notice.warning { background: var(--amber-soft); color: var(--amber); }
+
+    .state-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 2px 10px; }
+    .state-heading h2 { margin: 0; font-size: 18px; }
+    .revision { padding: 5px 8px; border-radius: 999px; background: #e9ece8; color: var(--muted); font-size: 9px; font-weight: 800; }
+    .state-grid { display: grid; gap: 12px; }
+    .panel { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .panel-head h3 { margin: 0; font-size: 15px; }
+    .panel-head small { color: var(--muted); }
+    .count { padding: 4px 7px; border-radius: 999px; background: #edf0ec; color: #4f5b53; font-size: 9px; font-weight: 800; }
+    .stack { display: grid; gap: 8px; }
+    .card { padding: 11px; border: 1px solid #dbe0db; border-radius: 13px; background: var(--surface-2); }
+    .card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .card strong { font-size: 12px; }
+    .card p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .status { flex: 0 0 auto; padding: 3px 6px; border-radius: 999px; font-size: 8px; font-weight: 850; text-transform: uppercase; }
+    .status.active { background: var(--green-soft); color: var(--green); }
+    .status.archived { background: var(--red-soft); color: var(--red); }
+    .status.open { background: var(--amber-soft); color: var(--amber); }
+    .status.accepted { background: var(--green-soft); color: var(--green); }
+    .status.rejected, .status.dismissed, .status.withdrawn { background: #ececeb; color: #687068; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border: 1px solid #cfd7d0; border-radius: 999px; background: white; color: #344239; font-size: 9px; font-weight: 720; }
+    .chip.archived { border-style: dashed; border-color: #d8a59e; background: var(--red-soft); color: var(--red); }
+    .chip.suggestion { border-color: #d8bd7b; background: var(--amber-soft); color: var(--amber); }
+    .origin { color: var(--muted); font-size: 8px; font-weight: 650; }
+    .aliases { margin-top: 7px; color: var(--blue); font-size: 9px; }
+    .impact { margin-top: 7px; color: var(--muted); font-size: 9px; }
+    .empty { padding: 12px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); font-size: 10px; text-align: center; }
+
+    .actions { margin-top: 22px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: #f0f1ec; }
+    .actions h2 { margin-bottom: 4px; font-size: 17px; }
+    .actions > p { color: var(--muted); font-size: 11px; }
+    .action-groups { display: grid; gap: 12px; }
+    .action-group { padding-top: 10px; border-top: 1px solid #d5dbd5; }
+    .action-group:first-child { padding-top: 0; border-top: 0; }
+    .action-group strong { display: block; margin-bottom: 7px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 7px; }
+    .action-button { padding: 9px 10px; border: 1px solid #b9c3bb; border-radius: 11px; background: white; color: var(--ink); font-size: 10px; font-weight: 720; }
+    .action-button.primary { border-color: var(--green); background: var(--green); color: white; }
+    .action-button.danger { border-color: #d7a29b; color: var(--red); }
+
+    details.debug { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; background: #1d2721; color: #dce9df; }
+    details.debug summary { padding: 11px 13px; cursor: pointer; font-size: 10px; font-weight: 800; }
+    details.debug pre { max-height: 420px; margin: 0; padding: 13px; overflow: auto; border-top: 1px solid #46534a; font: 9px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+
+    @media (min-width: 760px) {
+      .hero { padding: 30px 34px 24px; }
+      .scenario-bar { padding-inline: 30px; }
+      main { padding: 20px 30px 54px; }
+      .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .action-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .action-group:nth-child(2) { padding-top: 0; border-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-row">
+        <div>
+          <p class="eyebrow">Logic prototype · состояние в памяти</p>
+          <h1>Глоссарий тегов</h1>
+          <p class="question">Вопрос: достаточно ли ясно различаются существующий тег глоссария, предложение назначить его объекту и кандидат на создание нового тега — особенно после архивации, отклонения и слияния?</p>
+        </div>
+        <span class="prototype-mark">Не production</span>
+      </div>
+      <a class="back-link" href="collection-workspace.PROTOTYPE.html?variant=A">← Основной экран коллекции</a>
+    </header>
+
+    <nav id="scenarioBar" class="scenario-bar" aria-label="Проверочные сценарии"></nav>
+
+    <main>
+      <section id="walkthrough" class="walkthrough"></section>
+      <section id="notice"></section>
+
+      <div class="state-heading">
+        <h2>Текущее состояние</h2>
+        <span id="revision" class="revision"></span>
+      </div>
+      <section id="stateGrid" class="state-grid"></section>
+
+      <section class="actions">
+        <h2>Свободная проверка</h2>
+        <p>Все действия доступны в любом порядке. Недопустимый переход не меняет данные и объясняет причину.</p>
+        <div id="freePlay" class="action-groups"></div>
+      </section>
+
+      <details class="debug">
+        <summary>Полное состояние модели</summary>
+        <pre id="debugState"></pre>
+      </details>
+    </main>
+  </div>
+
+  <script>
+    const GlossaryModel = (() => {
+      const clone = value => JSON.parse(JSON.stringify(value));
+      const normalize = value => String(value ?? '')
+        .normalize('NFKC')
+        .trim()
+        .replace(/^#+/, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLocaleLowerCase('ru');
+
+      const seed = {
+        revision: 0,
+        nextId: 20,
+        notice: {
+          kind: 'info',
+          title: 'Исходное состояние',
+          message: 'Глоссарий, объекты, фильтры и предложения ссылаются на устойчивые идентификаторы тегов.'
+        },
+        tags: [
+          { id: 'tag-calm', name: 'спокойное', description: 'Ровный темп и мягкая эмоциональная нагрузка.', aliases: ['тихое', 'медитативное'], status: 'active' },
+          { id: 'tag-slow', name: 'медленное', description: 'Неспешное развитие и длинные наблюдательные сцены.', aliases: ['неторопливое'], status: 'active' },
+          { id: 'tag-japan', name: 'Япония', description: 'Место действия или значимый культурный контекст Японии.', aliases: ['японское'], status: 'active' },
+          { id: 'tag-poetry', name: 'поэзия', description: 'Поэзия является темой или способом повествования.', aliases: ['стихи'], status: 'active' },
+          { id: 'tag-family', name: 'семья', description: 'Семейные отношения находятся в центре истории.', aliases: [], status: 'active' }
+        ],
+        objects: [
+          { id: 'obj-days', name: 'Идеальные дни', assignments: [
+            { tagId: 'tag-calm', origin: 'manual' },
+            { tagId: 'tag-japan', origin: 'assistant-confirmed' }
+          ] },
+          { id: 'obj-columbus', name: 'Коламбус', assignments: [
+            { tagId: 'tag-calm', origin: 'manual' }
+          ] },
+          { id: 'obj-paterson', name: 'Патерсон', assignments: [
+            { tagId: 'tag-poetry', origin: 'manual' },
+            { tagId: 'tag-slow', origin: 'assistant-confirmed' }
+          ] }
+        ],
+        filters: [
+          { id: 'filter-quiet', name: 'Тихий вечер', tagIds: ['tag-calm', 'tag-slow'] },
+          { id: 'filter-japan', name: 'Японское', tagIds: ['tag-japan'] }
+        ],
+        assignmentSuggestions: [
+          { id: 'assign-slow-days', objectId: 'obj-days', tagId: 'tag-slow', rationale: 'Неспешный ритм повторяется на протяжении фильма.', status: 'open' }
+        ],
+        candidates: [
+          { id: 'candidate-architecture', name: 'архитектура', proposedDescription: 'Архитектура влияет на отношения героев или устройство повествования.', rationale: 'Тема повторилась в нескольких объектах, но подходящего тега нет.', occurrenceCount: 3, exampleObjectIds: ['obj-columbus', 'obj-days'], status: 'open', acceptedTagId: null }
+        ],
+        rejections: []
+      };
+
+      function initialState() { return clone(seed); }
+
+      function tagById(state, tagId) { return state.tags.find(tag => tag.id === tagId); }
+      function objectById(state, objectId) { return state.objects.find(object => object.id === objectId); }
+      function activeTokenOwner(state, value, excludeId = null) {
+        const token = normalize(value);
+        return state.tags.find(tag => tag.status === 'active' && tag.id !== excludeId &&
+          [tag.name, ...tag.aliases].some(label => normalize(label) === token));
+      }
+      function usage(state, tagId) {
+        const objects = state.objects.filter(object => object.assignments.some(item => item.tagId === tagId)).length;
+        const filters = state.filters.filter(filter => filter.tagIds.includes(tagId)).length;
+        return { objects, filters };
+      }
+      function withNotice(state, kind, title, message, changed = true) {
+        state.notice = { kind, title, message };
+        if (changed) state.revision += 1;
+        return state;
+      }
+      function illegal(state, message) {
+        return withNotice(state, 'error', 'Действие не выполнено', message, false);
+      }
+      function addAssignment(object, tagId, origin) {
+        const existing = object.assignments.find(item => item.tagId === tagId);
+        if (!existing) object.assignments.push({ tagId, origin });
+        else if (existing.origin !== 'manual' && origin === 'manual') existing.origin = 'manual';
+      }
+      function dedupeAssignments(assignments) {
+        const byTag = new Map();
+        assignments.forEach(item => {
+          const current = byTag.get(item.tagId);
+          if (!current || (current.origin !== 'manual' && item.origin === 'manual')) byTag.set(item.tagId, item);
+        });
+        return [...byTag.values()];
+      }
+
+      function reduce(previous, action) {
+        if (action.type === 'RESET') return initialState();
+        const state = clone(previous);
+
+        if (action.type === 'CONFIRM_ASSIGNMENT_SUGGESTION') {
+          const suggestion = state.assignmentSuggestions.find(item => item.id === action.suggestionId);
+          if (!suggestion || suggestion.status !== 'open') return illegal(state, 'Это предложение уже обработано.');
+          const tag = tagById(state, suggestion.tagId);
+          if (!tag || tag.status !== 'active') return illegal(state, 'Архивный или отсутствующий тег нельзя назначить.');
+          const object = objectById(state, suggestion.objectId);
+          addAssignment(object, tag.id, 'assistant-confirmed');
+          suggestion.status = 'accepted';
+          state.rejections = state.rejections.filter(item => !(item.objectId === object.id && item.tagId === tag.id));
+          return withNotice(state, 'success', `Назначен #${tag.name}`, `Предложение подтверждено для «${object.name}». Запись глоссария не создавалась: она уже существовала.`);
+        }
+
+        if (action.type === 'REJECT_ASSIGNMENT_SUGGESTION') {
+          const suggestion = state.assignmentSuggestions.find(item => item.id === action.suggestionId);
+          if (!suggestion || suggestion.status !== 'open') return illegal(state, 'Это предложение уже обработано.');
+          suggestion.status = 'rejected';
+          if (!state.rejections.some(item => item.objectId === suggestion.objectId && item.tagId === suggestion.tagId)) {
+            state.rejections.push({ objectId: suggestion.objectId, tagId: suggestion.tagId });
+          }
+          const tag = tagById(state, suggestion.tagId);
+          const object = objectById(state, suggestion.objectId);
+          return withNotice(state, 'warning', `Отклонено #${tag.name}`, `Помощник больше не предложит этот тег для «${object.name}», пока отклонение не будет сброшено.`);
+        }
+
+        if (action.type === 'CREATE_AND_ASSIGN_TAG') {
+          const name = String(action.name ?? '').trim().replace(/^#+/, '');
+          if (!normalize(name)) return illegal(state, 'Название нового тега пусто.');
+          const owner = activeTokenOwner(state, name);
+          if (owner) return illegal(state, `Обозначение уже принадлежит тегу #${owner.name}. Выберите существующий тег вместо создания.`);
+          const object = objectById(state, action.objectId);
+          if (!object) return illegal(state, 'Объект не найден.');
+          const id = `tag-created-${state.nextId++}`;
+          state.tags.push({ id, name, description: action.description || '', aliases: [], status: 'active' });
+          addAssignment(object, id, 'manual');
+          return withNotice(state, 'success', `Создан #${name} в глоссарии`, `Новая запись сразу назначена объекту «${object.name}». Это два результата одного явно названного действия.`);
+        }
+
+        if (action.type === 'ACCEPT_CANDIDATE') {
+          const candidate = state.candidates.find(item => item.id === action.candidateId);
+          if (!candidate || candidate.status !== 'open') return illegal(state, 'Кандидат уже обработан.');
+          const owner = activeTokenOwner(state, candidate.name);
+          if (owner) return illegal(state, `Название уже занято тегом #${owner.name}. Кандидат нужно связать с существующей записью или отклонить.`);
+          const id = `tag-candidate-${state.nextId++}`;
+          state.tags.push({ id, name: candidate.name, description: action.description ?? candidate.proposedDescription, aliases: [], status: 'active' });
+          candidate.status = 'accepted';
+          candidate.acceptedTagId = id;
+          return withNotice(state, 'success', `Создан #${candidate.name} в глоссарии`, `Ни одному из ${candidate.occurrenceCount} объектов тег не назначен автоматически. Примеры остаются основаниями, а не назначениями.`);
+        }
+
+        if (action.type === 'DISMISS_CANDIDATE') {
+          const candidate = state.candidates.find(item => item.id === action.candidateId);
+          if (!candidate || candidate.status !== 'open') return illegal(state, 'Кандидат уже обработан.');
+          candidate.status = 'dismissed';
+          return withNotice(state, 'warning', `Кандидат #${candidate.name} отклонён`, 'Новая запись глоссария не создана, разметка объектов не изменилась.');
+        }
+
+        if (action.type === 'ASSIGN_ACCEPTED_CANDIDATE') {
+          const candidate = state.candidates.find(item => item.id === action.candidateId);
+          if (!candidate || candidate.status !== 'accepted' || !candidate.acceptedTagId) return illegal(state, 'Сначала примите кандидата и создайте запись глоссария.');
+          const tag = tagById(state, candidate.acceptedTagId);
+          const object = objectById(state, action.objectId);
+          if (!tag || tag.status !== 'active' || !object) return illegal(state, 'Тег или объект недоступен.');
+          addAssignment(object, tag.id, 'manual');
+          return withNotice(state, 'success', `Назначен #${tag.name}`, `После создания записи пользователь отдельно назначил её объекту «${object.name}».`);
+        }
+
+        if (action.type === 'ARCHIVE_TAG') {
+          const tag = tagById(state, action.tagId);
+          if (!tag) return illegal(state, 'Тег не найден.');
+          if (tag.status === 'archived') return illegal(state, 'Тег уже находится в архиве.');
+          tag.status = 'archived';
+          state.assignmentSuggestions.forEach(item => {
+            if (item.tagId === tag.id && item.status === 'open') item.status = 'withdrawn';
+          });
+          const count = usage(state, tag.id);
+          return withNotice(state, 'warning', `#${tag.name} перемещён в архив`, `Сохранены ссылки: ${count.objects} объекта, ${count.filters} фильтр. Новые назначения и фильтры недоступны.`);
+        }
+
+        if (action.type === 'RESTORE_TAG') {
+          const tag = tagById(state, action.tagId);
+          if (!tag) return illegal(state, 'Тег не найден.');
+          if (tag.status === 'active') return illegal(state, 'Тег уже активен.');
+          const tokens = [tag.name, ...tag.aliases];
+          const collision = tokens.map(token => activeTokenOwner(state, token, tag.id)).find(Boolean);
+          if (collision) return illegal(state, `Восстановление невозможно: имя или синоним уже принадлежит #${collision.name}.`);
+          tag.status = 'active';
+          return withNotice(state, 'success', `#${tag.name} восстановлен`, 'Тег снова доступен для новых назначений, фильтров и предложений помощника.');
+        }
+
+        if (action.type === 'MERGE_TAGS') {
+          const source = tagById(state, action.sourceId);
+          const target = tagById(state, action.targetId);
+          if (!source || !target) return illegal(state, 'Один из тегов не найден.');
+          if (source.id === target.id) return illegal(state, 'Нельзя объединить тег с самим собой.');
+          if (source.status !== 'active' || target.status !== 'active') return illegal(state, 'Оба тега должны быть активны.');
+          const before = usage(state, source.id);
+          state.objects.forEach(object => {
+            object.assignments.forEach(item => { if (item.tagId === source.id) item.tagId = target.id; });
+            object.assignments = dedupeAssignments(object.assignments);
+          });
+          state.filters.forEach(filter => {
+            filter.tagIds = [...new Set(filter.tagIds.map(id => id === source.id ? target.id : id))];
+          });
+          state.assignmentSuggestions.forEach(item => {
+            if (item.tagId === source.id) item.tagId = target.id;
+          });
+          const occupied = new Set([target.name, ...target.aliases].map(normalize));
+          [source.name, ...source.aliases].forEach(label => {
+            if (!occupied.has(normalize(label))) {
+              target.aliases.push(label);
+              occupied.add(normalize(label));
+            }
+          });
+          source.status = 'archived';
+          return withNotice(state, 'success', `#${source.name} объединён с #${target.name}`, `Перенесены ссылки ${before.objects} объектов и ${before.filters} фильтров; исходное имя стало синонимом, исходная запись архивирована.`);
+        }
+
+        if (action.type === 'RENAME_TAG') {
+          const tag = tagById(state, action.tagId);
+          if (!tag || tag.status !== 'active') return illegal(state, 'Переименовать можно только активный тег.');
+          const name = String(action.name ?? '').trim().replace(/^#+/, '');
+          const collision = activeTokenOwner(state, name, tag.id);
+          if (!normalize(name)) return illegal(state, 'Новое название пусто.');
+          if (collision) return illegal(state, `Название уже принадлежит #${collision.name}.`);
+          const oldName = tag.name;
+          const count = usage(state, tag.id);
+          tag.name = name;
+          return withNotice(state, 'success', `#${oldName} переименован в #${name}`, `Идентичность сохранена; новое имя видно у ${count.objects} объектов и в ${count.filters} фильтрах.`);
+        }
+
+        return illegal(state, `Неизвестное действие: ${action.type}`);
+      }
+
+      return { initialState, reduce, normalize, usage };
+    })();
+
+    const scenarios = [
+      {
+        id: 'existing',
+        title: 'Существующий тег',
+        description: 'Проверяем, что подтверждение предложения назначает уже существующий тег, но не создаёт новую запись.',
+        steps: [
+          { label: '1. Подтвердить #медленное', action: { type: 'CONFIRM_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } },
+          { label: '2. Повторить подтверждение', action: { type: 'CONFIRM_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } }
+        ]
+      },
+      {
+        id: 'rejection',
+        title: 'Отклонение',
+        description: 'Отклоняем назначение и проверяем, что решение запомнено для конкретной пары «объект + тег».',
+        steps: [
+          { label: '1. Отклонить #медленное', action: { type: 'REJECT_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } },
+          { label: '2. Попробовать подтвердить', action: { type: 'CONFIRM_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } }
+        ]
+      },
+      {
+        id: 'candidate',
+        title: 'Новый кандидат',
+        description: 'Кандидат сначала создаёт запись глоссария. Назначение одному из примеров остаётся отдельным действием.',
+        steps: [
+          { label: '1. Создать #архитектура', action: { type: 'ACCEPT_CANDIDATE', candidateId: 'candidate-architecture', description: 'Архитектура определяет пространство истории или отношения героев.' } },
+          { label: '2. Назначить «Коламбусу»', action: { type: 'ASSIGN_ACCEPTED_CANDIDATE', candidateId: 'candidate-architecture', objectId: 'obj-columbus' } }
+        ]
+      },
+      {
+        id: 'archive',
+        title: 'Архив',
+        description: 'Архивируем используемый тег: прежние ссылки остаются видимыми, а новые действия с тегом блокируются.',
+        steps: [
+          { label: '1. Архивировать #Япония', action: { type: 'ARCHIVE_TAG', tagId: 'tag-japan' } },
+          { label: '2. Восстановить #Япония', action: { type: 'RESTORE_TAG', tagId: 'tag-japan' } }
+        ]
+      },
+      {
+        id: 'merge',
+        title: 'Слияние',
+        description: 'Объединяем близкие теги и наблюдаем перенос ссылок объектов и сохранённых фильтров.',
+        steps: [
+          { label: '1. Слить #медленное в #спокойное', action: { type: 'MERGE_TAGS', sourceId: 'tag-slow', targetId: 'tag-calm' } },
+          { label: '2. Повторить слияние', action: { type: 'MERGE_TAGS', sourceId: 'tag-slow', targetId: 'tag-calm' } }
+        ]
+      }
+    ];
+
+    const freePlayGroups = [
+      {
+        title: 'Предложение существующего тега',
+        actions: [
+          { label: 'Подтвердить #медленное', primary: true, action: { type: 'CONFIRM_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } },
+          { label: 'Отклонить и запомнить', action: { type: 'REJECT_ASSIGNMENT_SUGGESTION', suggestionId: 'assign-slow-days' } }
+        ]
+      },
+      {
+        title: 'Создание и кандидат',
+        actions: [
+          { label: 'Создать #уютное в глоссарии и назначить', primary: true, action: { type: 'CREATE_AND_ASSIGN_TAG', objectId: 'obj-days', name: 'уютное', description: 'Создаёт ощущение безопасности и домашнего тепла.' } },
+          { label: 'Принять кандидата #архитектура', action: { type: 'ACCEPT_CANDIDATE', candidateId: 'candidate-architecture' } },
+          { label: 'Отклонить кандидата', danger: true, action: { type: 'DISMISS_CANDIDATE', candidateId: 'candidate-architecture' } },
+          { label: 'Назначить принятого кандидата', action: { type: 'ASSIGN_ACCEPTED_CANDIDATE', candidateId: 'candidate-architecture', objectId: 'obj-columbus' } }
+        ]
+      },
+      {
+        title: 'Жизненный цикл',
+        actions: [
+          { label: 'Архивировать #Япония', danger: true, action: { type: 'ARCHIVE_TAG', tagId: 'tag-japan' } },
+          { label: 'Восстановить #Япония', action: { type: 'RESTORE_TAG', tagId: 'tag-japan' } },
+          { label: 'Переименовать #поэзия', action: { type: 'RENAME_TAG', tagId: 'tag-poetry', name: 'поэтическое' } }
+        ]
+      },
+      {
+        title: 'Дубли и сброс',
+        actions: [
+          { label: 'Слить #медленное в #спокойное', primary: true, action: { type: 'MERGE_TAGS', sourceId: 'tag-slow', targetId: 'tag-calm' } },
+          { label: 'Вернуть исходное состояние', action: { type: 'RESET' } }
+        ]
+      }
+    ];
+
+    let state = GlossaryModel.initialState();
+    let scenarioId = scenarios[0].id;
+    let scenarioStep = 0;
+
+    const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+    })[char]);
+    const tag = tagId => state.tags.find(item => item.id === tagId);
+    const object = objectId => state.objects.find(item => item.id === objectId);
+    const originLabel = origin => origin === 'manual' ? 'вручную' : 'предложено помощником · подтверждено';
+
+    function dispatch(action) {
+      state = GlossaryModel.reduce(state, action);
+      render();
+    }
+
+    function setScenario(id) {
+      scenarioId = id;
+      scenarioStep = 0;
+      state = GlossaryModel.initialState();
+      render();
+    }
+
+    function renderScenarios() {
+      document.querySelector('#scenarioBar').innerHTML = scenarios.map(item =>
+        `<button type="button" class="scenario-tab ${item.id === scenarioId ? 'active' : ''}" data-scenario="${item.id}">${escapeHTML(item.title)}</button>`
+      ).join('');
+      const scenario = scenarios.find(item => item.id === scenarioId);
+      document.querySelector('#walkthrough').innerHTML = `
+        <h2>${escapeHTML(scenario.title)}</h2>
+        <p>${escapeHTML(scenario.description)} При переключении сценария состояние сбрасывается.</p>
+        <div class="steps">${scenario.steps.map((step, index) =>
+          `<button type="button" class="step-button ${index < scenarioStep ? 'done' : index === scenarioStep ? 'current' : ''}" data-step="${index}">${escapeHTML(step.label)}</button>`
+        ).join('')}</div>`;
+    }
+
+    function renderNotice() {
+      const notice = state.notice;
+      document.querySelector('#notice').innerHTML = `<div class="notice ${notice.kind}"><strong>${escapeHTML(notice.title)}</strong>${escapeHTML(notice.message)}</div>`;
+      document.querySelector('#revision').textContent = `изменение ${state.revision}`;
+    }
+
+    function renderGlossary() {
+      const cards = [...state.tags].sort((a, b) => a.status.localeCompare(b.status) || a.name.localeCompare(b.name, 'ru')).map(item => {
+        const count = GlossaryModel.usage(state, item.id);
+        return `<article class="card">
+          <div class="card-row"><strong>#${escapeHTML(item.name)}</strong><span class="status ${item.status}">${item.status === 'active' ? 'активен' : 'в архиве'}</span></div>
+          <p>${escapeHTML(item.description || 'Без пояснения')}</p>
+          ${item.aliases.length ? `<div class="aliases">Синонимы: ${item.aliases.map(escapeHTML).join(', ')}</div>` : ''}
+          <div class="impact">${count.objects} объектов · ${count.filters} фильтров</div>
+        </article>`;
+      }).join('');
+      return `<section class="panel">
+        <div class="panel-head"><div><h3>Глоссарий</h3><small>Активные записи и архив</small></div><span class="count">${state.tags.length}</span></div>
+        <div class="stack">${cards}</div>
+      </section>`;
+    }
+
+    function assignmentChip(assignment) {
+      const item = tag(assignment.tagId);
+      if (!item) return '';
+      return `<span class="chip ${item.status === 'archived' ? 'archived' : ''}">#${escapeHTML(item.name)}${item.status === 'archived' ? ' · в архиве' : ''}<span class="origin">${escapeHTML(originLabel(assignment.origin))}</span></span>`;
+    }
+
+    function renderObjects() {
+      const cards = state.objects.map(item => {
+        const suggestions = state.assignmentSuggestions.filter(suggestion => suggestion.objectId === item.id);
+        return `<article class="card">
+          <div class="card-row"><strong>${escapeHTML(item.name)}</strong><span class="count">${item.assignments.length} тег.</span></div>
+          <div class="chips">${item.assignments.length ? item.assignments.map(assignmentChip).join('') : '<span class="empty">Нет тегов</span>'}</div>
+          ${suggestions.map(suggestion => {
+            const itemTag = tag(suggestion.tagId);
+            return `<div class="chips"><span class="chip suggestion">Предложение: #${escapeHTML(itemTag?.name || '?')} · ${escapeHTML(suggestion.status)}</span></div>`;
+          }).join('')}
+        </article>`;
+      }).join('');
+      return `<section class="panel">
+        <div class="panel-head"><div><h3>Объекты</h3><small>Назначения и предложения</small></div><span class="count">${state.objects.length}</span></div>
+        <div class="stack">${cards}</div>
+      </section>`;
+    }
+
+    function renderCandidates() {
+      const cards = state.candidates.map(item => `<article class="card">
+        <div class="card-row"><strong>#${escapeHTML(item.name)}</strong><span class="status ${item.status}">${escapeHTML(item.status)}</span></div>
+        <p>${escapeHTML(item.rationale)}</p>
+        <div class="impact">${item.occurrenceCount} независимых сигнала · примеры: ${item.exampleObjectIds.map(id => escapeHTML(object(id)?.name || id)).join(', ')}</div>
+        ${item.acceptedTagId ? `<div class="chips"><span class="chip">Создана запись #${escapeHTML(tag(item.acceptedTagId)?.name || '?')}</span></div>` : ''}
+      </article>`).join('');
+      return `<section class="panel">
+        <div class="panel-head"><div><h3>Кандидаты</h3><small>Пробелы в глоссарии, не назначения</small></div><span class="count">${state.candidates.filter(item => item.status === 'open').length} открытых</span></div>
+        <div class="stack">${cards || '<div class="empty">Кандидатов нет</div>'}</div>
+      </section>`;
+    }
+
+    function renderFilters() {
+      const cards = state.filters.map(item => `<article class="card">
+        <div class="card-row"><strong>${escapeHTML(item.name)}</strong><span class="count">${item.tagIds.length} тег.</span></div>
+        <div class="chips">${item.tagIds.map(tagId => {
+          const itemTag = tag(tagId);
+          return `<span class="chip ${itemTag?.status === 'archived' ? 'archived' : ''}">#${escapeHTML(itemTag?.name || '?')}${itemTag?.status === 'archived' ? ' · в архиве' : ''}</span>`;
+        }).join('')}</div>
+      </article>`).join('');
+      const rejections = state.rejections.map(item => `${object(item.objectId)?.name}: #${tag(item.tagId)?.name}`).join(' · ');
+      return `<section class="panel">
+        <div class="panel-head"><div><h3>Сохранённые фильтры</h3><small>Ссылки переживают rename, merge и archive</small></div><span class="count">${state.filters.length}</span></div>
+        <div class="stack">${cards}</div>
+        <div class="impact">Запомненные отклонения: ${rejections || 'нет'}</div>
+      </section>`;
+    }
+
+    function renderFreePlay() {
+      document.querySelector('#freePlay').innerHTML = freePlayGroups.map(group => `<section class="action-group">
+        <strong>${escapeHTML(group.title)}</strong>
+        <div class="buttons">${group.actions.map((item, index) =>
+          `<button type="button" class="action-button ${item.primary ? 'primary' : ''} ${item.danger ? 'danger' : ''}" data-group="${escapeHTML(group.title)}" data-action-index="${index}">${escapeHTML(item.label)}</button>`
+        ).join('')}</div>
+      </section>`).join('');
+    }
+
+    function render() {
+      renderScenarios();
+      renderNotice();
+      document.querySelector('#stateGrid').innerHTML = [renderGlossary(), renderObjects(), renderCandidates(), renderFilters()].join('');
+      renderFreePlay();
+      document.querySelector('#debugState').textContent = JSON.stringify(state, null, 2);
+    }
+
+    document.addEventListener('click', event => {
+      const scenarioButton = event.target.closest('[data-scenario]');
+      if (scenarioButton) { setScenario(scenarioButton.dataset.scenario); return; }
+
+      const stepButton = event.target.closest('[data-step]');
+      if (stepButton) {
+        const scenario = scenarios.find(item => item.id === scenarioId);
+        const index = Number(stepButton.dataset.step);
+        if (index !== scenarioStep) {
+          state.notice = { kind: 'error', title: 'Шаг не выполнен', message: 'В проверочном сценарии нажимайте шаги по порядку.' };
+          render();
+          return;
+        }
+        dispatch(scenario.steps[index].action);
+        scenarioStep = Math.min(scenario.steps.length, scenarioStep + 1);
+        render();
+        return;
+      }
+
+      const actionButton = event.target.closest('[data-action-index]');
+      if (actionButton) {
+        const group = freePlayGroups.find(item => item.title === actionButton.dataset.group);
+        const item = group?.actions[Number(actionButton.dataset.actionIndex)];
+        if (item) dispatch(item.action);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
