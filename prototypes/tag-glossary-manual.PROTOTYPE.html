@@ -156,8 +156,6 @@
     .form-grid { display: grid; gap: 11px; }
     label { display: grid; gap: 5px; color: #4d5a51; font-size: 10px; font-weight: 760; }
     .field { width: 100%; padding: 10px 11px; border: 1px solid #c2cbc3; border-radius: 12px; outline: 0; background: white; color: var(--ink); }
-    .field[readonly] { border-color: #d4d9d3; background: #f1f3ee; color: #657067; }
-    .rename-action { justify-self: start; padding-inline: 0; text-align: left; }
     textarea.field { min-height: 78px; resize: vertical; }
     .synonym-editor { display: grid; gap: 8px; padding: 9px; border: 1px solid #c2cbc3; border-radius: 14px; background: #f7f8f3; }
     .synonym-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -278,8 +276,7 @@
       formTagId: null,
       formName: '',
       formDescription: '',
-      formSynonyms: [],
-      renaming: false
+      formSynonyms: []
     };
 
     const tagById = id => state.tags.find(tag => tag.id === id);
@@ -391,14 +388,9 @@
         state.formName = value.name;
         state.formDescription = value.description;
         state.formSynonyms = [...value.synonyms];
-        state.renaming = false;
       }
-      const nameReadonly = !isNew && !archived && !state.renaming;
       return `<form class="form-grid" data-form="${isNew ? 'create' : 'edit'}" data-tag-id="${escapeHTML(value.id)}">
-        <label>Название тега
-          <input class="field" name="name" required value="${escapeHTML(state.formName)}" placeholder="Без решётки" ${archived ? 'disabled' : nameReadonly ? 'readonly' : ''}>
-          ${nameReadonly ? `<button type="button" class="quiet rename-action" data-action="start-rename">Переименовать с сохранением смысла</button>` : ''}
-        </label>
+        <label>Название тега<input class="field" name="name" required value="${escapeHTML(state.formName)}" placeholder="Без решётки" ${archived ? 'disabled' : ''}></label>
         <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${archived ? 'disabled' : ''}>${escapeHTML(state.formDescription)}</textarea></label>
         <label>Синонимы
           <span class="synonym-editor">
@@ -406,7 +398,7 @@
             ${archived ? '' : `<span class="synonym-add-row"><input class="field" data-synonym-input type="text" placeholder="Одно обозначение"><button type="button" class="secondary small-button" data-action="add-synonym">Добавить</button></span><span class="synonym-help">Пробелы допустимы; завершите ввод кнопкой или Enter.</span>`}
           </span>
         </label>
-        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : !isNew && state.renaming ? `<div class="impact-box">Меняйте только формулировку, сохраняя смысл. Новое название появится у ${value.objects} объектов и в ${value.filters} сохранённых фильтрах; идентичность тега сохранится.</div>` : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
+        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
         <div class="form-actions">
           ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
           ${!isNew && !archived ? `<button type="button" class="secondary" data-action="merge-tag" data-tag-id="${value.id}">Объединить дубли</button>
@@ -483,7 +475,6 @@
       state.formName = '';
       state.formDescription = '';
       state.formSynonyms = [];
-      state.renaming = false;
       const url = new URL(location.href);
       url.searchParams.set('variant', variant);
       history.replaceState(null, '', url);
@@ -502,7 +493,6 @@
       state.formName = tagById(id).name;
       state.formDescription = tagById(id).description;
       state.formSynonyms = [...tagById(id).synonyms];
-      state.renaming = false;
       state.overlay = { type: 'detail', tagId: id };
       render();
     }
@@ -513,7 +503,6 @@
       state.formName = prefill;
       state.formDescription = '';
       state.formSynonyms = [];
-      state.renaming = false;
       state.overlay = { type: 'new', prefill };
       render();
     }
@@ -566,7 +555,6 @@
       state.formName = '';
       state.formDescription = '';
       state.formSynonyms = [];
-      state.renaming = false;
       render();
     }
 
@@ -597,7 +585,6 @@
         state.formName = '';
         state.formDescription = '';
         state.formSynonyms = [];
-        state.renaming = false;
         render();
       }
       if (event.target.matches('[data-merge-target]')) {
@@ -617,15 +604,6 @@
       if (action === 'quick-search') { state.query = button.dataset.query; return render(); }
       if (action === 'new-tag') return beginNewTag('');
       if (action === 'new-from-query') return beginNewTag(state.query.replace(/^#+/, ''));
-      if (action === 'start-rename') {
-        state.renaming = true;
-        state.notice = null;
-        render();
-        const nameInput = document.querySelector('[name="name"]');
-        nameInput?.focus();
-        nameInput?.select();
-        return;
-      }
       if (action === 'add-synonym') {
         const form = button.closest('[data-form]');
         return addSynonym(form, form?.querySelector('[data-synonym-input]')?.value);
@@ -635,8 +613,8 @@
         state.notice = null;
         return render();
       }
-      if (action === 'close-overlay') { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; state.renaming = false; return render(); }
-      if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; state.renaming = false; return render(); }
+      if (action === 'close-overlay') { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
+      if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
       if (action === 'archive-tag') { state.overlay = { type: 'archive', tagId: button.dataset.tagId }; return render(); }
       if (action === 'confirm-archive') {
         const tag = tagById(button.dataset.tagId);
