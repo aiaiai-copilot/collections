@@ -244,8 +244,10 @@
     .edit-filter-icon { display: grid; width: 25px; height: 25px; padding: 0; place-items: center; border: 1px solid #cbd2ca; border-radius: 8px; background: transparent; cursor: pointer; font-size: 14px; line-height: 1; }
     .more-tags-button { padding: 5px 8px; border: 1px solid #c6d2c8; border-radius: 999px; background: transparent; color: var(--green); cursor: pointer; font-size: 10px; font-weight: 850; }
     .edit-filter-button { padding: 7px 10px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; font-size: 11px; font-weight: 820; }
+    .filter-name-prefix { display: inline-flex; flex: 0 0 auto; gap: 2px; align-items: center; }
     .current-filter-name { overflow: hidden; max-width: 180px; color: var(--ink); font-size: 12px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
     button.current-filter-name { padding: 6px 9px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; }
+    .filter-name-separator { color: var(--ink); font-size: 12px; font-weight: 850; }
     .filter-editor { margin: 15px 0 0; padding: 15px; border: 1px solid #bfc9bf; border-radius: 17px; background: #f8faf5; }
     .filter-editor-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .filter-editor-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
@@ -848,8 +850,9 @@
     }
     function currentFilterNameMarkup(filter) {
       if (!filter.showName) return '';
-      if (filter.dirty) return `<button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}:</button>`;
-      return `<strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}:</strong>`;
+      const separator = '<span class="filter-name-separator" aria-hidden="true">:</span>';
+      if (filter.dirty) return `<span class="filter-name-prefix"><button class="current-filter-name" type="button" data-current-filter-display data-focus-filter-name aria-label="Изменить название фильтра">${escapeHTML(filter.name)}</button>${separator}</span>`;
+      return `<span class="filter-name-prefix"><strong class="current-filter-name" data-current-filter-display>${escapeHTML(filter.name)}</strong>${separator}</span>`;
     }
     function filterStatusMarkup(filter, withLabel = false) {
       const unorderedCount = state.draftUnordered[filter.id]?.length ?? 0;
