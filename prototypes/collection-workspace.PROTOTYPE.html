@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>PROTOTYPE — основной интерфейс коллекции</title>
-  <!-- Three variants of the collection workspace, switchable via ?variant=, in one standalone throwaway file. -->
+  <!-- Mobile-first collection workspace plus two preserved historical variants, switchable via ?variant=. -->
   <style>
     :root {
       --ink: #17201b;
@@ -277,6 +277,55 @@
     .ordered-list, .unordered-list { display: grid; gap: 9px; }
     .a-unordered .unordered-list { margin-bottom: 12px; }
 
+    /* Selected direction — mobile-first workspace at every viewport */
+    body[data-variant="A"] { background: #dfe4dc; }
+    body[data-variant="A"] .prototype-page { width: min(100%, 460px); min-height: 100dvh; margin: 0 auto; padding-bottom: 92px; background: var(--paper); box-shadow: 0 0 55px rgba(23,32,27,.16); }
+    body[data-variant="A"] .variant-a { min-height: 100dvh; }
+    body[data-variant="A"] .a-topbar { position: sticky; z-index: 12; top: 0; height: 62px; padding: 0 12px; }
+    body[data-variant="A"] .a-topbar .brand span:last-child { display: none; }
+    body[data-variant="A"] .a-top-actions { min-width: 0; flex: 1; justify-content: flex-end; }
+    body[data-variant="A"] .a-top-actions .ghost-button { display: none; }
+    .mobile-collection-button { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; max-width: 265px; padding: 7px 10px; border: 0; border-radius: 12px; background: #e9ece5; cursor: pointer; text-align: left; }
+    .mobile-collection-button strong, .mobile-collection-button small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mobile-collection-button strong { font-size: 12px; }
+    .mobile-collection-button small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    body[data-variant="A"] .a-shell { display: block; min-height: auto; }
+    .mobile-slice-switch { padding: 10px 12px 0; }
+    .slice-switch-button { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); cursor: pointer; text-align: left; box-shadow: 0 5px 18px rgba(23,32,27,.05); }
+    .slice-switch-button small, .slice-switch-button strong { display: block; }
+    .slice-switch-button small { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .slice-switch-button strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .slice-switch-meta { color: var(--green); font-size: 10px; font-weight: 850; white-space: nowrap; }
+    body[data-variant="A"] .a-main { padding: 22px 12px 42px; }
+    body[data-variant="A"] .slice-head { display: block; }
+    body[data-variant="A"] .slice-head h1 { font-size: 34px; }
+    body[data-variant="A"] .slice-actions { margin-top: 13px; }
+    body[data-variant="A"] .continue-banner { grid-template-columns: auto 1fr; gap: 12px; margin: 20px 0; padding: 14px; }
+    body[data-variant="A"] .continue-actions { grid-column: 1 / -1; align-items: stretch; flex-direction: column; }
+    body[data-variant="A"] .continue-actions button, body[data-variant="A"] .continue-banner .progress-track { width: 100%; }
+    body[data-variant="A"] .a-order { padding: 14px; }
+    body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) auto; gap: 8px; }
+    body[data-variant="A"] .ordered-card .poster { display: none; }
+    body[data-variant="A"] .ordered-copy .tags { display: none; }
+    body[data-variant="A"] .ordered-rank { font-size: 19px; }
+    body[data-variant="A"] .move-actions { grid-template-columns: 1fr 1fr; }
+    body[data-variant="A"] .move-actions button { width: 32px; height: 32px; }
+    body[data-variant="A"] .collection-backdrop { padding: 0; place-items: end center; }
+    body[data-variant="A"] .collection-panel { width: min(430px, 100%); border-radius: 22px 22px 0 0; }
+    body[data-variant="A"] .glossary-backdrop { justify-content: center; }
+    body[data-variant="A"] .glossary-panel { min-height: 100dvh; }
+    body[data-variant="A"] .duel-backdrop { padding: 0; }
+    body[data-variant="A"] .duel { width: min(460px, 100%); min-height: 100dvh; border-radius: 0; }
+    body[data-variant="A"] .duel-header { grid-template-columns: auto 1fr; }
+    body[data-variant="A"] .duel-progress { grid-column: 1 / -1; }
+    body[data-variant="A"] .duel-stage { grid-template-columns: 1fr 1fr; min-height: calc(100vh - 190px); }
+    body[data-variant="A"] .duel-choice { padding: 12px; }
+    body[data-variant="A"] .duel-object .poster { min-height: 45vh; border-radius: 17px; box-shadow: 5px 5px 0 rgba(23,32,27,.82); }
+    body[data-variant="A"] .duel-object .poster-copy { padding: 50px 12px 14px; }
+    body[data-variant="A"] .duel-object .poster-copy strong { font-size: 19px; }
+    body[data-variant="A"] .duel-rail { position: absolute; z-index: 3; right: 50%; bottom: 68px; flex-direction: row; transform: translateX(50%); border: 0; border-radius: 99px; background: rgba(242,240,233,.93); box-shadow: 0 7px 25px rgba(0,0,0,.18); }
+    body[data-variant="A"] .duel-rail span, body[data-variant="A"] .duel-footer span:last-child { display: none; }
+
     /* Variant B — horizontal workbench */
     .variant-b { min-height: calc(100vh - 106px); background: #e7ebe4; }
     .b-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px clamp(18px, 4vw, 52px); background: var(--ink); color: white; }
@@ -391,6 +440,25 @@
     .collection-choice.active .collection-choice-state { background: var(--green-2); color: var(--green); }
     .collection-create { width: 100%; margin-top: 12px; }
 
+    /* Saved filters — mobile-first separate surface */
+    .filter-backdrop { position: fixed; z-index: 57; inset: 0; display: none; justify-content: center; background: rgba(13,18,15,.64); backdrop-filter: blur(8px); }
+    .filter-backdrop.open { display: flex; }
+    .filter-panel { display: flex; width: min(430px, 100%); height: 100dvh; min-height: 0; flex-direction: column; background: #f6f5ee; box-shadow: 0 0 60px rgba(0,0,0,.28); }
+    .filter-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 18px 16px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .filter-panel-head h2 { margin-bottom: 3px; font-size: 24px; }
+    .filter-panel-head p { margin: 0; color: var(--muted); font-size: 10px; }
+    .filter-panel-context { padding: 12px 16px; border-bottom: 1px solid var(--line); background: #eef0e9; }
+    .filter-panel-context strong, .filter-panel-context small { display: block; }
+    .filter-panel-context strong { font-size: 12px; }
+    .filter-panel-context small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .filter-panel .a-filter-toolbar { padding: 12px 16px 8px; }
+    .filter-panel .filter-toolbar-actions { grid-template-columns: 1fr 1fr 1fr; }
+    .filter-panel .glossary-toolbar-button { display: block; grid-column: auto; }
+    .filter-panel .a-filter-list { display: grid; overflow-x: hidden; overflow-y: auto; max-height: none; flex: 1; gap: 6px; padding: 4px 16px 14px; }
+    .filter-panel .a-filter-row { width: 100%; }
+    .filter-panel .a-filter-list .filter-button { width: 100%; padding: 12px; }
+    .filter-panel .a-new-filter { display: block; width: auto; margin: 0 16px 16px; padding: 12px; border: 1px solid #cbd2ca; text-align: center; }
+
     /* Collection tag glossary */
     .glossary-button { width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid #cbd2ca; border-radius: 10px; background: transparent; cursor: pointer; text-align: left; font-size: 11px; font-weight: 820; }
     .glossary-backdrop { position: fixed; z-index: 55; inset: 0; display: none; align-items: stretch; justify-content: flex-end; background: rgba(13,18,15,.64); backdrop-filter: blur(8px); }
@@ -497,7 +565,7 @@
       font-weight: 750;
     }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
-    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug { display: none; }
+    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug { display: none; }
 
     @media (max-width: 1100px) and (min-width: 701px) {
       .continue-banner { grid-template-columns: auto 1fr; }
@@ -602,6 +670,7 @@
   <section id="duelBackdrop" class="duel-backdrop" aria-hidden="true"></section>
   <section id="glossaryBackdrop" class="glossary-backdrop" aria-hidden="true"></section>
   <section id="collectionBackdrop" class="collection-backdrop" aria-hidden="true"></section>
+  <section id="filterBackdrop" class="filter-backdrop" aria-hidden="true"></section>
 
   <details class="state-debug">
     <summary>Состояние прототипа</summary>
@@ -619,7 +688,7 @@
 
   <script>
     const variants = [
-      { id: 'A', name: 'Панель сохранённых фильтров' },
+      { id: 'A', name: 'Mobile-first интерфейс' },
       { id: 'B', name: 'Лента порядка' },
       { id: 'C', name: 'Сначала продолжение' }
     ];
@@ -670,6 +739,7 @@
       expandedTags: false,
       glossaryOpen: false,
       collectionMenuOpen: false,
+      filterPanelOpen: false,
       draftOrders: Object.fromEntries(savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))])),
       draftUnordered: Object.fromEntries(savedFilters.map(filter => [filter.id, [...filter.unorderedIds]])),
       duel: { open: false, pairIndex: 0 },
@@ -680,6 +750,7 @@
     const duelBackdrop = document.querySelector('#duelBackdrop');
     const glossaryBackdrop = document.querySelector('#glossaryBackdrop');
     const collectionBackdrop = document.querySelector('#collectionBackdrop');
+    const filterBackdrop = document.querySelector('#filterBackdrop');
     const stateOutput = document.querySelector('#stateOutput');
     const variantLabel = document.querySelector('#variantLabel');
     const toast = document.querySelector('#toast');
@@ -809,19 +880,10 @@
       return `<section class="variant-a">
         <header class="a-topbar">
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
-          <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="soft-button" type="button" data-open-collections aria-haspopup="dialog">Коллекция: Фильмы на вечер&nbsp;⌄</button></div>
+          <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="mobile-collection-button" type="button" data-open-collections aria-haspopup="dialog"><span><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></span><span>⌄</span></button></div>
         </header>
+        <div class="mobile-slice-switch"><button class="slice-switch-button" type="button" data-open-filter-panel aria-haspopup="dialog"><span><small>Сохранённый фильтр</small><strong>${escapeHTML(filter.name)}</strong></span><span class="slice-switch-meta">${savedFilters.length} фильтров&nbsp; ☰</span></button></div>
         <div class="a-shell">
-          <aside class="a-rail">
-            <div class="a-rail-heading"><p class="eyebrow">Текущая коллекция</p><h2>Фильмы на вечер</h2><span class="collection-format">Формат объектов · карточки фильмов</span>${criterionMarkup()}<button class="glossary-button" type="button" data-open-glossary>Глоссарий тегов →</button></div>
-            <div class="a-filter-toolbar">
-              <div class="a-filter-toolbar-top"><p class="eyebrow">Сохранённые фильтры</p><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle ${state.filterMovePanelOpen ? 'active' : ''}" type="button" data-toggle-filter-move>Переместить</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий тегов</button></div></div>
-              <div class="activity-legend">Темнее — использовался активнее. Перетаскивание сразу закрепляет порядок.</div>
-              ${filterMovePanelMarkup(filter)}
-            </div>
-            <nav class="a-filter-list" aria-label="Сохранённые фильтры">${filterListA()}</nav>
-            <button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button>
-          </aside>
           <main class="a-main">
             <div class="slice-head">
               <div class="slice-head-copy"><p class="eyebrow">Живой срез коллекции «Фильмы на вечер»</p><div class="slice-title-row"><h1>${escapeHTML(filter.name)}</h1>${filterStatusMarkup(filter, true)}</div><p>${pluralObjects(filter.objectIds.length)}</p>${filterConditionMarkup(filter)}${filterEditorMarkup(filter)}</div>
@@ -967,10 +1029,26 @@
       collectionBackdrop.setAttribute('aria-hidden', 'false');
     }
 
+    function renderFilterPanel() {
+      if (!state.filterPanelOpen) {
+        document.body.classList.remove('filter-open');
+        filterBackdrop.classList.remove('open');
+        filterBackdrop.setAttribute('aria-hidden', 'true');
+        filterBackdrop.innerHTML = '';
+        return;
+      }
+      const filter = activeFilter();
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${savedFilters.length} фильтров в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle ${state.filterMovePanelOpen ? 'active' : ''}" type="button" data-toggle-filter-move>Переместить</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание или перемещение закрепляет порядок.</div>${filterMovePanelMarkup(filter)}</div><nav class="a-filter-list" aria-label="Сохранённые фильтры">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      document.body.classList.add('filter-open');
+      filterBackdrop.classList.add('open');
+      filterBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
     function renderState() {
       const filter = activeFilter();
       stateOutput.textContent = JSON.stringify({
         variant: state.variant,
+        layoutFocus: state.variant === 'A' ? 'mobile-first' : 'historical-variant',
         collection: 'Фильмы на вечер',
         savedFilter: { id: filter.id, name: filter.name, tags: filter.tags },
         savedFilterNavigation: {
@@ -987,12 +1065,14 @@
     }
 
     function render() {
+      document.body.dataset.variant = state.variant;
       app.innerHTML = state.variant === 'A' ? renderVariantA() : state.variant === 'B' ? renderVariantB() : renderVariantC();
       const descriptor = variants.find(item => item.id === state.variant);
       variantLabel.textContent = `${descriptor.id} · ${descriptor.name}`;
       renderDuel();
       renderGlossary();
       renderCollections();
+      renderFilterPanel();
       renderState();
       wireDragAndDrop();
       wireSavedFilterDragAndDrop();
@@ -1014,10 +1094,8 @@
       state.filterMovePanelOpen = false;
       state.filterEditorOpen = false;
       state.expandedTags = false;
+      state.filterPanelOpen = false;
       render();
-      if (state.variant === 'A' && window.matchMedia('(max-width: 800px)').matches) {
-        requestAnimationFrame(() => document.querySelector(`[data-filter-id="${id}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' }));
-      }
     }
 
     function toggleFilterOrder() {
@@ -1161,7 +1239,9 @@
       else if (target.matches('[data-toggle-all-tags]')) { state.expandedTags = !state.expandedTags; render(); }
       else if (target.matches('[data-toggle-filter-editor]')) { state.filterEditorOpen = !state.filterEditorOpen; render(); }
       else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
-      else if (target.matches('[data-open-glossary]')) { state.glossaryOpen = true; renderGlossary(); }
+      else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
+      else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
+      else if (target.matches('[data-open-glossary]')) { state.filterPanelOpen = false; renderFilterPanel(); state.glossaryOpen = true; renderGlossary(); }
       else if (target.matches('[data-close-glossary]')) { state.glossaryOpen = false; renderGlossary(); }
       else if (target.matches('[data-open-collections]')) { state.collectionMenuOpen = true; renderCollections(); }
       else if (target.matches('[data-close-collections]')) { state.collectionMenuOpen = false; renderCollections(); }
@@ -1187,11 +1267,12 @@
 
     document.addEventListener('keydown', event => {
       const editing = event.target.matches('input, textarea, select, [contenteditable="true"]');
-      if (!editing && !state.duel.open && event.key === 'ArrowLeft') setVariant(-1);
-      if (!editing && !state.duel.open && event.key === 'ArrowRight') setVariant(1);
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && event.key === 'ArrowLeft') setVariant(-1);
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && event.key === 'ArrowRight') setVariant(1);
       if (event.key === 'Escape' && state.duel.open) { state.duel.open = false; renderDuel(); }
       else if (event.key === 'Escape' && state.glossaryOpen) { state.glossaryOpen = false; renderGlossary(); }
       else if (event.key === 'Escape' && state.collectionMenuOpen) { state.collectionMenuOpen = false; renderCollections(); }
+      else if (event.key === 'Escape' && state.filterPanelOpen) { state.filterPanelOpen = false; renderFilterPanel(); }
     });
 
     render();
