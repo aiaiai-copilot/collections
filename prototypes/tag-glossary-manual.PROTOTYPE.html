@@ -112,19 +112,21 @@
     .section-title span { color: var(--muted); font-size: 10px; }
     .tag-list { display: grid; gap: 8px; }
     .tag-row {
-      display: block;
+      display: grid;
       width: 100%;
-      padding: 12px;
+      overflow: hidden;
       border: 1px solid #d4dad4;
       border-radius: 15px;
       background: white;
       color: inherit;
       text-align: left;
     }
-    .tag-row:active { background: var(--green-soft); }
+    .tag-open { width: 100%; padding: 12px 12px 7px; border: 0; background: transparent; color: inherit; text-align: left; }
+    .tag-open:active, .tag-usage:active { background: var(--green-soft); }
     .tag-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .tag-main strong { font-size: 13px; }
-    .tag-row > .meta { display: block; margin-top: 4px; }
+    .tag-usage { display: flex; width: 100%; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 12px 9px; border: 0; background: transparent; color: var(--green); font-size: 10px; font-weight: 780; text-align: left; }
+    .tag-usage-arrow { font-size: 16px; line-height: 1; }
     .match-reason { display: block; margin-top: 5px; color: var(--blue); font-size: 10px; }
     .meta { color: var(--muted); font-size: 10px; }
     .description { margin: 5px 0 0; color: #4f5c53; font-size: 11px; }
@@ -194,6 +196,16 @@
     .close { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; background: #ecefe9; font-size: 18px; }
     .confirm-box { padding: 12px; border-radius: 15px; background: var(--red-soft); color: var(--red); }
     .merge-preview { margin: 12px 0; padding: 12px; border-radius: 15px; background: var(--amber-soft); color: var(--amber); }
+    .usage-section + .usage-section { margin-top: 18px; }
+    .usage-section-head { margin-bottom: 7px; }
+    .usage-section-head h3 { margin: 0; font-size: 13px; }
+    .usage-section-head span { color: var(--muted); font-size: 10px; }
+    .usage-list { display: grid; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: white; }
+    .usage-link { display: flex; min-height: 46px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #e2e6e1; color: var(--ink); font-size: 11px; font-weight: 730; text-decoration: none; }
+    .usage-link:last-child { border-bottom: 0; }
+    .usage-link:active { background: var(--green-soft); }
+    .usage-link span:last-child { color: var(--green); font-size: 16px; }
+    .usage-empty { padding: 14px 12px; color: var(--muted); font-size: 11px; }
 
     .product-nav {
       position: fixed;
@@ -248,14 +260,14 @@
     ];
 
     const seedTags = [
-      { id: 'calm', name: 'спокойное', description: 'Ровный темп и мягкая эмоциональная нагрузка.', synonyms: ['тихое', 'медитативное'], status: 'active', objects: 8, filters: 3 },
-      { id: 'slow', name: 'медленное', description: 'Неспешное развитие и длинные наблюдательные сцены.', synonyms: ['неторопливое'], status: 'active', objects: 5, filters: 2 },
-      { id: 'japan', name: 'Япония', description: 'Место действия или значимый культурный контекст Японии.', synonyms: ['японское'], status: 'active', objects: 4, filters: 1 },
-      { id: 'poetry', name: 'поэзия', description: 'Поэзия является темой или способом повествования.', synonyms: ['стихи'], status: 'active', objects: 3, filters: 1 },
-      { id: 'family', name: 'семья', description: 'Семейные отношения находятся в центре истории.', synonyms: [], status: 'active', objects: 6, filters: 2 },
-      { id: 'architecture', name: 'архитектура', description: 'Архитектура определяет пространство истории или отношения героев.', synonyms: ['здания'], status: 'active', objects: 2, filters: 0 },
-      { id: 'europe', name: 'Европа', description: 'Европейский географический или культурный контекст.', synonyms: [], status: 'archived', objects: 2, filters: 1 }
-    ];
+      { id: 'calm', name: 'спокойное', description: 'Ровный темп и мягкая эмоциональная нагрузка.', synonyms: ['тихое', 'медитативное'], status: 'active', objectRefs: [{ id: 2, name: 'Любовное настроение' }, { id: 3, name: 'Идеальные дни' }, { id: 6, name: 'Коламбус' }, { id: 7, name: 'Патерсон' }], filterRefs: [{ id: 'quiet', name: 'Тихий вечер' }] },
+      { id: 'slow', name: 'медленное', description: 'Неспешное развитие и длинные наблюдательные сцены.', synonyms: ['неторопливое'], status: 'active', objectRefs: [{ id: 3, name: 'Идеальные дни' }, { id: 6, name: 'Коламбус' }, { id: 7, name: 'Патерсон' }], filterRefs: [{ id: 'quiet', name: 'Тихий вечер' }] },
+      { id: 'japan', name: 'Япония', description: 'Место действия или значимый культурный контекст Японии.', synonyms: ['японское'], status: 'active', objectRefs: [{ id: 3, name: 'Идеальные дни' }], filterRefs: [] },
+      { id: 'poetry', name: 'поэзия', description: 'Поэзия является темой или способом повествования.', synonyms: ['стихи'], status: 'active', objectRefs: [{ id: 7, name: 'Патерсон' }], filterRefs: [] },
+      { id: 'family', name: 'семья', description: 'Семейные отношения находятся в центре истории.', synonyms: [], status: 'active', objectRefs: [{ id: 9, name: 'Солнце моё' }, { id: 10, name: 'Маленькая мисс Счастье' }], filterRefs: [{ id: 'family', name: 'С семьёй' }] },
+      { id: 'architecture', name: 'архитектура', description: 'Архитектура определяет пространство истории или отношения героев.', synonyms: ['здания'], status: 'active', objectRefs: [{ id: 6, name: 'Коламбус' }], filterRefs: [] },
+      { id: 'europe', name: 'Европа', description: 'Европейский географический или культурный контекст.', synonyms: [], status: 'archived', objectRefs: [{ id: 1, name: 'Перед рассветом' }, { id: 8, name: 'Отель «Гранд Будапешт»' }], filterRefs: [{ id: 'europe', name: 'Европейское' }] }
+    ].map(tag => ({ ...tag, objects: tag.objectRefs.length, filters: tag.filterRefs.length }));
 
     const clone = value => JSON.parse(JSON.stringify(value));
     const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru');
@@ -330,11 +342,13 @@
       }
       const token = normalize(state.query);
       const synonymMatch = token ? tag.synonyms.find(value => normalize(value).includes(token)) : null;
-      return `<button type="button" class="tag-row" data-action="open-tag" data-tag-id="${tag.id}">
-        <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong>${tag.status === 'archived' ? '<span class="badge archive">В архиве</span>' : ''}</span>
-        <span class="meta">${usageLabel(tag)}</span>
-        ${synonymMatch ? `<span class="match-reason">Найдено по синониму «${escapeHTML(synonymMatch)}»</span>` : ''}
-      </button>`;
+      return `<div class="tag-row">
+        <button type="button" class="tag-open" data-action="open-tag" data-tag-id="${tag.id}">
+          <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong>${tag.status === 'archived' ? '<span class="badge archive">В архиве</span>' : ''}</span>
+          ${synonymMatch ? `<span class="match-reason">Найдено по синониму «${escapeHTML(synonymMatch)}»</span>` : ''}
+        </button>
+        <button type="button" class="tag-usage" data-action="open-usage" data-tag-id="${tag.id}" aria-label="Где используется тег ${escapeHTML(tag.name)}: ${usageLabel(tag)}"><span>${usageLabel(tag)}</span><span class="tag-usage-arrow" aria-hidden="true">›</span></button>
+      </div>`;
     }
 
     function renderA() {
@@ -380,7 +394,7 @@
 
     function tagForm(tag, context) {
       const isNew = !tag;
-      const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0 };
+      const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0, objectRefs: [], filterRefs: [] };
       const archived = !isNew && value.status === 'archived';
       const formTagId = value.id || '__new__';
       if (state.formTagId !== formTagId) {
@@ -437,6 +451,16 @@
             ${notice()}${tagForm(tag, full ? 'full' : 'sheet')}
           </section>
         </div>`;
+      }
+      if (type === 'usage') {
+        const tag = tagById(state.overlay.tagId);
+        const objectLinks = tag.objectRefs.map(item => `<a class="usage-link" href="collection-workspace.PROTOTYPE.html?variant=A&amp;object=${item.id}"><span>${escapeHTML(item.name)}</span><span aria-hidden="true">›</span></a>`).join('');
+        const filterLinks = tag.filterRefs.map(item => `<a class="usage-link" href="collection-workspace.PROTOTYPE.html?variant=A&amp;filter=${encodeURIComponent(item.id)}"><span>${escapeHTML(item.name)}</span><span aria-hidden="true">›</span></a>`).join('');
+        return `<div class="overlay sheet"><section class="dialog" role="dialog" aria-modal="true">
+          <div class="dialog-head"><div><div class="proto-mark">Где используется</div><h2>#${escapeHTML(tag.name)}</h2></div><button type="button" class="close" data-action="close-overlay" aria-label="Закрыть">×</button></div>
+          <section class="usage-section"><div class="usage-section-head row between"><h3>Объекты</h3><span>${tag.objects}</span></div><div class="usage-list">${objectLinks || '<div class="usage-empty">Тег не назначен объектам</div>'}</div></section>
+          <section class="usage-section"><div class="usage-section-head row between"><h3>Сохранённые фильтры</h3><span>${tag.filters}</span></div><div class="usage-list">${filterLinks || '<div class="usage-empty">Тег не используется в фильтрах</div>'}</div></section>
+        </section></div>`;
       }
       if (type === 'archive') {
         const tag = tagById(state.overlay.tagId);
@@ -543,7 +567,7 @@
         tag.synonyms = synonyms;
         state.notice = { kind: 'success', text: `Изменения #${name} сохранены во всех связанных объектах и фильтрах.` };
       } else {
-        const created = { id: `created-${Date.now()}`, name, description: String(data.get('description') || '').trim(), synonyms, status: 'active', objects: 0, filters: 0 };
+        const created = { id: `created-${Date.now()}`, name, description: String(data.get('description') || '').trim(), synonyms, status: 'active', objects: 0, filters: 0, objectRefs: [], filterRefs: [] };
         state.tags.push(created);
         state.selectedId = created.id;
         state.notice = { kind: 'success', text: `#${name} создан в глоссарии, но пока нигде не используется.` };
@@ -600,6 +624,7 @@
       if (action === 'previous-variant') return cycleVariant(-1);
       if (action === 'next-variant') return cycleVariant(1);
       if (action === 'open-tag') return openTag(button.dataset.tagId);
+      if (action === 'open-usage') { state.notice = null; state.overlay = { type: 'usage', tagId: button.dataset.tagId }; return render(); }
       if (action === 'set-status') { state.status = button.dataset.status; state.notice = null; return render(); }
       if (action === 'quick-search') { state.query = button.dataset.query; return render(); }
       if (action === 'new-tag') return beginNewTag('');
@@ -640,12 +665,16 @@
       if (action === 'confirm-merge') {
         const source = tagById(button.dataset.sourceId);
         const target = tagById(button.dataset.targetId);
-        target.objects += source.objects;
-        target.filters += source.filters;
+        target.objectRefs = [...new Map([...target.objectRefs, ...source.objectRefs].map(item => [item.id, item])).values()];
+        target.filterRefs = [...new Map([...target.filterRefs, ...source.filterRefs].map(item => [item.id, item])).values()];
+        target.objects = target.objectRefs.length;
+        target.filters = target.filterRefs.length;
         target.synonyms = [...new Set([...target.synonyms, source.name, ...source.synonyms])];
         source.status = 'archived';
         source.objects = 0;
         source.filters = 0;
+        source.objectRefs = [];
+        source.filterRefs = [];
         state.selectedId = target.id;
         state.overlay = null;
         state.notice = { kind: 'success', text: `#${source.name} объединён с #${target.name}; прежнее название стало синонимом.` };

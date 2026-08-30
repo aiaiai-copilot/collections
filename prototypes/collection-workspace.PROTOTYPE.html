@@ -734,21 +734,24 @@
       { id: 'music', name: 'Музыкальное', tags: ['музыка'], objectIds: [11], unorderedIds: [], maxRemainingComparisons: 0, activity: 8, task: null }
     ];
 
-    const requestedVariant = new URLSearchParams(location.search).get('variant')?.toUpperCase();
-    const initialFilter = savedFilters.find(filter => filter.id === 'all');
+    const routeParams = new URLSearchParams(location.search);
+    const requestedVariant = routeParams.get('variant')?.toUpperCase();
+    const requestedFilter = savedFilters.find(filter => filter.id === routeParams.get('filter'));
+    const requestedObject = objects.find(item => item.id === Number(routeParams.get('object')));
+    const initialFilter = requestedFilter || savedFilters.find(filter => filter.id === 'all');
     const state = {
       variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
-      activeFilterId: 'all',
+      activeFilterId: initialFilter.id,
       currentFilter: currentFilterFrom(initialFilter),
       criterion: 'Пересмотреть первым',
       filterOrderMode: 'activity',
       filterOrder: savedFilters.filter(filter => !filter.system).map(filter => filter.id),
-      filterEditorOpen: false,
+      filterEditorOpen: Boolean(requestedFilter),
       expandedTags: false,
       glossaryOpen: false,
       collectionMenuOpen: false,
       filterPanelOpen: false,
-      objectDetailId: null,
+      objectDetailId: requestedObject?.id ?? null,
       objectDetailContext: null,
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
