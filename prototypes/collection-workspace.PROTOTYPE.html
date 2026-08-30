@@ -166,8 +166,9 @@
     .ordered-copy { min-width: 0; }
     .ordered-copy strong { display: block; overflow: hidden; margin-bottom: 7px; text-overflow: ellipsis; white-space: nowrap; }
     .ordered-copy .tags { display: flex; overflow: hidden; gap: 4px; }
-    .move-actions { display: grid; gap: 4px; }
-    .move-actions button { width: 30px; height: 27px; border: 0; border-radius: 8px; background: #edf0ea; cursor: pointer; }
+    .drag-handle { display: grid; width: 32px; height: 36px; place-items: center; border-radius: 10px; background: #edf0ea; color: #657067; cursor: grab; font-size: 18px; font-weight: 900; touch-action: none; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-target { outline: 2px solid rgba(35,104,75,.55); outline-offset: 2px; }
 
     .unordered-card {
       display: grid;
@@ -230,10 +231,6 @@
     .a-filter-row.is-dragging { opacity: .42; }
     .a-filter-list .filter-button { padding: 11px 10px; }
     .a-filter-list .filter-button.active { padding-block: 13px; }
-    .filter-move-panel { margin: 8px 0 3px; padding: 10px; border: 1px solid #cbd2ca; border-radius: 13px; background: var(--panel); }
-    .filter-move-panel strong { display: block; overflow: hidden; margin-bottom: 8px; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-    .filter-move-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-    .filter-move-actions button { min-height: 30px; padding: 4px; border: 1px solid #d3d8d1; border-radius: 8px; background: #f6f6f1; cursor: pointer; font-size: 9px; font-weight: 800; }
     .a-new-filter { width: 100%; margin-top: 12px; text-align: left; }
     .a-main { min-width: 0; padding: 34px clamp(20px, 4vw, 58px) 58px; }
     .slice-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
@@ -252,6 +249,10 @@
     .filter-editor-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .filter-editor-tags button { padding: 7px 9px; border: 1px solid #cbd2ca; border-radius: 999px; background: white; cursor: pointer; font-size: 11px; }
     .filter-editor-tags button.active { border-color: var(--green); background: var(--green-2); color: var(--green); font-weight: 820; }
+    .filter-name-field { display: grid; gap: 5px; margin-bottom: 13px; }
+    .filter-name-field span { font-size: 10px; font-weight: 850; }
+    .filter-name-field input { width: 100%; padding: 10px 11px; border: 1px solid #bfc9bf; border-radius: 11px; background: white; color: var(--ink); font: inherit; font-size: 13px; font-weight: 760; }
+    .filter-name-field small { color: var(--muted); font-size: 9px; }
     .slice-actions { display: flex; gap: 8px; align-items: center; }
     .continue-banner {
       display: grid;
@@ -291,12 +292,20 @@
     .mobile-collection-button small { margin-top: 2px; color: var(--muted); font-size: 9px; }
     body[data-variant="A"] .a-shell { display: block; min-height: auto; }
     .mobile-slice-switch { padding: 10px 12px 0; }
-    .slice-switch-button { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); cursor: pointer; text-align: left; box-shadow: 0 5px 18px rgba(23,32,27,.05); }
-    .slice-switch-button small, .slice-switch-button strong { display: block; }
-    .slice-switch-button small { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .slice-switch-button strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-    .slice-switch-meta { color: var(--green); font-size: 10px; font-weight: 850; white-space: nowrap; }
-    body[data-variant="A"] .a-main { padding: 22px 12px 42px; }
+    .current-filter-summary { min-width: 0; padding: 11px 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); box-shadow: 0 5px 18px rgba(23,32,27,.05); }
+    .current-filter-summary small, .current-filter-summary strong { display: block; }
+    .current-filter-summary small { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .current-filter-summary strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .a-bottom-nav { position: fixed; z-index: 45; bottom: 0; left: 50%; display: grid; width: min(460px, 100%); grid-template-columns: repeat(3, minmax(0,1fr)); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); transform: translateX(-50%); border-top: 1px solid #c8cec7; background: rgba(250,249,243,.97); box-shadow: 0 -8px 26px rgba(23,32,27,.12); backdrop-filter: blur(14px); }
+    .a-bottom-nav button { position: relative; display: grid; min-width: 0; min-height: 52px; padding: 5px 3px; place-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); cursor: pointer; }
+    .a-bottom-nav button:active { background: var(--green-2); }
+    .a-bottom-nav button:disabled { cursor: default; opacity: .42; }
+    .a-bottom-nav-icon { font-size: 19px; font-weight: 900; line-height: 1; }
+    .a-bottom-nav-label { overflow: hidden; max-width: 100%; font-size: 10px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+    .a-bottom-nav-meta { color: var(--green); font-size: 8px; font-weight: 820; line-height: 1; }
+    .a-bottom-nav-count { position: absolute; top: 3px; left: calc(50% + 9px); display: grid; min-width: 18px; height: 18px; padding: 0 4px; place-items: center; border: 2px solid #faf9f3; border-radius: 99px; background: var(--green); color: white; font-size: 8px; font-weight: 900; }
+    body[data-variant="A"] .a-main { padding: 22px 12px 112px; }
+    body[data-variant="A"] .switcher, body[data-variant="A"] .state-debug { display: none; }
     body[data-variant="A"] .slice-head { display: block; }
     body[data-variant="A"] .slice-head h1 { font-size: 34px; }
     body[data-variant="A"] .slice-actions { margin-top: 13px; }
@@ -304,12 +313,10 @@
     body[data-variant="A"] .continue-actions { grid-column: 1 / -1; align-items: stretch; flex-direction: column; }
     body[data-variant="A"] .continue-actions button, body[data-variant="A"] .continue-banner .progress-track { width: 100%; }
     body[data-variant="A"] .a-order { padding: 14px; }
-    body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) auto; gap: 8px; }
+    body[data-variant="A"] .ordered-card { grid-template-columns: 28px minmax(0,1fr) 32px; gap: 8px; }
     body[data-variant="A"] .ordered-card .poster { display: none; }
     body[data-variant="A"] .ordered-copy .tags { display: none; }
     body[data-variant="A"] .ordered-rank { font-size: 19px; }
-    body[data-variant="A"] .move-actions { grid-template-columns: 1fr 1fr; }
-    body[data-variant="A"] .move-actions button { width: 32px; height: 32px; }
     body[data-variant="A"] .collection-backdrop { padding: 0; place-items: end center; }
     body[data-variant="A"] .collection-panel { width: min(430px, 100%); border-radius: 22px 22px 0 0; }
     body[data-variant="A"] .glossary-backdrop { justify-content: center; }
@@ -452,12 +459,12 @@
     .filter-panel-context strong { font-size: 12px; }
     .filter-panel-context small { margin-top: 3px; color: var(--muted); font-size: 10px; }
     .filter-panel .a-filter-toolbar { padding: 12px 16px 8px; }
-    .filter-panel .filter-toolbar-actions { grid-template-columns: 1fr 1fr 1fr; }
+    .filter-panel .filter-toolbar-actions { grid-template-columns: 1fr 1fr; }
     .filter-panel .glossary-toolbar-button { display: block; grid-column: auto; }
     .filter-panel .a-filter-list { display: grid; overflow-x: hidden; overflow-y: auto; max-height: none; flex: 1; gap: 6px; padding: 4px 16px 14px; }
-    .filter-panel .a-filter-row { width: 100%; }
+    .filter-panel .a-filter-row { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 7px; align-items: center; width: 100%; }
     .filter-panel .a-filter-list .filter-button { width: 100%; padding: 12px; }
-    .filter-panel .fixed-filter { margin-bottom: 7px; }
+    .filter-panel .fixed-filter { display: block; margin-bottom: 7px; }
     .filter-panel .fixed-filter .filter-button { border-color: #cbd2ca; background: white; }
     .filter-panel-section-label { margin: 7px 2px 3px; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
     .filter-order-toggle:disabled { cursor: not-allowed; opacity: .4; }
@@ -603,7 +610,6 @@
       .a-filter-row { flex: 0 0 168px; }
       .a-filter-list .filter-button { width: 100%; min-width: 0; padding: 9px 10px; }
       .a-filter-list .filter-meta { margin: 4px 0 0; }
-      .filter-move-actions button { width: auto; }
       .a-new-filter { display: none; }
       .a-main { padding: 24px 14px 40px; }
       .slice-head { display: block; }
@@ -740,7 +746,6 @@
       criterion: 'Пересмотреть первым',
       filterOrderMode: 'activity',
       filterOrder: savedFilters.filter(filter => !filter.system).map(filter => filter.id),
-      filterMovePanelOpen: false,
       filterEditorOpen: false,
       expandedTags: false,
       glossaryOpen: false,
@@ -763,6 +768,7 @@
     let toastTimer;
     let draggedId = null;
     let draggedSavedFilterId = null;
+    let suppressNextClick = false;
 
     function currentFilterFrom(source) {
       return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null };
@@ -836,17 +842,14 @@
     function filterList(extra = '') { return savedFilters.map(filter => filterButton(filter, extra)).join(''); }
     function filterListA() {
       const all = savedFilters.find(filter => filter.system);
-      return `<div class="a-filter-row fixed-filter">${filterButton(all, '', true)}</div><p class="filter-panel-section-label">Сохранённые · ${userSavedFilters().length}</p>${orderedSavedFilters().map(filter => `<div class="a-filter-row" draggable="true" data-saved-filter-id="${filter.id}">${filterButton(filter, '', true)}</div>`).join('')}`;
+      return `<div class="a-filter-row fixed-filter">${filterButton(all, '', true)}</div><p class="filter-panel-section-label">Сохранённые · ${userSavedFilters().length}</p>${orderedSavedFilters().map(filter => `<div class="a-filter-row" draggable="true" data-saved-filter-id="${filter.id}"><span class="drag-handle filter-drag-handle" aria-label="Перетащить фильтр «${escapeHTML(filter.name)}»">⠿</span>${filterButton(filter, '', true)}</div>`).join('')}`;
     }
     function orderedCard(item, index) {
       return `<article class="ordered-card" draggable="true" data-order-id="${item.id}">
         <span class="ordered-rank">${index + 1}</span>
         ${poster(item, String(index + 1).padStart(2, '0'))}
         <div class="ordered-copy"><strong>${escapeHTML(item.title)}</strong>${tagsMarkup(item.tags)}</div>
-        <div class="move-actions" aria-label="Изменить черновую позицию">
-          <button type="button" data-move-id="${item.id}" data-direction="-1" aria-label="Поднять">↑</button>
-          <button type="button" data-move-id="${item.id}" data-direction="1" aria-label="Опустить">↓</button>
-        </div>
+        <span class="drag-handle order-drag-handle" aria-label="Перетащить «${escapeHTML(item.title)}»">⠿</span>
       </article>`;
     }
     function unorderedCard(item) {
@@ -874,15 +877,21 @@
       </div>`;
     }
 
-    function filterMovePanelMarkup(filter) {
-      if (!state.filterMovePanelOpen) return '';
-      return `<div class="filter-move-panel"><strong>Переместить «${escapeHTML(filter.name)}»</strong><div class="filter-move-actions"><button type="button" data-move-selected-filter="start">В начало</button><button type="button" data-move-selected-filter="previous">Раньше</button><button type="button" data-move-selected-filter="next">Позже</button><button type="button" data-move-selected-filter="end">В конец</button></div></div>`;
-    }
-
     function filterEditorMarkup(filter) {
       if (!state.filterEditorOpen) return '';
       const availableTags = [...new Set(objects.flatMap(item => item.tags))].sort((left, right) => left.localeCompare(right, 'ru'));
-      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div><strong>Фильтр «${escapeHTML(filter.name)}»</strong><p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p><button class="edit-filter-button" type="button" data-open-glossary>Открыть глоссарий тегов</button></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div><div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
+      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div><strong>Фильтр «${escapeHTML(filter.name)}»</strong><p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p><button class="edit-filter-button" type="button" data-open-glossary>Открыть глоссарий тегов</button></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div>${filter.dirty ? `<label class="filter-name-field"><span>Название текущего фильтра</span><input type="text" value="${escapeHTML(filter.name)}" data-current-filter-name aria-label="Название текущего фильтра"><small>Оно будет использовано при сохранении; исходный сохранённый фильтр не изменится.</small></label>` : ''}<div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
+    }
+
+    function bottomNavigationMarkup(filter) {
+      const progress = state.taskProgress[filter.id];
+      const comparisonsAvailable = filter.objectIds.length >= 2;
+      const comparisonMeta = !comparisonsAvailable ? 'Не нужны' : progress == null ? 'Начать' : `Продолжить · ${progress}%`;
+      return `<nav class="a-bottom-nav" aria-label="Основные действия">
+        <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
+        <button type="button" data-open-glossary aria-haspopup="dialog"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span><span class="a-bottom-nav-meta">Теги</span></button>
+        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'}><span class="a-bottom-nav-icon">↗</span><span class="a-bottom-nav-label">Сравнения</span><span class="a-bottom-nav-meta">${comparisonMeta}</span></button>
+      </nav>`;
     }
 
     function renderVariantA() {
@@ -894,24 +903,24 @@
           <div class="brand"><span class="brand-mark">К</span><span>Коллекции</span></div>
           <div class="a-top-actions"><button class="ghost-button" type="button" data-toast="Добавление не входит в вопрос этого прототипа">＋ Объект</button><button class="mobile-collection-button" type="button" data-open-collections aria-haspopup="dialog"><span><strong>Фильмы на вечер</strong><small>Коллекция · карточки фильмов</small></span><span>⌄</span></button></div>
         </header>
-        <div class="mobile-slice-switch"><button class="slice-switch-button" type="button" data-open-filter-panel aria-haspopup="dialog"><span><small>${filter.dirty ? 'Текущий фильтр не сохранён' : filter.sourceId === 'all' ? 'Без фильтра' : 'Сохранённый фильтр'}</small><strong>${escapeHTML(filter.name)}</strong></span><span class="slice-switch-meta">${userSavedFilters().length} сохранённых&nbsp; ☰</span></button></div>
+        <div class="mobile-slice-switch"><div class="current-filter-summary"><small>${filter.dirty ? 'Текущий фильтр не сохранён' : filter.sourceId === 'all' ? 'Без фильтра' : 'Сохранённый фильтр'}</small><strong>${escapeHTML(filter.name)}</strong></div></div>
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy"><p class="eyebrow">Живой срез коллекции «Фильмы на вечер»</p><div class="slice-title-row"><h1>${escapeHTML(filter.name)}</h1>${filterStatusMarkup(filter, true)}</div><p>${pluralObjects(filter.objectIds.length)}</p>${filterConditionMarkup(filter)}${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><p class="eyebrow">Живой срез коллекции «Фильмы на вечер»</p><div class="slice-title-row"><h1>${escapeHTML(filter.name)}</h1>${filterStatusMarkup(filter, true)}${filter.dirty ? '<button class="edit-filter-button" type="button" data-focus-filter-name>Назвать</button>' : ''}</div><p>${pluralObjects(filter.objectIds.length)}</p>${filterConditionMarkup(filter)}${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
             ${continueBanner(filter)}
             <div class="a-workspace">
               <section class="a-order" data-order-section>
-                <header class="section-head"><div><p class="eyebrow">Прямая расстановка текущего среза</p><h2>Текущий порядок</h2><p>Перетаскивайте видимые объекты или используйте стрелки. Объекты без места здесь не показываются.</p></div><span class="count-pill">${ordered.length}</span></header>
+                <header class="section-head"><div><p class="eyebrow">Прямая расстановка текущего среза</p><h2>Текущий порядок</h2><p>Перетаскивайте видимые объекты за ⠿. Объекты без места здесь не показываются.</p></div><span class="count-pill">${ordered.length}</span></header>
                 <div class="ordered-list" data-order-lane>${ordered.map(orderedCard).join('')}</div>
                 <div style="margin-top:14px">${prototypeWarning()}</div>
               </section>
             </div>
           </main>
         </div>
-      </section>`;
+      </section>${bottomNavigationMarkup(filter)}`;
     }
 
     function renderVariantB() {
@@ -1050,8 +1059,7 @@
         return;
       }
       const filter = activeFilter();
-      const selectedSavedFilter = !filter.dirty ? savedFilters.find(item => item.id === state.activeFilterId && !item.system) : null;
-      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>${filter.dirty ? 'Текущий фильтр не сохранён' : 'Фильмы на вечер'}</strong><small>${filter.dirty ? filterRule(filter) : 'Коллекция · карточки фильмов'}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle ${state.filterMovePanelOpen ? 'active' : ''}" type="button" data-toggle-filter-move ${selectedSavedFilter ? '' : 'disabled'}>Переместить</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание или перемещение закрепляет порядок.</div>${selectedSavedFilter ? filterMovePanelMarkup(selectedSavedFilter) : ''}</div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
+      filterBackdrop.innerHTML = `<aside class="filter-panel" role="dialog" aria-modal="true" aria-label="Сохранённые фильтры"><header class="filter-panel-head"><div><p class="eyebrow">Навигация по срезам</p><h2>Сохранённые фильтры</h2><p>${userSavedFilters().length} сохранённых в текущей коллекции</p></div><button class="icon-button" type="button" data-close-filter-panel aria-label="Закрыть сохранённые фильтры">×</button></header><div class="filter-panel-context"><strong>Текущий фильтр · ${escapeHTML(filter.name)}</strong><small>${filter.dirty ? 'Не сохранён · ' : ''}${escapeHTML(filterRule(filter))}</small></div><div class="a-filter-toolbar"><div class="filter-toolbar-actions"><button class="filter-order-toggle ${state.filterOrderMode === 'pinned' ? 'active' : ''}" type="button" data-toggle-filter-order>${state.filterOrderMode === 'pinned' ? '◆ Открепить' : 'Закрепить'}</button><button class="filter-order-toggle glossary-toolbar-button" type="button" data-open-glossary>Глоссарий</button></div><div class="activity-legend">Темнее — использовался активнее. Перетаскивание за ⠿ закрепляет ручной порядок.</div></div><nav class="a-filter-list" aria-label="Фильтры текущей коллекции">${filterListA()}</nav><button class="ghost-button a-new-filter" type="button" data-toast="Форма сохранения фильтра появится позднее">Сохранить текущий фильтр</button></aside>`;
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
@@ -1089,6 +1097,10 @@
       renderState();
       wireDragAndDrop();
       wireSavedFilterDragAndDrop();
+      if (state.variant === 'A') {
+        wirePointerReorder('.order-drag-handle', '[data-order-id]', 'orderId', moveRelative);
+        wirePointerReorder('.filter-drag-handle', '[data-saved-filter-id]', 'savedFilterId', moveSavedFilterRelative);
+      }
     }
 
     function setVariant(direction) {
@@ -1109,7 +1121,6 @@
       state.draftUnordered.current = [...state.draftUnordered[source.id]];
       state.taskProgress.current = state.taskProgress[source.id] ?? null;
       state.duel.pairIndex = 0;
-      state.filterMovePanelOpen = false;
       state.filterEditorOpen = false;
       state.expandedTags = false;
       state.filterPanelOpen = false;
@@ -1134,33 +1145,33 @@
       state.filterOrderMode = 'pinned';
     }
 
-    function moveSelectedSavedFilter(action) {
-      ensurePinnedFilterOrder();
-      const id = state.activeFilterId;
-      const index = state.filterOrder.indexOf(id);
-      const targets = { start: 0, previous: index - 1, next: index + 1, end: state.filterOrder.length - 1 };
-      const target = Math.max(0, Math.min(state.filterOrder.length - 1, targets[action] ?? index));
-      if (index < 0 || index === target) return;
-      const [moved] = state.filterOrder.splice(index, 1);
-      state.filterOrder.splice(target, 0, moved);
-      showToast('Порядок закреплён и выбранный фильтр перемещён');
-      render();
+    function reorderRelative(order, id, targetId, after = false) {
+      if (id === targetId) return false;
+      const from = order.indexOf(id);
+      if (from < 0 || !order.includes(targetId)) return false;
+      const [moved] = order.splice(from, 1);
+      const target = order.indexOf(targetId);
+      order.splice(target + (after ? 1 : 0), 0, moved);
+      return true;
     }
 
-    function moveSavedFilterBefore(id, targetId) {
+    function moveSavedFilterRelative(id, targetId, after = false) {
       if (id === targetId) return;
       ensurePinnedFilterOrder();
-      const from = state.filterOrder.indexOf(id);
-      if (from < 0 || !state.filterOrder.includes(targetId)) return;
-      const [moved] = state.filterOrder.splice(from, 1);
-      const to = state.filterOrder.indexOf(targetId);
-      state.filterOrder.splice(to, 0, moved);
+      if (!reorderRelative(state.filterOrder, id, targetId, after)) return;
       showToast('Перетаскивание закрепило новый порядок фильтров');
       render();
     }
 
     function sameTags(left, right) {
       return left.length === right.length && left.every(tag => right.includes(tag));
+    }
+
+    function renameCurrentFilter(value) {
+      const filter = activeFilter();
+      if (!filter.dirty) return;
+      const name = value.trim();
+      filter.name = name || 'Несохранённый фильтр';
     }
 
     function syncCurrentDraftToSource() {
@@ -1174,11 +1185,15 @@
 
     function toggleActiveFilterTag(tag) {
       const filter = activeFilter();
+      const wasDirty = filter.dirty;
       filter.tags = filter.tags.includes(tag) ? filter.tags.filter(value => value !== tag) : [...filter.tags, tag];
       const source = savedFilters.find(item => item.id === filter.sourceId);
       filter.dirty = !sameTags(filter.tags, source.tags);
-      filter.name = filter.dirty ? 'Несохранённый фильтр' : source.name;
-      state.filterMovePanelOpen = false;
+      if (!filter.dirty) {
+        filter.name = source.name;
+      } else if (!wasDirty) {
+        filter.name = 'Несохранённый фильтр';
+      }
       if (!filter.dirty) {
         filter.objectIds = [...source.objectIds];
         filter.unorderedIds = [...source.unorderedIds];
@@ -1223,13 +1238,9 @@
       render();
     }
 
-    function moveBefore(id, targetId) {
+    function moveRelative(id, targetId, after = false) {
       const order = state.draftOrders[activeFilter().id];
-      const from = order.indexOf(Number(id));
-      const to = order.indexOf(Number(targetId));
-      if (from < 0 || to < 0 || from === to) return;
-      const [moved] = order.splice(from, 1);
-      order.splice(order.indexOf(Number(targetId)), 0, moved);
+      if (!reorderRelative(order, Number(id), Number(targetId), after)) return;
       syncCurrentDraftToSource();
       showToast('Черновая расстановка изменена');
       render();
@@ -1258,7 +1269,12 @@
         });
         card.addEventListener('dragend', () => { draggedId = null; card.classList.remove('is-dragging'); });
         card.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
-        card.addEventListener('drop', event => { event.preventDefault(); if (draggedId != null) moveBefore(draggedId, Number(card.dataset.orderId)); });
+        card.addEventListener('drop', event => {
+          event.preventDefault();
+          const bounds = card.getBoundingClientRect();
+          const after = state.variant === 'A' && event.clientY > bounds.top + bounds.height / 2;
+          if (draggedId != null) moveRelative(draggedId, Number(card.dataset.orderId), after);
+        });
       });
     }
 
@@ -1274,21 +1290,94 @@
         row.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
         row.addEventListener('drop', event => {
           event.preventDefault();
-          if (draggedSavedFilterId != null) moveSavedFilterBefore(draggedSavedFilterId, row.dataset.savedFilterId);
+          const bounds = row.getBoundingClientRect();
+          if (draggedSavedFilterId != null) moveSavedFilterRelative(draggedSavedFilterId, row.dataset.savedFilterId, event.clientY > bounds.top + bounds.height / 2);
+        });
+      });
+    }
+
+    function wirePointerReorder(handleSelector, rowSelector, dataKey, onDrop) {
+      document.querySelectorAll(handleSelector).forEach(handle => {
+        handle.addEventListener('pointerdown', event => {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          const row = handle.closest(rowSelector);
+          if (!row) return;
+          event.preventDefault();
+          handle.setPointerCapture(event.pointerId);
+          const startY = event.clientY;
+          const scrollArea = row.closest('.a-filter-list');
+          let targetRow = null;
+          let after = false;
+          let moved = false;
+          row.classList.add('is-dragging');
+          row.style.position = 'relative';
+          row.style.zIndex = '2';
+
+          const update = moveEvent => {
+            const delta = moveEvent.clientY - startY;
+            moved ||= Math.abs(delta) > 5;
+            row.style.transform = `translateY(${delta}px)`;
+            if (scrollArea) {
+              const scrollBounds = scrollArea.getBoundingClientRect();
+              if (moveEvent.clientY < scrollBounds.top + 48) scrollArea.scrollTop -= 14;
+              else if (moveEvent.clientY > scrollBounds.bottom - 48) scrollArea.scrollTop += 14;
+            }
+            targetRow?.classList.remove('drag-target');
+            const candidates = [...document.querySelectorAll(rowSelector)].filter(candidate => candidate !== row);
+            targetRow = candidates.reduce((nearest, candidate) => {
+              const center = candidate.getBoundingClientRect().top + candidate.getBoundingClientRect().height / 2;
+              const distance = Math.abs(moveEvent.clientY - center);
+              return !nearest || distance < nearest.distance ? { candidate, center, distance } : nearest;
+            }, null)?.candidate ?? null;
+            if (targetRow) {
+              const bounds = targetRow.getBoundingClientRect();
+              after = moveEvent.clientY > bounds.top + bounds.height / 2;
+              targetRow.classList.add('drag-target');
+            }
+          };
+
+          const finish = finishEvent => {
+            handle.removeEventListener('pointermove', update);
+            handle.removeEventListener('pointerup', finish);
+            handle.removeEventListener('pointercancel', finish);
+            targetRow?.classList.remove('drag-target');
+            row.classList.remove('is-dragging');
+            row.style.removeProperty('position');
+            row.style.removeProperty('z-index');
+            row.style.removeProperty('transform');
+            if (handle.hasPointerCapture(finishEvent.pointerId)) handle.releasePointerCapture(finishEvent.pointerId);
+            if (moved && targetRow) {
+              suppressNextClick = true;
+              setTimeout(() => { suppressNextClick = false; }, 0);
+              onDrop(row.dataset[dataKey], targetRow.dataset[dataKey], after);
+            }
+          };
+
+          handle.addEventListener('pointermove', update);
+          handle.addEventListener('pointerup', finish);
+          handle.addEventListener('pointercancel', finish);
         });
       });
     }
 
     document.addEventListener('click', event => {
+      if (suppressNextClick) { event.preventDefault(); suppressNextClick = false; return; }
       const target = event.target.closest('button');
       if (!target) return;
       if (target.matches('[data-cycle]')) setVariant(Number(target.dataset.cycle));
       else if (target.matches('[data-toggle-filter-order]')) toggleFilterOrder();
-      else if (target.matches('[data-toggle-filter-move]')) { state.filterMovePanelOpen = !state.filterMovePanelOpen; render(); }
-      else if (target.matches('[data-move-selected-filter]')) moveSelectedSavedFilter(target.dataset.moveSelectedFilter);
       else if (target.matches('[data-filter-id]')) setFilter(target.dataset.filterId);
       else if (target.matches('[data-toggle-all-tags]')) { state.expandedTags = !state.expandedTags; render(); }
       else if (target.matches('[data-toggle-filter-editor]')) { state.filterEditorOpen = !state.filterEditorOpen; render(); }
+      else if (target.matches('[data-focus-filter-name]')) {
+        state.filterEditorOpen = true;
+        render();
+        requestAnimationFrame(() => {
+          const field = document.querySelector('[data-current-filter-name]');
+          field?.focus();
+          field?.select();
+        });
+      }
       else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
@@ -1316,6 +1405,20 @@
 
     document.addEventListener('change', event => {
       if (event.target.matches('[data-select-filter]')) setFilter(event.target.value);
+    });
+
+    document.addEventListener('input', event => {
+      if (!event.target.matches('[data-current-filter-name]')) return;
+      renameCurrentFilter(event.target.value);
+      const filter = activeFilter();
+      document.querySelector('.slice-title-row h1')?.replaceChildren(filter.name);
+      document.querySelector('.current-filter-summary strong')?.replaceChildren(filter.name);
+      document.querySelector('.filter-editor-head strong')?.replaceChildren(`Фильтр «${filter.name}»`);
+      renderState();
+    });
+
+    document.addEventListener('focusout', event => {
+      if (event.target.matches('[data-current-filter-name]') && !event.target.value.trim()) event.target.value = activeFilter().name;
     });
 
     document.addEventListener('keydown', event => {
