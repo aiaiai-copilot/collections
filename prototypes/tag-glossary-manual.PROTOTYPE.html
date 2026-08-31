@@ -133,6 +133,7 @@
     .synonyms { margin-top: 7px; color: var(--blue); font-size: 10px; }
     .badge { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; background: #edf0ec; color: #546058; font-size: 9px; font-weight: 800; }
     .badge.archive { background: var(--red-soft); color: var(--red); }
+    .badge.merged { background: #e8eef5; color: var(--blue); }
     .empty { padding: 24px 14px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
     .notice { margin-bottom: 12px; padding: 10px 12px; border-radius: 13px; background: var(--green-soft); color: var(--green); font-size: 11px; }
     .notice.error { background: var(--red-soft); color: var(--red); }
@@ -195,7 +196,24 @@
     .dialog-head h2 { margin: 0; }
     .close { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; background: #ecefe9; color: var(--ink); font-size: 18px; text-decoration: none; }
     .confirm-box { padding: 12px; border-radius: 15px; background: var(--red-soft); color: var(--red); }
-    .merge-preview { margin: 12px 0; padding: 12px; border-radius: 15px; background: var(--amber-soft); color: var(--amber); }
+    .merge-preview { display: grid; gap: 12px; margin: 12px 0; }
+    .merge-summary { padding: 12px; border-radius: 15px; background: var(--amber-soft); color: var(--amber); font-size: 11px; }
+    .merge-summary strong { display: block; margin-bottom: 4px; font-size: 12px; }
+    .merge-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .merge-metric { padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+    .merge-metric strong, .merge-metric span { display: block; }
+    .merge-metric strong { font-size: 17px; }
+    .merge-metric span { color: var(--muted); font-size: 9px; }
+    .merge-filter-list { display: grid; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .merge-filter-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 11px; border-bottom: 1px solid #e2e6e1; }
+    .merge-filter-row:last-child { border-bottom: 0; }
+    .merge-filter-row strong, .merge-filter-row small { display: block; }
+    .merge-filter-row strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .merge-filter-row small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .merge-filter-delta { color: var(--green); font-size: 11px; font-weight: 850; white-space: nowrap; }
+    .merge-filter-delta.changed { color: var(--red); }
+    .merge-task-note { padding: 10px 11px; border-radius: 13px; background: var(--green-soft); color: var(--green); font-size: 10px; }
+    .merged-target-link { width: 100%; }
     .usage-section + .usage-section { margin-top: 18px; }
     .usage-section-head { margin-bottom: 7px; }
     .usage-section-head h3 { margin: 0; font-size: 13px; }
@@ -269,10 +287,56 @@
       { id: 'europe', name: 'Европа', description: 'Европейский географический или культурный контекст.', synonyms: [], status: 'archived', objectRefs: [{ id: 1, name: 'Перед рассветом' }, { id: 8, name: 'Отель «Гранд Будапешт»' }], filterRefs: [{ id: 'europe', name: 'Европейское' }] }
     ].map(tag => ({ ...tag, objects: tag.objectRefs.length, filters: tag.filterRefs.length }));
 
+    const prototypeObjects = [
+      { id: 1, tags: ['романтика', 'разговоры', 'Европа'] },
+      { id: 2, tags: ['романтика', 'классика', 'спокойное'] },
+      { id: 3, tags: ['спокойное', 'Япония', 'до 130 минут', 'одному', 'медленное', 'после работы'] },
+      { id: 4, tags: ['компания', 'лёгкое', 'до 100 минут'] },
+      { id: 5, tags: ['фантастика', 'серьёзное', 'компания'] },
+      { id: 6, tags: ['архитектура', 'спокойное', 'до 130 минут', 'одному', 'медленное', 'после работы'] },
+      { id: 7, tags: ['спокойное', 'поэзия', 'до 130 минут', 'одному', 'медленное', 'после работы'] },
+      { id: 8, tags: ['компания', 'комедия', 'Европа'] },
+      { id: 9, tags: ['семья', 'серьёзное', 'до 100 минут'] },
+      { id: 10, tags: ['компания', 'семья', 'до 100 минут'] },
+      { id: 11, tags: ['романтика', 'музыка', 'компания'] },
+      { id: 12, tags: ['компания', 'зима', 'серьёзное'] }
+    ];
+    const prototypeFilters = [
+      { id: 'all', name: 'Без фильтра', tags: [] },
+      { id: 'friends', name: 'Для компании', tags: ['компания'], task: true },
+      { id: 'quiet', name: 'Тихий вечер', tags: ['спокойное', 'до 130 минут', 'одному', 'медленное', 'после работы'], task: true },
+      { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'] },
+      { id: 'europe', name: 'Европейское', tags: ['Европа'] },
+      { id: 'family', name: 'С семьёй', tags: ['семья'] },
+      { id: 'romance', name: 'Романтика', tags: ['романтика'] },
+      { id: 'serious', name: 'Серьёзное', tags: ['серьёзное'] },
+      { id: 'comedy', name: 'Комедии', tags: ['комедия'] },
+      { id: 'music', name: 'Музыкальное', tags: ['музыка'] }
+    ];
+
     const clone = value => JSON.parse(JSON.stringify(value));
     const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru');
     const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
     const routeParams = new URLSearchParams(location.search);
+    const inheritedMergedSource = routeParams.get('mergedSource')?.trim();
+    const inheritedMergedTarget = routeParams.get('mergedTarget')?.trim();
+    if (inheritedMergedSource && inheritedMergedTarget) {
+      const inheritedSource = seedTags.find(tag => normalize(tag.name) === normalize(inheritedMergedSource));
+      const inheritedTarget = seedTags.find(tag => normalize(tag.name) === normalize(inheritedMergedTarget));
+      if (inheritedSource && inheritedTarget && inheritedSource.id !== inheritedTarget.id) {
+        inheritedTarget.objectRefs = [...new Map([...inheritedTarget.objectRefs, ...inheritedSource.objectRefs].map(item => [item.id, item])).values()];
+        inheritedTarget.filterRefs = [...new Map([...inheritedTarget.filterRefs, ...inheritedSource.filterRefs].map(item => [item.id, item])).values()];
+        inheritedTarget.objects = inheritedTarget.objectRefs.length;
+        inheritedTarget.filters = inheritedTarget.filterRefs.length;
+        inheritedTarget.synonyms = [...new Set([...inheritedTarget.synonyms, inheritedSource.name, ...inheritedSource.synonyms])];
+        inheritedSource.status = 'merged';
+        inheritedSource.mergedIntoId = inheritedTarget.id;
+        inheritedSource.objects = 0;
+        inheritedSource.filters = 0;
+        inheritedSource.objectRefs = [];
+        inheritedSource.filterRefs = [];
+      }
+    }
     const objectAssignmentContext = routeParams.get('newTag') && routeParams.get('assignObject') ? {
       kind: 'object',
       objectId: routeParams.get('assignObject'),
@@ -292,7 +356,18 @@
       draftUnordered: routeParams.get('draftFilterUnordered') || '[]',
       prefill: routeParams.get('newTag').trim().replace(/^#+/, '')
     } : null;
+    const browseFilterContext = routeParams.get('browseFilter') ? {
+      kind: 'browse-filter',
+      sourceId: routeParams.get('browseFilter'),
+      draftName: routeParams.get('draftFilterName') || 'Текущий фильтр',
+      draftShowName: routeParams.get('draftFilterShowName') || '0',
+      draftDirty: routeParams.get('draftFilterDirty') || '0',
+      draftTags: routeParams.get('draftFilterTags') || '[]',
+      draftOrder: routeParams.get('draftFilterOrder') || '[]',
+      draftUnordered: routeParams.get('draftFilterUnordered') || '[]'
+    } : null;
     const assignmentContext = objectAssignmentContext || filterAssignmentContext;
+    const filterNavigationContext = filterAssignmentContext || browseFilterContext;
     const variantFromURL = () => {
       const id = routeParams.get('variant')?.toUpperCase();
       return variants.some(item => item.id === id) ? id : 'A';
@@ -309,7 +384,8 @@
       formTagId: null,
       formName: '',
       formDescription: '',
-      formSynonyms: []
+      formSynonyms: [],
+      lastMerge: inheritedMergedSource && inheritedMergedTarget ? { sourceName: inheritedMergedSource, targetName: inheritedMergedTarget } : null
     };
 
     if (assignmentContext) {
@@ -324,7 +400,7 @@
       const token = normalize(query);
       return !token || [tag.name, ...tag.synonyms].some(value => normalize(value).includes(token));
     };
-    const visibleTags = status => state.tags.filter(tag => tag.status === status && matches(tag, state.query)).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    const visibleTags = status => state.tags.filter(tag => (status === 'archived' ? tag.status !== 'active' : tag.status === 'active') && matches(tag, state.query)).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     const tokenOwner = (value, excludeId = null) => {
       const token = normalize(value);
       return state.tags.find(tag => tag.status === 'active' && tag.id !== excludeId && [tag.name, ...tag.synonyms].some(label => normalize(label) === token));
@@ -336,23 +412,73 @@
     };
     const usageLabel = tag => `${tag.objects} ${plural(tag.objects, ['объект', 'объекта', 'объектов'])} · ${tag.filters} ${plural(tag.filters, ['фильтр', 'фильтра', 'фильтров'])}`;
 
+    function replaceMergedTag(tags, sourceName, targetName) {
+      const next = tags.map(tag => normalize(tag) === normalize(sourceName) ? targetName : tag);
+      return next.filter((tag, index) => next.findIndex(value => normalize(value) === normalize(tag)) === index);
+    }
+    function filterObjectCount(tags, sourceName = '', targetName = '') {
+      const objects = sourceName && targetName ? prototypeObjects.map(item => ({ ...item, tags: replaceMergedTag(item.tags, sourceName, targetName) })) : prototypeObjects;
+      return objects.filter(item => tags.every(tag => item.tags.some(value => normalize(value) === normalize(tag)))).length;
+    }
+    function mergeImpact(source, target) {
+      const affected = prototypeFilters.filter(filter => filter.tags.some(tag => [source.name, target.name].some(name => normalize(name) === normalize(tag))));
+      const savedFilters = affected.map(filter => {
+        const nextTags = replaceMergedTag(filter.tags, source.name, target.name);
+        return { ...filter, before: filterObjectCount(filter.tags), after: filterObjectCount(nextTags, source.name, target.name) };
+      });
+      let currentFilter = null;
+      if (filterNavigationContext) {
+        let currentTags = [];
+        try {
+          const parsed = JSON.parse(filterNavigationContext.draftTags);
+          if (Array.isArray(parsed)) currentTags = parsed.map(String);
+        } catch {}
+        if (currentTags.some(tag => [source.name, target.name].some(name => normalize(name) === normalize(tag)))) {
+          const nextTags = replaceMergedTag(currentTags, source.name, target.name);
+          currentFilter = {
+            id: 'current',
+            name: filterNavigationContext.draftShowName === '1' ? filterNavigationContext.draftName : 'Текущий фильтр',
+            before: filterObjectCount(currentTags),
+            after: filterObjectCount(nextTags, source.name, target.name)
+          };
+        }
+      }
+      return {
+        objects: source.objectRefs.length,
+        savedFilters,
+        currentFilter,
+        frozenTasks: savedFilters.filter(filter => filter.task).length
+      };
+    }
+
     function contextReturnURL(assignedTag = '') {
-      if (!assignmentContext) return 'collection-workspace.PROTOTYPE.html?variant=A';
-      if (assignmentContext.kind === 'filter') {
+      if (filterNavigationContext) {
         const params = new URLSearchParams({
           variant: 'A',
-          filter: assignmentContext.sourceId,
+          filter: filterNavigationContext.sourceId,
           filterContext: '1',
-          draftFilterName: assignmentContext.draftName,
-          draftFilterShowName: assignmentContext.draftShowName,
-          draftFilterDirty: assignmentContext.draftDirty,
-          draftFilterTags: assignmentContext.draftTags,
-          draftFilterOrder: assignmentContext.draftOrder,
-          draftFilterUnordered: assignmentContext.draftUnordered
+          draftFilterName: filterNavigationContext.draftName,
+          draftFilterShowName: filterNavigationContext.draftShowName,
+          draftFilterDirty: filterNavigationContext.draftDirty,
+          draftFilterTags: filterNavigationContext.draftTags,
+          draftFilterOrder: filterNavigationContext.draftOrder,
+          draftFilterUnordered: filterNavigationContext.draftUnordered
         });
         if (assignedTag) {
           params.set('addFilterTag', assignedTag);
           params.set('createdTag', assignedTag);
+        }
+        if (state.lastMerge) {
+          params.set('mergedSource', state.lastMerge.sourceName);
+          params.set('mergedTarget', state.lastMerge.targetName);
+        }
+        return `collection-workspace.PROTOTYPE.html?${params.toString()}`;
+      }
+      if (!assignmentContext) {
+        const params = new URLSearchParams({ variant: 'A' });
+        if (state.lastMerge) {
+          params.set('mergedSource', state.lastMerge.sourceName);
+          params.set('mergedTarget', state.lastMerge.targetName);
         }
         return `collection-workspace.PROTOTYPE.html?${params.toString()}`;
       }
@@ -367,6 +493,10 @@
         params.set('assignTag', assignedTag);
         params.set('createdTag', assignedTag);
       }
+      if (state.lastMerge) {
+        params.set('mergedSource', state.lastMerge.sourceName);
+        params.set('mergedTarget', state.lastMerge.targetName);
+      }
       return `collection-workspace.PROTOTYPE.html?${params.toString()}`;
     }
 
@@ -379,7 +509,7 @@
     }
 
     function productNav() {
-      const home = 'collection-workspace.PROTOTYPE.html?variant=A';
+      const home = contextReturnURL();
       return `<nav class="product-nav" aria-label="Основное меню">
         <a class="nav-item" href="${home}"><b>▦</b><span>Коллекции</span></a>
         <a class="nav-item" href="${home}"><b>◇</b><span>Фильтры</span></a>
@@ -395,9 +525,11 @@
     }
 
     function tagRow(tag, mode = 'catalog') {
+      const mergedTarget = tag.status === 'merged' ? tagById(tag.mergedIntoId) : null;
+      const statusCopy = tag.status === 'archived' ? ' · в архиве' : mergedTarget ? ` · объединён с #${mergedTarget.name}` : '';
       if (mode === 'search') {
         return `<div class="search-result">
-          <div><strong>#${escapeHTML(tag.name)}</strong><div class="meta">${tag.objects} объектов · ${tag.filters} фильтров${tag.status === 'archived' ? ' · в архиве' : ''}</div></div>
+          <div><strong>#${escapeHTML(tag.name)}</strong><div class="meta">${tag.objects} объектов · ${tag.filters} фильтров${escapeHTML(statusCopy)}</div></div>
           <button type="button" data-action="open-tag" data-tag-id="${tag.id}">Открыть</button>
         </div>`;
       }
@@ -405,7 +537,7 @@
       const synonymMatch = token ? tag.synonyms.find(value => normalize(value).includes(token)) : null;
       return `<div class="tag-row">
         <button type="button" class="tag-open" data-action="open-tag" data-tag-id="${tag.id}">
-          <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong>${tag.status === 'archived' ? '<span class="badge archive">В архиве</span>' : ''}</span>
+          <span class="tag-main"><strong>#${escapeHTML(tag.name)}</strong>${tag.status === 'archived' ? '<span class="badge archive">В архиве</span>' : mergedTarget ? `<span class="badge merged">→ #${escapeHTML(mergedTarget.name)}</span>` : ''}</span>
           ${synonymMatch ? `<span class="match-reason">Найдено по синониму «${escapeHTML(synonymMatch)}»</span>` : ''}
         </button>
         <button type="button" class="tag-usage" data-action="open-usage" data-tag-id="${tag.id}" aria-label="Где используется тег ${escapeHTML(tag.name)}: ${usageLabel(tag)}"><span>${usageLabel(tag)}</span><span class="tag-usage-arrow" aria-hidden="true">›</span></button>
@@ -425,7 +557,7 @@
           <input class="search" data-search type="search" value="${escapeHTML(state.query)}" placeholder="Найти или создать тег">
           <div class="segmented">
             <button type="button" class="segment ${state.status === 'active' ? 'active' : ''}" data-action="set-status" data-status="active">Активные · ${activeTags().length}</button>
-            <button type="button" class="segment ${state.status === 'archived' ? 'active' : ''}" data-action="set-status" data-status="archived">Архив · ${state.tags.filter(tag => tag.status === 'archived').length}</button>
+            <button type="button" class="segment ${state.status === 'archived' ? 'active' : ''}" data-action="set-status" data-status="archived">Архив · ${state.tags.filter(tag => tag.status !== 'active').length}</button>
           </div>
         </div>
         ${query && !exact ? `<button type="button" class="create-result" data-action="new-from-query">Создать #${escapeHTML(state.query.replace(/^#+/, ''))} в глоссарии</button>` : ''}
@@ -457,6 +589,9 @@
       const isNew = !tag;
       const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0, objectRefs: [], filterRefs: [] };
       const archived = !isNew && value.status === 'archived';
+      const merged = !isNew && value.status === 'merged';
+      const unavailable = archived || merged;
+      const mergedTarget = merged ? tagById(value.mergedIntoId) : null;
       const assignsToObject = isNew && assignmentContext?.kind === 'object';
       const addsToFilter = isNew && assignmentContext?.kind === 'filter';
       const formTagId = value.id || '__new__';
@@ -467,18 +602,18 @@
         state.formSynonyms = [...value.synonyms];
       }
       return `<form class="form-grid" data-form="${isNew ? 'create' : 'edit'}" data-tag-id="${escapeHTML(value.id)}">
-        <label>Название тега<input class="field" name="name" required value="${escapeHTML(state.formName)}" placeholder="Без решётки" ${archived ? 'disabled' : ''}></label>
-        <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${archived ? 'disabled' : ''}>${escapeHTML(state.formDescription)}</textarea></label>
+        <label>Название тега<input class="field" name="name" required value="${escapeHTML(state.formName)}" placeholder="Без решётки" ${unavailable ? 'disabled' : ''}></label>
+        <label>Пояснение<textarea class="field" name="description" placeholder="Когда этот тег уместен" ${unavailable ? 'disabled' : ''}>${escapeHTML(state.formDescription)}</textarea></label>
         <label>Синонимы
           <span class="synonym-editor">
-            <span class="synonym-chips">${state.formSynonyms.length ? state.formSynonyms.map((synonym, index) => `<span class="synonym-chip">${escapeHTML(synonym)}${archived ? '' : `<button type="button" data-action="remove-synonym" data-index="${index}" aria-label="Удалить синоним ${escapeHTML(synonym)}">×</button>`}</span>`).join('') : '<span class="synonym-empty">Пока нет</span>'}</span>
-            ${archived ? '' : `<span class="synonym-add-row"><input class="field" data-synonym-input type="text" placeholder="Одно обозначение"><button type="button" class="secondary small-button" data-action="add-synonym">Добавить</button></span><span class="synonym-help">Пробелы допустимы; завершите ввод кнопкой или Enter.</span>`}
+            <span class="synonym-chips">${state.formSynonyms.length ? state.formSynonyms.map((synonym, index) => `<span class="synonym-chip">${escapeHTML(synonym)}${unavailable ? '' : `<button type="button" data-action="remove-synonym" data-index="${index}" aria-label="Удалить синоним ${escapeHTML(synonym)}">×</button>`}</span>`).join('') : '<span class="synonym-empty">Пока нет</span>'}</span>
+            ${unavailable ? '' : `<span class="synonym-add-row"><input class="field" data-synonym-input type="text" placeholder="Одно обозначение"><button type="button" class="secondary small-button" data-action="add-synonym">Добавить</button></span><span class="synonym-help">Пробелы допустимы; завершите ввод кнопкой или Enter.</span>`}
           </span>
         </label>
-        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : assignsToObject ? `<div class="impact-box">После создания тег будет назначен объекту «${escapeHTML(assignmentContext.draftTitle)}». Отмена вернёт в форму объекта без изменений.</div>` : addsToFilter ? '<div class="impact-box">После создания запись появится в глоссарии и будет добавлена в текущий фильтр. Отмена вернёт черновик фильтра без изменений.</div>' : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
+        ${merged ? `<div class="impact-box">Эта историческая запись объединена с #${escapeHTML(mergedTarget?.name || 'целевым тегом')}. Все ссылки перенесены; восстановить её как архивный тег нельзя.</div>` : archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : assignsToObject ? `<div class="impact-box">После создания тег будет назначен объекту «${escapeHTML(assignmentContext.draftTitle)}». Отмена вернёт в форму объекта без изменений.</div>` : addsToFilter ? '<div class="impact-box">После создания запись появится в глоссарии и будет добавлена в текущий фильтр. Отмена вернёт черновик фильтра без изменений.</div>' : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
         <div class="form-actions">
-          ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${assignsToObject ? 'Создать в глоссарии и назначить объекту' : addsToFilter ? 'Создать в глоссарии и добавить в фильтр' : isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
-          ${!isNew && !archived ? `<button type="button" class="secondary" data-action="merge-tag" data-tag-id="${value.id}">Объединить дубли</button>
+          ${merged ? `<button type="button" class="primary wide merged-target-link" data-action="open-tag" data-tag-id="${mergedTarget?.id || ''}">Открыть #${escapeHTML(mergedTarget?.name || 'целевой тег')}</button>` : archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${assignsToObject ? 'Создать в глоссарии и назначить объекту' : addsToFilter ? 'Создать в глоссарии и добавить в фильтр' : isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
+          ${!isNew && !unavailable ? `<button type="button" class="secondary" data-action="merge-tag" data-tag-id="${value.id}">Объединить дубли</button>
           <button type="button" class="danger" data-action="archive-tag" data-tag-id="${value.id}">В архив</button>` : ''}
         </div>
       </form>`;
@@ -486,7 +621,8 @@
 
     function renderC() {
       const tag = tagById(state.selectedId) || activeTags()[0];
-      const options = [...state.tags].sort((a, b) => a.name.localeCompare(b.name, 'ru')).map(item => `<option value="${item.id}" ${item.id === tag.id ? 'selected' : ''}>#${escapeHTML(item.name)}${item.status === 'archived' ? ' · в архиве' : ''}</option>`).join('');
+      const options = [...state.tags].sort((a, b) => a.name.localeCompare(b.name, 'ru')).map(item => `<option value="${item.id}" ${item.id === tag.id ? 'selected' : ''}>#${escapeHTML(item.name)}${item.status === 'archived' ? ' · в архиве' : item.status === 'merged' ? ' · объединён' : ''}</option>`).join('');
+      const statusLabel = tag.status === 'archived' ? 'В архиве' : tag.status === 'merged' ? 'Объединён' : 'Активен';
       return `<div class="phone">${topbar()}<main class="screen">
         ${notice()}
         <h1>Запись глоссария</h1>
@@ -496,7 +632,7 @@
           <select class="inspector-select" data-inspector-select aria-label="Выбрать тег">${options}</select>
         </section>
         <section class="inspector-card">
-          <div class="row between"><h2>#${escapeHTML(tag.name)}</h2><span class="badge ${tag.status === 'archived' ? 'archive' : ''}">${tag.status === 'archived' ? 'В архиве' : 'Активен'}</span></div>
+          <div class="row between"><h2>#${escapeHTML(tag.name)}</h2><span class="badge ${tag.status === 'archived' ? 'archive' : tag.status === 'merged' ? 'merged' : ''}">${statusLabel}</span></div>
           ${tagForm(tag, 'inspector')}
         </section>
       </main>${productNav()}</div>`;
@@ -537,11 +673,21 @@
         const source = tagById(state.overlay.tagId);
         const targets = activeTags().filter(tag => tag.id !== source.id);
         const target = tagById(state.overlay.targetId) || targets[0];
+        const impact = mergeImpact(source, target);
+        const filterRows = [
+          ...(impact.currentFilter ? [{ ...impact.currentFilter, kind: 'Текущий фильтр' }] : []),
+          ...impact.savedFilters.map(filter => ({ ...filter, kind: 'Сохранённый фильтр' }))
+        ];
         return `<div class="overlay sheet"><section class="dialog" role="dialog" aria-modal="true">
           <div class="dialog-head"><h2>Объединить дубли</h2><button type="button" class="close" data-action="close-overlay">×</button></div>
           <label>С какой записью объединить #${escapeHTML(source.name)}<select class="field" data-merge-target>${targets.map(tag => `<option value="${tag.id}" ${tag.id === target.id ? 'selected' : ''}>#${escapeHTML(tag.name)}</option>`).join('')}</select></label>
-          <div class="merge-preview">${source.objects} объектов и ${source.filters} фильтров перейдут к #${escapeHTML(target.name)}. Название «${escapeHTML(source.name)}» станет синонимом, исходная запись уйдёт в архив.</div>
-          <div class="form-actions"><button type="button" class="secondary" data-action="close-overlay">Отмена</button><button type="button" class="primary" data-action="confirm-merge" data-source-id="${source.id}" data-target-id="${target.id}">Объединить</button></div>
+          <div class="merge-preview">
+            <div class="merge-summary"><strong>Основным останется #${escapeHTML(target.name)}</strong>Название «${escapeHTML(source.name)}» и его синонимы перейдут к основному тегу. Исходная запись получит состояние «Объединён» и не сможет быть восстановлена как архивная.</div>
+            <div class="merge-metrics"><div class="merge-metric"><strong>${impact.objects}</strong><span>${plural(impact.objects, ['объект изменится', 'объекта изменятся', 'объектов изменятся'])}</span></div><div class="merge-metric"><strong>${impact.savedFilters.length}</strong><span>${plural(impact.savedFilters.length, ['сохранённый фильтр', 'сохранённых фильтра', 'сохранённых фильтров'])}</span></div></div>
+            <div><div class="usage-section-head row between"><h3>Как изменятся живые срезы</h3><span>${filterRows.length}</span></div><div class="merge-filter-list">${filterRows.length ? filterRows.map(filter => `<div class="merge-filter-row"><div><strong>${escapeHTML(filter.name)}</strong><small>${filter.kind}</small></div><span class="merge-filter-delta ${filter.before !== filter.after ? 'changed' : ''}">${filter.before} → ${filter.after} ${plural(filter.after, ['объект', 'объекта', 'объектов'])}</span></div>`).join('') : '<div class="usage-empty">Текущий и сохранённые фильтры не используют эти теги</div>'}</div></div>
+            <div class="merge-task-note">Начатые задачи сравнения сохранят прежние зафиксированные версии срезов и не изменятся.</div>
+          </div>
+          <div class="form-actions"><button type="button" class="secondary" data-action="close-overlay">Отмена</button><button type="button" class="primary" data-action="confirm-merge" data-source-id="${source.id}" data-target-id="${target.id}">Объединить и обновить фильтры</button></div>
         </section></div>`;
       }
       return '';
@@ -739,14 +885,22 @@
         target.objects = target.objectRefs.length;
         target.filters = target.filterRefs.length;
         target.synonyms = [...new Set([...target.synonyms, source.name, ...source.synonyms])];
-        source.status = 'archived';
+        source.status = 'merged';
+        source.mergedIntoId = target.id;
         source.objects = 0;
         source.filters = 0;
         source.objectRefs = [];
         source.filterRefs = [];
+        state.lastMerge = { sourceName: source.name, targetName: target.name };
+        if (filterNavigationContext) {
+          try {
+            const currentTags = JSON.parse(filterNavigationContext.draftTags);
+            if (Array.isArray(currentTags)) filterNavigationContext.draftTags = JSON.stringify(replaceMergedTag(currentTags, source.name, target.name));
+          } catch {}
+        }
         state.selectedId = target.id;
         state.overlay = null;
-        state.notice = { kind: 'success', text: `#${source.name} объединён с #${target.name}; прежнее название стало синонимом.` };
+        state.notice = { kind: 'success', text: `#${source.name} объединён с #${target.name}; объекты и живые фильтры обновлены, прежнее название стало синонимом.` };
         return render();
       }
     });

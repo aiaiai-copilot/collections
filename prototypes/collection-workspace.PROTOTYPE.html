@@ -259,6 +259,8 @@
     .filter-editor-title-input { width: min(100%, 310px); padding: 4px 0; border: 0; border-bottom: 1px solid #aeb9af; background: transparent; color: var(--ink); font: inherit; font-size: 18px; font-weight: 850; outline: 0; }
     .filter-editor-title-input:focus { border-bottom-color: var(--green); }
     .filter-editor-title-input::placeholder { color: #7a847c; opacity: 1; }
+    .merge-applied-notice { margin-top: 11px; padding: 10px 12px; border: 1px solid #b9cdbf; border-radius: 13px; background: var(--green-2); color: var(--green); font-size: 10px; line-height: 1.35; }
+    .merge-applied-notice strong { display: block; margin-bottom: 2px; }
     .slice-actions { display: flex; gap: 8px; align-items: center; }
     .a-workspace { display: block; }
     .a-order, .a-unordered { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.7); }
@@ -758,6 +760,10 @@
     const assignedFilterTagFromGlossary = routeParams.get('addFilterTag')?.trim();
     const createdTagFromGlossary = routeParams.get('createdTag')?.trim();
     const filterReturnContext = routeParams.get('filterContext') === '1';
+    const mergedSourceFromGlossary = routeParams.get('mergedSource')?.trim();
+    const mergedTargetFromGlossary = routeParams.get('mergedTarget')?.trim();
+    const preservedComparisonTasksFromMerge = [];
+    if (mergedSourceFromGlossary && mergedTargetFromGlossary) applyMergedTagRoute();
     let requestedDraftTags = null;
     try {
       const parsedDraftTags = JSON.parse(routeParams.get('draftTags'));
@@ -771,6 +777,10 @@
       'архитектура': { synonyms: ['здания'] },
       'Европа': { synonyms: [], status: 'archived' }
     };
+    if (mergedSourceFromGlossary && mergedTargetFromGlossary) {
+      const targetDetails = glossaryDetails[mergedTargetFromGlossary] || { synonyms: [] };
+      glossaryDetails[mergedTargetFromGlossary] = { ...targetDetails, synonyms: [...new Set([...(targetDetails.synonyms || []), mergedSourceFromGlossary])] };
+    }
     const glossaryEntries = [...new Set([...objects.flatMap(item => item.tags), createdTagFromGlossary].filter(Boolean))]
       .map(name => ({ name, synonyms: glossaryDetails[name]?.synonyms || [], status: glossaryDetails[name]?.status || 'active' }))
       .sort((left, right) => left.name.localeCompare(right.name, 'ru'));
@@ -799,6 +809,7 @@
         tags: initialObjectTags
       } : null,
       objectTagQuery: '',
+      preservedComparisonTasks: preservedComparisonTasksFromMerge,
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
@@ -824,6 +835,32 @@
 
     function currentFilterFrom(source) {
       return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null };
+    }
+    function replaceMergedTagList(tags, sourceName = mergedSourceFromGlossary, targetName = mergedTargetFromGlossary) {
+      const next = tags.map(tag => normalizeTag(tag) === normalizeTag(sourceName) ? targetName : tag);
+      return next.filter((tag, index) => next.findIndex(value => normalizeTag(value) === normalizeTag(tag)) === index);
+    }
+    function applyMergedTagRoute() {
+      objects.forEach(item => { item.tags = replaceMergedTagList(item.tags); });
+      savedFilters.forEach(filter => {
+        const affected = filter.tags.some(tag => [mergedSourceFromGlossary, mergedTargetFromGlossary].some(name => normalizeTag(name) === normalizeTag(tag)));
+        if (!affected) return;
+        const previousObjectIds = [...filter.objectIds];
+        const previousOrdered = previousObjectIds.filter(id => !filter.unorderedIds.includes(id));
+        if (filter.task) preservedComparisonTasksFromMerge.push({ filterId: filter.id, filterName: filter.name, objectIds: previousObjectIds, task: { ...filter.task } });
+        filter.tags = replaceMergedTagList(filter.tags);
+        filter.objectIds = objects.filter(item => filter.tags.every(tag => item.tags.some(value => normalizeTag(value) === normalizeTag(tag)))).map(item => item.id);
+        const nextOrdered = previousOrdered.filter(id => filter.objectIds.includes(id));
+        const nextUnordered = filter.unorderedIds.filter(id => filter.objectIds.includes(id) && !nextOrdered.includes(id));
+        filter.objectIds.forEach(id => { if (!nextOrdered.includes(id) && !nextUnordered.includes(id)) nextUnordered.push(id); });
+        if (filter.objectIds.length <= 1) {
+          filter.unorderedIds = [];
+        } else {
+          filter.unorderedIds = nextUnordered;
+        }
+        filter.task = null;
+        filter.maxRemainingComparisons = estimateRemainingComparisonUpperBound(filter.objectIds, filter.unorderedIds);
+      });
     }
     function parseRouteArray(name) {
       try {
@@ -893,6 +930,10 @@
         draftYear: String(draft.year),
         draftTags: JSON.stringify(draft.tags)
       });
+      if (mergedSourceFromGlossary && mergedTargetFromGlossary) {
+        params.set('mergedSource', mergedSourceFromGlossary);
+        params.set('mergedTarget', mergedTargetFromGlossary);
+      }
       return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
     }
     function filterCreationURL(tagName) {
@@ -908,6 +949,27 @@
         draftFilterOrder: JSON.stringify(state.draftOrders[filter.id]),
         draftFilterUnordered: JSON.stringify(state.draftUnordered[filter.id])
       });
+      if (mergedSourceFromGlossary && mergedTargetFromGlossary) {
+        params.set('mergedSource', mergedSourceFromGlossary);
+        params.set('mergedTarget', mergedTargetFromGlossary);
+      }
+      return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
+    }
+    function glossaryBrowsingURL(filter) {
+      const params = new URLSearchParams({
+        variant: 'A',
+        browseFilter: filter.sourceId,
+        draftFilterName: filter.name,
+        draftFilterShowName: filter.showName ? '1' : '0',
+        draftFilterDirty: filter.dirty ? '1' : '0',
+        draftFilterTags: JSON.stringify(filter.tags),
+        draftFilterOrder: JSON.stringify(state.draftOrders[filter.id]),
+        draftFilterUnordered: JSON.stringify(state.draftUnordered[filter.id])
+      });
+      if (mergedSourceFromGlossary && mergedTargetFromGlossary) {
+        params.set('mergedSource', mergedSourceFromGlossary);
+        params.set('mergedTarget', mergedTargetFromGlossary);
+      }
       return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
     }
     function pluralObjects(count) {
@@ -946,6 +1008,11 @@
     function criterionMarkup() { return `<span class="criterion-pill">Критерий · ${escapeHTML(state.criterion)}</span>`; }
     function prototypeWarning() {
       return `<div class="prototype-warning"><strong>◇</strong><span>Здесь проверяется место прямой расстановки. Как она дополняет общий порядок и влияет на скрытые объекты, пока не решено.</span></div>`;
+    }
+    function mergeAppliedMarkup() {
+      if (!mergedSourceFromGlossary || !mergedTargetFromGlossary) return '';
+      const frozen = state.preservedComparisonTasks.length;
+      return `<div class="merge-applied-notice"><strong>#${escapeHTML(mergedSourceFromGlossary)} объединён с #${escapeHTML(mergedTargetFromGlossary)}</strong>Живые фильтры пересчитаны.${frozen ? ` ${frozen} ${frozen === 1 ? 'начатая задача сохранила' : 'начатые задачи сохранили'} прежнюю версию среза.` : ''}</div>`;
     }
     function filterRule(filter) {
       if (!filter.tags.length) return 'Без фильтра · все фильмы';
@@ -1041,7 +1108,7 @@
       return `<nav class="a-bottom-nav" aria-label="Основные действия">
         <button type="button" data-open-collections aria-haspopup="dialog"><span class="a-bottom-nav-icon">▱</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-count">${collections.length}</span></button>
         <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
-        <a href="tag-glossary-manual.PROTOTYPE.html?variant=A"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></a>
+        <a href="${glossaryBrowsingURL(filter)}"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></a>
         <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span></button>
         <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span></button>
       </nav>`;
@@ -1060,7 +1127,7 @@
         <div class="a-shell">
           <main class="a-main">
             <div class="slice-head">
-              <div class="slice-head-copy"><div class="slice-context-meta"><span>${pluralObjects(filter.objectIds.length)}</span></div>${filterEditorMarkup(filter)}</div>
+              <div class="slice-head-copy"><div class="slice-context-meta"><span>${pluralObjects(filter.objectIds.length)}</span></div>${mergeAppliedMarkup()}${filterEditorMarkup(filter)}</div>
               <div class="slice-actions">${criterionMarkup()}</div>
             </div>
             <div class="a-workspace">
@@ -1375,6 +1442,8 @@
           activity: Object.fromEntries(userSavedFilters().map(item => [item.id, item.activity]))
         },
         liveSliceSize: filter.objectIds.length,
+        appliedTagMerge: mergedSourceFromGlossary && mergedTargetFromGlossary ? { source: mergedSourceFromGlossary, target: mergedTargetFromGlossary } : null,
+        preservedComparisonTasks: state.preservedComparisonTasks,
         objectDetailId: state.objectDetailId,
         objectDetailContext: state.objectDetailContext,
         criterion: state.criterion,
