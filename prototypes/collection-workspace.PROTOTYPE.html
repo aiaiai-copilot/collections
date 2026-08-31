@@ -306,6 +306,7 @@
     body[data-variant="A"] .ordered-rank { font-size: 19px; }
     body[data-variant="A"] .collection-backdrop { padding: 0; place-items: end center; }
     body[data-variant="A"] .collection-panel { width: min(430px, 100%); border-radius: 22px 22px 0 0; }
+    body[data-variant="A"] .priority-panel { border-radius: 22px 22px 0 0; }
     body[data-variant="A"] .glossary-backdrop { justify-content: center; }
     body[data-variant="A"] .glossary-panel { min-height: 100dvh; }
     body[data-variant="A"] .duel-backdrop { padding: 0; }
@@ -462,6 +463,46 @@
     .filter-order-toggle:disabled { cursor: not-allowed; opacity: .4; }
     .filter-panel .a-new-filter { display: block; width: auto; margin: 0 16px 16px; padding: 12px; border: 1px solid #cbd2ca; text-align: center; }
 
+    /* Priority state — compact mobile-first management surface */
+    .priority-backdrop { position: fixed; z-index: 59; inset: 0; display: none; align-items: flex-end; justify-content: center; background: rgba(13,18,15,.64); backdrop-filter: blur(8px); }
+    .priority-backdrop.open { display: flex; }
+    .priority-panel { width: min(460px, 100%); max-height: 88dvh; overflow-y: auto; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); background: var(--panel); box-shadow: 0 -24px 70px rgba(0,0,0,.28); }
+    .priority-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .priority-panel-head h2 { margin: 2px 0 3px; font-size: 24px; }
+    .priority-panel-head p { margin: 0; color: var(--muted); font-size: 10px; }
+    .priority-summary { padding: 14px; border: 1px solid; border-radius: 16px; }
+    .priority-summary.incomplete { border-color: #e5aaa3; background: #fff0ee; }
+    .priority-summary.complete { border-color: #b9d8c1; background: #edf8f0; }
+    .priority-summary.neutral { border-color: #cbd2ca; background: #f5f6f1; }
+    .priority-summary strong { display: block; margin-bottom: 5px; font-size: 15px; }
+    .priority-summary p { margin: 0; color: #4f5a53; font-size: 11px; line-height: 1.45; }
+    .priority-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .priority-fact { padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.62); }
+    .priority-fact strong, .priority-fact small { display: block; }
+    .priority-fact strong { margin: 0 0 2px; font-size: 15px; }
+    .priority-fact small { color: var(--muted); font-size: 9px; line-height: 1.3; }
+    .priority-version-note { margin-top: 10px; padding: 10px 11px; border-left: 3px solid #bd7d25; border-radius: 0 11px 11px 0; background: #fff5df; color: #684d23; font-size: 10px; line-height: 1.4; }
+    .priority-result-note { margin-top: 10px; padding: 10px 11px; border-radius: 11px; background: #e8eee8; color: #47534b; font-size: 10px; line-height: 1.4; }
+    .priority-result { display: grid; gap: 12px; }
+    .priority-result-back { width: max-content; padding: 7px 9px; border: 0; border-radius: 9px; background: #e8eee8; color: var(--ink); cursor: pointer; font-size: 10px; font-weight: 850; }
+    .priority-result-head { padding: 13px 14px; border: 1px solid #b9d8c1; border-radius: 15px; background: #edf8f0; }
+    .priority-result-head strong, .priority-result-head small { display: block; }
+    .priority-result-head strong { margin-bottom: 4px; font-size: 16px; }
+    .priority-result-head small { color: var(--muted); font-size: 10px; }
+    .priority-result-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .priority-result-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 9px; align-items: center; padding: 10px 11px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .priority-result-rank { color: var(--green); font-size: 15px; font-weight: 900; text-align: center; }
+    .priority-result-row strong, .priority-result-row small { display: block; }
+    .priority-result-row strong { font-size: 11px; }
+    .priority-result-row small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .priority-actions { display: grid; gap: 8px; margin-top: 14px; }
+    .priority-actions button { min-height: 46px; }
+    .priority-review-button { border-color: #d7aaa4; color: #8b2b22; }
+    .priority-confirm { padding: 14px; border: 1px solid #d7aaa4; border-radius: 16px; background: #fff0ee; }
+    .priority-confirm h3 { margin-bottom: 7px; font-size: 17px; }
+    .priority-confirm p { margin: 0; color: #61514f; font-size: 11px; line-height: 1.45; }
+    .priority-confirm ul { margin: 10px 0 0; padding-left: 18px; color: #61514f; font-size: 10px; line-height: 1.45; }
+
     /* Object detail — mobile-first form */
     .object-detail-backdrop { position: fixed; z-index: 58; inset: 0; display: none; justify-content: center; background: rgba(13,18,15,.64); backdrop-filter: blur(8px); }
     .object-detail-backdrop.open { display: flex; }
@@ -600,7 +641,7 @@
       font-weight: 750;
     }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
-    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug, body.object-detail-open .switcher, body.object-detail-open .state-debug { display: none; }
+    body.duel-open .switcher, body.duel-open .state-debug, body.glossary-open .switcher, body.glossary-open .state-debug, body.collection-open .switcher, body.collection-open .state-debug, body.filter-open .switcher, body.filter-open .state-debug, body.object-detail-open .switcher, body.object-detail-open .state-debug, body.priorities-open .switcher, body.priorities-open .state-debug { display: none; }
 
     @media (max-width: 930px) {
       .a-shell { grid-template-columns: 220px minmax(0, 1fr); }
@@ -695,6 +736,7 @@
   <section id="glossaryBackdrop" class="glossary-backdrop" aria-hidden="true"></section>
   <section id="collectionBackdrop" class="collection-backdrop" aria-hidden="true"></section>
   <section id="filterBackdrop" class="filter-backdrop" aria-hidden="true"></section>
+  <section id="priorityBackdrop" class="priority-backdrop" aria-hidden="true"></section>
   <section id="objectDetailBackdrop" class="object-detail-backdrop" aria-hidden="true"></section>
 
   <details class="state-debug">
@@ -746,7 +788,7 @@
       { id: 'short', name: 'До 100 минут', tags: ['до 100 минут'], objectIds: [4, 9, 10], unorderedIds: [10], maxRemainingComparisons: 2, activity: 62, task: null },
       { id: 'europe', name: 'Европейское', tags: ['Европа'], objectIds: [1, 8], unorderedIds: [8], maxRemainingComparisons: 1, activity: 54, task: null },
       { id: 'family', name: 'С семьёй', tags: ['семья'], objectIds: [9, 10], unorderedIds: [10], maxRemainingComparisons: 1, activity: 47, task: null },
-      { id: 'romance', name: 'Романтика', tags: ['романтика'], objectIds: [1, 2, 11], unorderedIds: [], maxRemainingComparisons: 0, activity: 39, task: null },
+      { id: 'romance', name: 'Романтика', tags: ['романтика'], objectIds: [1, 2, 11], unorderedIds: [], maxRemainingComparisons: 0, activity: 39, task: null, result: { id: 'romance-2026-08-28', completedAt: '28 августа 2026', objectIds: [1, 2, 11] } },
       { id: 'serious', name: 'Серьёзное', tags: ['серьёзное'], objectIds: [5, 9, 12], unorderedIds: [12], maxRemainingComparisons: 2, activity: 28, task: null },
       { id: 'comedy', name: 'Комедии', tags: ['комедия'], objectIds: [8], unorderedIds: [], maxRemainingComparisons: 0, activity: 17, task: null },
       { id: 'music', name: 'Музыкальное', tags: ['музыка'], objectIds: [11], unorderedIds: [], maxRemainingComparisons: 0, activity: 8, task: null }
@@ -800,6 +842,9 @@
       glossaryOpen: false,
       collectionMenuOpen: false,
       filterPanelOpen: false,
+      priorityPanelOpen: false,
+      priorityReviewConfirmation: false,
+      priorityResultOpen: false,
       objectDetailId: requestedObject?.id ?? null,
       objectDetailContext: null,
       objectDetailDraft: requestedObject ? {
@@ -813,6 +858,7 @@
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
+      priorityReviewRemaining: Object.fromEntries([...savedFilters.map(filter => [filter.id, 0]), ['current', 0]]),
       taskProgress: Object.fromEntries([...savedFilters.filter(filter => filter.task).map(filter => [filter.id, filter.task.progress]), ['current', initialFilter.task?.progress ?? null]]),
       maxRemainingComparisons: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.maxRemainingComparisons]), ['current', initialFilter.maxRemainingComparisons]])
     };
@@ -824,6 +870,7 @@
     const glossaryBackdrop = document.querySelector('#glossaryBackdrop');
     const collectionBackdrop = document.querySelector('#collectionBackdrop');
     const filterBackdrop = document.querySelector('#filterBackdrop');
+    const priorityBackdrop = document.querySelector('#priorityBackdrop');
     const objectDetailBackdrop = document.querySelector('#objectDetailBackdrop');
     const stateOutput = document.querySelector('#stateOutput');
     const variantLabel = document.querySelector('#variantLabel');
@@ -834,7 +881,7 @@
     let suppressNextClick = false;
 
     function currentFilterFrom(source) {
-      return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null };
+      return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null, result: source.result ? { ...source.result, objectIds: [...source.result.objectIds] } : null };
     }
     function replaceMergedTagList(tags, sourceName = mergedSourceFromGlossary, targetName = mergedTargetFromGlossary) {
       const next = tags.map(tag => normalizeTag(tag) === normalizeTag(sourceName) ? targetName : tag);
@@ -1109,7 +1156,7 @@
         <button type="button" data-open-collections aria-haspopup="dialog"><span class="a-bottom-nav-icon">▱</span><span class="a-bottom-nav-label">Коллекции</span><span class="a-bottom-nav-count">${collections.length}</span></button>
         <button type="button" data-open-filter-panel aria-haspopup="dialog"><span class="a-bottom-nav-icon">☰</span><span class="a-bottom-nav-label">Фильтры</span><span class="a-bottom-nav-count">${userSavedFilters().length}</span></button>
         <a href="${glossaryBrowsingURL(filter)}"><span class="a-bottom-nav-icon">#</span><span class="a-bottom-nav-label">Глоссарий</span></a>
-        <button type="button" ${comparisonsAvailable ? 'data-open-duel' : 'disabled'} aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span></button>
+        <button type="button" data-open-priorities aria-haspopup="dialog" aria-label="${priorityLabel}"><span class="a-bottom-nav-icon">⇅</span><span class="a-bottom-nav-label">Приоритеты</span></button>
         <button type="button" data-toast="Настройки коллекции появятся в следующей итерации"><span class="a-bottom-nav-icon">⚙</span><span class="a-bottom-nav-label">Настройки</span></button>
       </nav>`;
     }
@@ -1221,8 +1268,9 @@
       const left = objectById(ids[state.duel.pairIndex % ids.length]);
       const right = objectById(ids[(state.duel.pairIndex + 2) % ids.length]);
       const progress = state.taskProgress[filter.id] ?? 0;
-      const remaining = state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []);
-      const duelProgress = state.variant === 'A' ? `<div class="duel-progress"><div class="duel-progress-copy"><span>Оценка</span><strong>${remaining > 0 ? `до ${pluralComparisons(remaining)}` : 'Приоритеты определены'}</strong></div></div>` : `<div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>`;
+      const reviewRemaining = state.priorityReviewRemaining[filter.id] ?? 0;
+      const remaining = reviewRemaining || (state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []));
+      const duelProgress = state.variant === 'A' ? `<div class="duel-progress"><div class="duel-progress-copy"><span>${reviewRemaining ? 'Пересмотр' : 'Оценка'}</span><strong>${remaining > 0 ? `до ${pluralComparisons(remaining)}` : 'Приоритеты определены'}</strong></div></div>` : `<div class="duel-progress"><div class="duel-progress-copy"><span>Прогресс</span><strong>${progress}%</strong></div><div class="progress-track" style="--progress:${progress}%"><div class="progress-fill"></div></div></div>`;
       const choiceMarkup = (item, outcome, side) => {
         const choice = `<button class="duel-choice" type="button" data-duel-outcome="${outcome}"><span class="duel-object">${poster(item)}<strong>Выбрать «${escapeHTML(item.title)}»</strong></span></button>`;
         if (state.variant !== 'A') return choice;
@@ -1292,6 +1340,85 @@
       document.body.classList.add('filter-open');
       filterBackdrop.classList.add('open');
       filterBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function renderPriorityPanel() {
+      const filter = activeFilter();
+      if (!state.priorityPanelOpen || state.variant !== 'A') {
+        document.body.classList.remove('priorities-open');
+        priorityBackdrop.classList.remove('open');
+        priorityBackdrop.setAttribute('aria-hidden', 'true');
+        priorityBackdrop.innerHTML = '';
+        return;
+      }
+      const remaining = state.maxRemainingComparisons[filter.id] ?? estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id] ?? []);
+      const reviewRemaining = state.priorityReviewRemaining[filter.id] ?? 0;
+      const comparisonsAvailable = filter.objectIds.length >= 2;
+      const hasTask = state.taskProgress[filter.id] != null;
+      const orderedCount = state.draftOrders[filter.id]?.length ?? 0;
+      const source = savedFilters.find(item => item.id === filter.sourceId);
+      const sourceRemaining = filter.dirty && source ? state.maxRemainingComparisons[source.id] ?? source.maxRemainingComparisons ?? 0 : 0;
+      const result = filter.result;
+      let tone = 'incomplete';
+      let title = 'Приоритеты ещё не определены';
+      let description = 'Можно начать попарные сравнения. Уже известные отношения общего порядка повторяться не будут.';
+      let primaryLabel = comparisonsAvailable ? 'Начать сравнения' : '';
+      if (!comparisonsAvailable) {
+        tone = 'neutral';
+        title = 'Сравнения не нужны';
+        description = filter.objectIds.length === 1 ? 'В срезе один объект — его положение однозначно.' : 'В текущем срезе нет объектов для сравнения.';
+      } else if (reviewRemaining > 0) {
+        tone = 'complete';
+        title = 'Пересмотр не завершён';
+        description = 'Известный порядок продолжает действовать. Новые решения могут изменить его в живых срезах.';
+        primaryLabel = 'Продолжить пересмотр';
+      } else if (filter.dirty && remaining > 0) {
+        title = 'Состав среза изменился';
+        description = 'Для текущего состава нужна отдельная задача. Прежняя задача не была изменена.';
+        primaryLabel = 'Начать для текущего среза';
+      } else if (remaining > 0 && hasTask) {
+        title = 'Определение приоритетов не завершено';
+        description = 'Все сделанные решения сохранены. Продолжение начнётся со следующей необходимой пары.';
+        primaryLabel = 'Продолжить сравнения';
+      } else if (remaining === 0) {
+        tone = 'complete';
+        title = 'Приоритеты определены';
+        description = 'Для всех объектов текущего среза известен полный порядок.';
+        primaryLabel = '';
+      }
+      const versionNote = filter.dirty && sourceRemaining > 0 ? `<div class="priority-version-note"><strong>Прежняя задача сохранена</strong><br>Она относится к фильтру «${escapeHTML(source.name)}» и содержит не более ${pluralComparisons(sourceRemaining)}. Вернуться к ней можно через «Фильтры».</div>` : '';
+      const resultNote = remaining === 0 || reviewRemaining > 0 ? '<div class="priority-result-note">Завершённый результат остаётся неизменяемым историческим снимком, даже если общий порядок позже будет пересмотрен.</div>' : '';
+      const resultRows = result?.objectIds.map((id, index) => {
+        const item = objectById(id);
+        return item ? `<li class="priority-result-row"><span class="priority-result-rank">${index + 1}</span><span><strong>${escapeHTML(item.title)}</strong><small>${item.year}</small></span></li>` : '';
+      }).join('') ?? '';
+      const resultContent = result ? `<div class="priority-result"><button class="priority-result-back" type="button" data-close-priority-result>← К состоянию приоритетов</button><div class="priority-result-head"><strong>Сохранённый результат</strong><small>${escapeHTML(result.completedAt)} · ${pluralObjects(result.objectIds.length)} · ${escapeHTML(state.criterion)}</small></div><ol class="priority-result-list">${resultRows}</ol></div>` : '';
+      const mainContent = state.priorityResultOpen && result ? resultContent : state.priorityReviewConfirmation ? `<div class="priority-confirm"><h3>Пересмотреть установленные отношения?</h3><p>Это отдельная задача поверх уже известного порядка.</p><ul><li>новые решения могут переставить объекты в других живых срезах;</li><li>сохранённые завершённые результаты не изменятся;</li><li>пересмотр можно прервать и продолжить позже.</li></ul></div><div class="priority-actions"><button class="soft-button" type="button" data-cancel-priority-review>Отмена</button><button class="primary-button" type="button" data-start-priority-review>Начать пересмотр</button></div>` : `<div class="priority-summary ${tone}"><strong>${escapeHTML(title)}</strong><p>${escapeHTML(description)}</p></div><div class="priority-facts"><div class="priority-fact"><strong>${orderedCount} из ${filter.objectIds.length}</strong><small>объектов уже имеют место</small></div><div class="priority-fact"><strong>${reviewRemaining > 0 ? `&lt;= ${reviewRemaining}` : remaining > 0 ? `&lt;= ${remaining}` : 'Готово'}</strong><small>${reviewRemaining > 0 ? 'решений для пересмотра' : remaining > 0 ? 'сравнений осталось' : 'полный порядок'}</small></div></div>${versionNote}${resultNote}<div class="priority-actions">${primaryLabel ? `<button class="primary-button" type="button" data-start-priority-task>${escapeHTML(primaryLabel)}</button>` : ''}${result ? '<button class="soft-button" type="button" data-open-priority-result>Открыть сохранённый результат</button>' : ''}${remaining === 0 && comparisonsAvailable && reviewRemaining === 0 ? '<button class="ghost-button priority-review-button" type="button" data-confirm-priority-review>Пересмотреть решения</button>' : ''}</div>`;
+      priorityBackdrop.innerHTML = `<section class="priority-panel" role="dialog" aria-modal="true" aria-label="Состояние приоритетов"><header class="priority-panel-head"><div><p class="eyebrow">${escapeHTML(filter.name)}</p><h2>Приоритеты</h2><p>${escapeHTML(state.criterion)}</p></div><button class="icon-button" type="button" data-close-priorities aria-label="Закрыть">×</button></header>${mainContent}</section>`;
+      document.body.classList.add('priorities-open');
+      priorityBackdrop.classList.add('open');
+      priorityBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function openPriorityTask() {
+      const filter = activeFilter();
+      if (filter.objectIds.length < 2) return;
+      if ((state.priorityReviewRemaining[filter.id] ?? 0) === 0 && state.taskProgress[filter.id] == null) state.taskProgress[filter.id] = 0;
+      state.priorityPanelOpen = false;
+      state.priorityReviewConfirmation = false;
+      state.priorityResultOpen = false;
+      state.duel.open = true;
+      render();
+    }
+
+    function startPriorityReview() {
+      const filter = activeFilter();
+      if (filter.objectIds.length < 2) return;
+      state.priorityReviewRemaining[filter.id] = Math.max(1, filter.objectIds.length - 1);
+      if (!filter.dirty) state.priorityReviewRemaining[filter.sourceId] = state.priorityReviewRemaining[filter.id];
+      state.priorityReviewConfirmation = false;
+      state.priorityResultOpen = false;
+      openPriorityTask();
     }
 
     function renderObjectDetail() {
@@ -1444,6 +1571,9 @@
         liveSliceSize: filter.objectIds.length,
         appliedTagMerge: mergedSourceFromGlossary && mergedTargetFromGlossary ? { source: mergedSourceFromGlossary, target: mergedTargetFromGlossary } : null,
         preservedComparisonTasks: state.preservedComparisonTasks,
+        priorityPanelOpen: state.priorityPanelOpen,
+        priorityReviewRemaining: state.priorityReviewRemaining[filter.id] ?? 0,
+        priorityResult: filter.result ? { id: filter.result.id, completedAt: filter.result.completedAt, objectIds: filter.result.objectIds } : null,
         objectDetailId: state.objectDetailId,
         objectDetailContext: state.objectDetailContext,
         criterion: state.criterion,
@@ -1462,6 +1592,7 @@
       renderGlossary();
       renderCollections();
       renderFilterPanel();
+      renderPriorityPanel();
       renderObjectDetail();
       renderState();
       wireDragAndDrop();
@@ -1490,11 +1621,15 @@
       state.draftUnordered.current = [...state.draftUnordered[source.id]];
       state.taskProgress.current = state.taskProgress[source.id] ?? null;
       state.maxRemainingComparisons.current = state.maxRemainingComparisons[source.id] ?? 0;
+      state.priorityReviewRemaining.current = state.priorityReviewRemaining[source.id] ?? 0;
       state.duel.pairIndex = 0;
       state.filterEditorOpen = false;
       state.filterTagQuery = '';
       state.expandedTags = false;
       state.filterPanelOpen = false;
+      state.priorityPanelOpen = false;
+      state.priorityReviewConfirmation = false;
+      state.priorityResultOpen = false;
       render();
     }
 
@@ -1561,7 +1696,8 @@
         unorderedIds: [...state.draftUnordered[filter.id]],
         maxRemainingComparisons: state.maxRemainingComparisons[filter.id] ?? 0,
         activity: Math.min(100, Math.max(0, ...userSavedFilters().map(item => item.activity)) + 1),
-        task: filter.task ? { ...filter.task } : null
+        task: filter.task ? { ...filter.task } : null,
+        result: filter.result && filter.result.objectIds.length === filter.objectIds.length && filter.result.objectIds.every(objectId => filter.objectIds.includes(objectId)) ? { ...filter.result, objectIds: [...filter.result.objectIds] } : null
       };
       savedFilters.push(saved);
       state.activeFilterId = id;
@@ -1570,11 +1706,13 @@
       state.draftUnordered[id] = [...state.draftUnordered[filter.id]];
       state.taskProgress[id] = state.taskProgress[filter.id] ?? null;
       state.maxRemainingComparisons[id] = state.maxRemainingComparisons[filter.id] ?? 0;
+      state.priorityReviewRemaining[id] = state.priorityReviewRemaining[filter.id] ?? 0;
       state.currentFilter = currentFilterFrom(saved);
       state.draftOrders.current = [...state.draftOrders[id]];
       state.draftUnordered.current = [...state.draftUnordered[id]];
       state.taskProgress.current = state.taskProgress[id];
       state.maxRemainingComparisons.current = state.maxRemainingComparisons[id];
+      state.priorityReviewRemaining.current = state.priorityReviewRemaining[id];
       state.filterEditorOpen = false;
       render();
       showToast(`Фильтр «${saved.name}» сохранён`);
@@ -1610,10 +1748,12 @@
         filter.objectIds = [...source.objectIds];
         filter.unorderedIds = [...source.unorderedIds];
         filter.task = source.task ? { ...source.task } : null;
+        filter.result = source.result ? { ...source.result, objectIds: [...source.result.objectIds] } : null;
         state.draftOrders[filter.id] = [...state.draftOrders[source.id]];
         state.draftUnordered[filter.id] = [...state.draftUnordered[source.id]];
         state.taskProgress[filter.id] = state.taskProgress[source.id] ?? null;
         state.maxRemainingComparisons[filter.id] = state.maxRemainingComparisons[source.id] ?? 0;
+        state.priorityReviewRemaining[filter.id] = state.priorityReviewRemaining[source.id] ?? 0;
         state.expandedTags = false;
         showToast('Текущий фильтр снова совпадает с исходным');
         render();
@@ -1634,6 +1774,7 @@
       filter.unorderedIds = [...state.draftUnordered[filter.id]];
       filter.task = null;
       state.taskProgress[filter.id] = null;
+      state.priorityReviewRemaining[filter.id] = 0;
       state.maxRemainingComparisons[filter.id] = estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered[filter.id]);
       state.expandedTags = false;
       showToast('Текущий фильтр изменён; прежняя задача осталась у прежней версии среза');
@@ -1808,6 +1949,14 @@
       else if (target.matches('[data-save-current-filter]')) saveCurrentFilter();
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
+      else if (target.matches('[data-open-priorities]')) { state.priorityPanelOpen = true; state.priorityReviewConfirmation = false; state.priorityResultOpen = false; renderPriorityPanel(); renderState(); }
+      else if (target.matches('[data-close-priorities]')) { state.priorityPanelOpen = false; state.priorityReviewConfirmation = false; state.priorityResultOpen = false; renderPriorityPanel(); renderState(); }
+      else if (target.matches('[data-start-priority-task]')) openPriorityTask();
+      else if (target.matches('[data-open-priority-result]')) { state.priorityResultOpen = true; state.priorityReviewConfirmation = false; renderPriorityPanel(); renderState(); }
+      else if (target.matches('[data-close-priority-result]')) { state.priorityResultOpen = false; renderPriorityPanel(); renderState(); }
+      else if (target.matches('[data-confirm-priority-review]')) { state.priorityReviewConfirmation = true; renderPriorityPanel(); }
+      else if (target.matches('[data-cancel-priority-review]')) { state.priorityReviewConfirmation = false; renderPriorityPanel(); }
+      else if (target.matches('[data-start-priority-review]')) startPriorityReview();
       else if (target.matches('[data-remove-object-tag]')) {
         state.objectDetailDraft.tags = state.objectDetailDraft.tags.filter(tag => normalizeTag(tag) !== normalizeTag(target.dataset.removeObjectTag));
         rerenderObjectDetailPreservingScroll(true);
@@ -1831,6 +1980,19 @@
       else if (target.matches('[data-duel-outcome]')) {
         const outcome = target.dataset.duelOutcome;
         const filter = activeFilter();
+        const reviewRemaining = state.priorityReviewRemaining[filter.id] ?? 0;
+        if (reviewRemaining > 0) {
+          if (outcome !== 'defer') state.priorityReviewRemaining[filter.id] = Math.max(0, reviewRemaining - 1);
+          if (!filter.dirty) state.priorityReviewRemaining[filter.sourceId] = state.priorityReviewRemaining[filter.id];
+          state.duel.pairIndex += 1;
+          if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
+          else if (state.priorityReviewRemaining[filter.id] === 0) {
+            state.duel.open = false;
+            showToast('Пересмотр завершён; общий порядок обновлён');
+          } else showToast(outcome === 'equal' ? 'Равноценность обновлена в общем порядке' : 'Решение обновлено в общем порядке');
+          render();
+          return;
+        }
         const current = state.taskProgress[filter.id] ?? 0;
         state.taskProgress[filter.id] = Math.min(96, current + (outcome === 'defer' ? 0 : 4));
         if (outcome !== 'defer') state.maxRemainingComparisons[filter.id] = Math.max(0, (state.maxRemainingComparisons[filter.id] ?? 1) - 1);
@@ -1847,6 +2009,12 @@
         if (outcome === 'defer') showToast('Пара отложена и вернётся позже');
         else if (state.maxRemainingComparisons[filter.id] === 0) {
           state.duel.open = false;
+          const completedResult = { id: `result-${Date.now()}`, completedAt: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()), objectIds: [...state.draftOrders[filter.id]] };
+          filter.result = completedResult;
+          if (!filter.dirty) {
+            const source = savedFilters.find(item => item.id === filter.sourceId);
+            if (source) source.result = { ...completedResult, objectIds: [...completedResult.objectIds] };
+          }
           showToast('Приоритеты среза определены');
         } else showToast(outcome === 'equal' ? 'Равноценность сохранена' : 'Решение сохранено в общем порядке');
         render();
@@ -1904,13 +2072,15 @@
         openObjectDetail(objectCard.dataset.openObjectId);
         return;
       }
-      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && state.objectDetailId == null && event.key === 'ArrowLeft') setVariant(-1);
-      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && state.objectDetailId == null && event.key === 'ArrowRight') setVariant(1);
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && !state.priorityPanelOpen && state.objectDetailId == null && event.key === 'ArrowLeft') setVariant(-1);
+      if (!editing && !state.duel.open && !state.glossaryOpen && !state.collectionMenuOpen && !state.filterPanelOpen && !state.priorityPanelOpen && state.objectDetailId == null && event.key === 'ArrowRight') setVariant(1);
       if (event.key === 'Escape' && state.objectDetailId != null) closeObjectDetail();
       else if (event.key === 'Escape' && state.duel.open) { state.duel.open = false; renderDuel(); }
       else if (event.key === 'Escape' && state.glossaryOpen) { state.glossaryOpen = false; renderGlossary(); }
       else if (event.key === 'Escape' && state.collectionMenuOpen) { state.collectionMenuOpen = false; renderCollections(); }
       else if (event.key === 'Escape' && state.filterPanelOpen) { state.filterPanelOpen = false; renderFilterPanel(); }
+      else if (event.key === 'Escape' && state.priorityPanelOpen && state.priorityResultOpen) { state.priorityResultOpen = false; renderPriorityPanel(); }
+      else if (event.key === 'Escape' && state.priorityPanelOpen) { state.priorityPanelOpen = false; state.priorityReviewConfirmation = false; renderPriorityPanel(); }
     });
 
     render();
