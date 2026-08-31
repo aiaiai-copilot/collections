@@ -18,6 +18,9 @@
       --lime: #dff26f;
       --peach: #f0c9af;
       --blue: #c9ddec;
+      --blue-ink: #315d86;
+      --red: #963d34;
+      --red-2: #f9e7e3;
       --yellow: #f5de85;
       --shadow: 0 18px 55px rgba(27, 43, 34, .10);
       --radius: 22px;
@@ -473,6 +476,20 @@
     .object-detail-field input, .object-detail-field textarea { width: 100%; padding: 11px 12px; border: 1px solid #bfc9bf; border-radius: 12px; background: white; color: var(--ink); font: inherit; font-size: 13px; }
     .object-detail-field textarea { min-height: 90px; resize: vertical; line-height: 1.4; }
     .object-detail-field small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+    .object-tag-editor { display: grid; gap: 9px; padding: 10px; border: 1px solid #bfc9bf; border-radius: 14px; background: white; }
+    .object-tag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .object-tag-chip { display: inline-flex; min-height: 32px; align-items: center; gap: 6px; padding: 5px 6px 5px 9px; border-radius: 999px; background: var(--green-2); color: var(--green); font-size: 10px; font-weight: 800; }
+    .object-tag-chip.archived { background: var(--red-2); color: var(--red); }
+    .object-tag-chip button { display: grid; width: 20px; height: 20px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: rgba(31, 93, 62, .11); color: inherit; line-height: 1; }
+    .object-tag-search { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #bfc9bf; border-radius: 11px; background: #fafbf8; color: var(--ink); }
+    .object-tag-results { display: grid; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #fafbf8; }
+    .object-tag-option, .object-tag-create, .object-tag-state { width: 100%; min-height: 42px; padding: 9px 11px; border: 0; border-bottom: 1px solid #e0e5df; background: transparent; color: var(--ink); font-size: 11px; text-align: left; }
+    .object-tag-option:last-child, .object-tag-create:last-child, .object-tag-state:last-child { border-bottom: 0; }
+    .object-tag-option { font-weight: 760; }
+    .object-tag-option small { display: block; margin-top: 2px; color: var(--blue-ink); }
+    .object-tag-create { background: var(--green-2); color: var(--green); font-weight: 850; }
+    .object-tag-state { color: var(--muted); }
+    .object-tag-state.archived { color: var(--red); }
     .object-detail-actions { display: grid; flex: 0 0 auto; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); }
     .object-detail-actions button { min-height: 46px; }
 
@@ -738,7 +755,27 @@
     const requestedVariant = routeParams.get('variant')?.toUpperCase();
     const requestedFilter = savedFilters.find(filter => filter.id === routeParams.get('filter'));
     const requestedObject = objects.find(item => item.id === Number(routeParams.get('object')));
+    const assignedTagFromGlossary = routeParams.get('assignTag')?.trim();
+    const createdTagFromGlossary = routeParams.get('createdTag')?.trim();
+    let requestedDraftTags = null;
+    try {
+      const parsedDraftTags = JSON.parse(routeParams.get('draftTags'));
+      if (Array.isArray(parsedDraftTags)) requestedDraftTags = parsedDraftTags.map(tag => String(tag).trim()).filter(Boolean);
+    } catch {}
+    const glossaryDetails = {
+      'спокойное': { synonyms: ['тихое', 'медитативное'] },
+      'медленное': { synonyms: ['неторопливое'] },
+      'Япония': { synonyms: ['японское'] },
+      'поэзия': { synonyms: ['стихи'] },
+      'архитектура': { synonyms: ['здания'] },
+      'Европа': { synonyms: [], status: 'archived' }
+    };
+    const glossaryEntries = [...new Set([...objects.flatMap(item => item.tags), createdTagFromGlossary].filter(Boolean))]
+      .map(name => ({ name, synonyms: glossaryDetails[name]?.synonyms || [], status: glossaryDetails[name]?.status || 'active' }))
+      .sort((left, right) => left.name.localeCompare(right.name, 'ru'));
     const initialFilter = requestedFilter || savedFilters.find(filter => filter.id === 'all');
+    const initialObjectTags = requestedObject ? [...new Set([...(requestedDraftTags || requestedObject.tags), assignedTagFromGlossary].filter(Boolean))] : [];
+    const requestedDraftYear = Number(routeParams.get('draftYear'));
     const state = {
       variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
       activeFilterId: initialFilter.id,
@@ -753,6 +790,13 @@
       filterPanelOpen: false,
       objectDetailId: requestedObject?.id ?? null,
       objectDetailContext: null,
+      objectDetailDraft: requestedObject ? {
+        objectId: requestedObject.id,
+        title: routeParams.get('draftTitle') || requestedObject.title,
+        year: Number.isFinite(requestedDraftYear) && requestedDraftYear > 0 ? requestedDraftYear : requestedObject.year,
+        tags: initialObjectTags
+      } : null,
+      objectTagQuery: '',
       draftOrders: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.objectIds.filter(id => !filter.unorderedIds.includes(id))]), ['current', initialFilter.objectIds.filter(id => !initialFilter.unorderedIds.includes(id))]]),
       draftUnordered: Object.fromEntries([...savedFilters.map(filter => [filter.id, [...filter.unorderedIds]]), ['current', [...initialFilter.unorderedIds]]]),
       duel: { open: false, pairIndex: 0 },
@@ -782,8 +826,22 @@
     function objectById(id) { return objects.find(item => item.id === Number(id)); }
     function orderedObjects() { return state.draftOrders[activeFilter().id].map(objectById); }
     function unorderedObjects() { return state.draftUnordered[activeFilter().id].map(objectById); }
+    function normalizeTag(value = '') { return String(value).normalize('NFKC').trim().replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru'); }
     function escapeHTML(value = '') {
       return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
+    }
+    function glossaryCreationURL(tagName) {
+      const draft = state.objectDetailDraft;
+      if (!draft) return 'tag-glossary-manual.PROTOTYPE.html?variant=A';
+      const params = new URLSearchParams({
+        variant: 'A',
+        newTag: tagName,
+        assignObject: String(draft.objectId),
+        draftTitle: draft.title,
+        draftYear: String(draft.year),
+        draftTags: JSON.stringify(draft.tags)
+      });
+      return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
     }
     function pluralObjects(count) {
       const tail = count % 10;
@@ -1091,16 +1149,56 @@
         objectDetailBackdrop.innerHTML = '';
         return;
       }
-      objectDetailBackdrop.innerHTML = `<aside class="object-detail-panel" role="dialog" aria-modal="true" aria-label="Детальная форма элемента"><header class="object-detail-head"><div><p class="eyebrow">Элемент коллекции</p><h2>Детальная форма</h2><p>Изменения сохраняются только в памяти прототипа.</p></div><button class="icon-button" type="button" data-close-object-detail aria-label="Закрыть детальную форму">×</button></header><form class="object-detail-form" data-object-detail-form data-object-id="${item.id}"><div class="object-detail-fields"><div class="object-detail-preview">${poster(item)}</div><label class="object-detail-field"><span>Название</span><input type="text" name="title" value="${escapeHTML(item.title)}" required></label><label class="object-detail-field"><span>Год</span><input type="number" name="year" value="${item.year}" min="1888" max="2100" required></label><label class="object-detail-field"><span>Теги</span><textarea name="tags" aria-describedby="object-tags-help">${escapeHTML(item.tags.join(', '))}</textarea><small id="object-tags-help">Разделяйте теги запятыми. Изменение тегов может изменить состав текущего и сохранённых фильтров.</small></label></div><footer class="object-detail-actions"><button class="soft-button" type="button" data-close-object-detail>Отмена</button><button class="primary-button" type="submit">Сохранить</button></footer></form></aside>`;
+      if (!state.objectDetailDraft || state.objectDetailDraft.objectId !== item.id) {
+        state.objectDetailDraft = { objectId: item.id, title: item.title, year: item.year, tags: [...item.tags] };
+        state.objectTagQuery = '';
+      }
+      const draft = state.objectDetailDraft;
+      const rawQuery = state.objectTagQuery.trim().replace(/^#+/, '').trim();
+      const query = normalizeTag(rawQuery);
+      const selected = new Set(draft.tags.map(normalizeTag));
+      const exactEntry = query ? glossaryEntries.find(entry => [entry.name, ...entry.synonyms].some(label => normalizeTag(label) === query)) : null;
+      const suggestions = query ? glossaryEntries.filter(entry => entry.status === 'active' && !selected.has(normalizeTag(entry.name)) && [entry.name, ...entry.synonyms].some(label => normalizeTag(label).includes(query))).slice(0, 5) : [];
+      const chips = draft.tags.map(tag => {
+        const entry = glossaryEntries.find(item => normalizeTag(item.name) === normalizeTag(tag));
+        const archived = entry?.status === 'archived';
+        return `<span class="object-tag-chip ${archived ? 'archived' : ''}">#${escapeHTML(tag)}${archived ? ' · в архиве' : ''}<button type="button" data-remove-object-tag="${escapeHTML(tag)}" aria-label="Удалить тег ${escapeHTML(tag)}">×</button></span>`;
+      }).join('');
+      const suggestionRows = suggestions.map(entry => {
+        const synonym = entry.synonyms.find(label => normalizeTag(label).includes(query));
+        return `<button type="button" class="object-tag-option" data-add-object-tag="${escapeHTML(entry.name)}">Добавить #${escapeHTML(entry.name)}${synonym && normalizeTag(synonym) !== normalizeTag(entry.name) ? `<small>Найдено по синониму «${escapeHTML(synonym)}»</small>` : ''}</button>`;
+      }).join('');
+      let queryAction = '';
+      if (query && exactEntry?.status === 'archived' && !selected.has(normalizeTag(exactEntry.name))) queryAction = `<div class="object-tag-state archived">#${escapeHTML(exactEntry.name)} находится в архиве и недоступен для нового назначения</div>`;
+      else if (query && exactEntry && selected.has(normalizeTag(exactEntry.name))) queryAction = `<div class="object-tag-state">#${escapeHTML(exactEntry.name)} уже назначен объекту</div>`;
+      else if (query && !exactEntry) queryAction = `<button type="button" class="object-tag-create" data-create-object-tag="${escapeHTML(rawQuery)}">Создать #${escapeHTML(rawQuery)} в глоссарии и назначить объекту</button>`;
+      const tagResults = query ? `<div class="object-tag-results">${suggestionRows}${queryAction || (!suggestions.length ? '<div class="object-tag-state">Совпадений нет</div>' : '')}</div>` : '';
+      const previewItem = { ...item, title: draft.title || item.title, year: draft.year || item.year, tags: draft.tags };
+      objectDetailBackdrop.innerHTML = `<aside class="object-detail-panel" role="dialog" aria-modal="true" aria-label="Детальная форма элемента"><header class="object-detail-head"><div><p class="eyebrow">Элемент коллекции</p><h2>Детальная форма</h2><p>Изменения сохраняются только в памяти прототипа.</p></div><button class="icon-button" type="button" data-close-object-detail aria-label="Закрыть детальную форму">×</button></header><form class="object-detail-form" data-object-detail-form data-object-id="${item.id}"><div class="object-detail-fields"><div class="object-detail-preview">${poster(previewItem)}</div><label class="object-detail-field"><span>Название</span><input type="text" name="title" value="${escapeHTML(draft.title)}" required></label><label class="object-detail-field"><span>Год</span><input type="number" name="year" value="${draft.year}" min="1888" max="2100" required></label><div class="object-detail-field"><span>Теги</span><div class="object-tag-editor"><div class="object-tag-chips">${chips || '<span class="object-tag-state">Пока нет тегов</span>'}</div><input class="object-tag-search" data-object-tag-search type="search" value="${escapeHTML(state.objectTagQuery)}" placeholder="Найти или добавить тег" aria-describedby="object-tags-help">${tagResults}</div><small id="object-tags-help">Поиск использует названия и синонимы глоссария. Для неизвестного обозначения сначала откроется форма новой записи.</small></div></div><footer class="object-detail-actions"><button class="soft-button" type="button" data-close-object-detail>Отмена</button><button class="primary-button" type="submit">Сохранить</button></footer></form></aside>`;
       document.body.classList.add('object-detail-open');
       objectDetailBackdrop.classList.add('open');
       objectDetailBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function rerenderObjectDetailPreservingScroll(focusSearch = false) {
+      const scrollTop = objectDetailBackdrop.querySelector('.object-detail-fields')?.scrollTop ?? 0;
+      renderObjectDetail();
+      const fields = objectDetailBackdrop.querySelector('.object-detail-fields');
+      if (fields) fields.scrollTop = scrollTop;
+      if (focusSearch) {
+        const search = objectDetailBackdrop.querySelector('[data-object-tag-search]');
+        search?.focus();
+        search?.setSelectionRange(search.value.length, search.value.length);
+      }
     }
 
     function openObjectDetail(id, context = 'workspace') {
       if (state.variant !== 'A' || !objectById(id)) return;
       state.objectDetailId = Number(id);
       state.objectDetailContext = context;
+      const item = objectById(id);
+      state.objectDetailDraft = { objectId: item.id, title: item.title, year: item.year, tags: [...item.tags] };
+      state.objectTagQuery = '';
       renderObjectDetail();
       renderState();
     }
@@ -1108,6 +1206,8 @@
     function closeObjectDetail() {
       state.objectDetailId = null;
       state.objectDetailContext = null;
+      state.objectDetailDraft = null;
+      state.objectTagQuery = '';
       renderObjectDetail();
       renderState();
     }
@@ -1159,16 +1259,18 @@
 
     function saveObjectDetail(form) {
       const item = objectById(form.dataset.objectId);
-      if (!item) return;
+      const draft = state.objectDetailDraft;
+      if (!item || !draft) return;
       const detailContext = state.objectDetailContext;
-      const data = new FormData(form);
-      item.title = String(data.get('title')).trim();
-      item.year = Number(data.get('year'));
-      item.tags = [...new Set(String(data.get('tags')).split(',').map(tag => tag.trim()).filter(Boolean))];
+      item.title = draft.title.trim();
+      item.year = Number(draft.year);
+      item.tags = [...new Set(draft.tags.map(tag => tag.trim()).filter(Boolean))];
       refreshFilterMemberships();
       const remainsInCurrentFilter = activeFilter().objectIds.includes(item.id);
       state.objectDetailId = null;
       state.objectDetailContext = null;
+      state.objectDetailDraft = null;
+      state.objectTagQuery = '';
       render();
       showToast(detailContext === 'duel' && !remainsInCurrentFilter ? 'Элемент больше не входит в текущий фильтр' : 'Изменения элемента сохранены в прототипе');
     }
@@ -1544,6 +1646,16 @@
       else if (target.matches('[data-save-current-filter]')) saveCurrentFilter();
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
+      else if (target.matches('[data-remove-object-tag]')) {
+        state.objectDetailDraft.tags = state.objectDetailDraft.tags.filter(tag => normalizeTag(tag) !== normalizeTag(target.dataset.removeObjectTag));
+        rerenderObjectDetailPreservingScroll(true);
+      }
+      else if (target.matches('[data-add-object-tag]')) {
+        if (!state.objectDetailDraft.tags.some(tag => normalizeTag(tag) === normalizeTag(target.dataset.addObjectTag))) state.objectDetailDraft.tags.push(target.dataset.addObjectTag);
+        state.objectTagQuery = '';
+        rerenderObjectDetailPreservingScroll(true);
+      }
+      else if (target.matches('[data-create-object-tag]')) location.href = glossaryCreationURL(target.dataset.createObjectTag);
       else if (target.matches('[data-close-object-detail]')) closeObjectDetail();
       else if (target.matches('[data-open-glossary]')) { state.filterPanelOpen = false; renderFilterPanel(); state.glossaryOpen = true; renderGlossary(); }
       else if (target.matches('[data-close-glossary]')) { state.glossaryOpen = false; renderGlossary(); }
@@ -1590,9 +1702,23 @@
     });
 
     document.addEventListener('input', event => {
-      if (!event.target.matches('[data-current-filter-name]')) return;
-      renameCurrentFilter(event.target.value);
-      renderState();
+      if (event.target.matches('[data-object-detail-form] [name="title"]')) {
+        state.objectDetailDraft.title = event.target.value;
+        return;
+      }
+      if (event.target.matches('[data-object-detail-form] [name="year"]')) {
+        state.objectDetailDraft.year = event.target.value;
+        return;
+      }
+      if (event.target.matches('[data-object-tag-search]')) {
+        state.objectTagQuery = event.target.value;
+        rerenderObjectDetailPreservingScroll(true);
+        return;
+      }
+      if (event.target.matches('[data-current-filter-name]')) {
+        renameCurrentFilter(event.target.value);
+        renderState();
+      }
     });
 
     document.addEventListener('focusout', event => {
