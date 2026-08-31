@@ -240,6 +240,7 @@
     .slice-context-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; color: var(--muted); font-size: 11px; font-weight: 760; }
     .slice-condition { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 11px; }
     .slice-condition .tag { background: var(--green-2); color: var(--green); font-size: 11px; }
+    .slice-condition .tag.archived { background: var(--red-2); color: var(--red); }
     .slice-condition .empty-filter-state { border: 1px solid #d7bd68; background: #fff2bf; color: #745715; font-weight: 880; }
     .filter-tag-remove { display: grid; width: 18px; height: 18px; margin: -2px -4px -2px 0; padding: 0; place-items: center; border: 0; border-radius: 99px; background: rgba(35,104,75,.12); color: var(--green); cursor: pointer; font-size: 13px; font-weight: 900; line-height: 1; }
     .filter-tag-remove:active { background: rgba(35,104,75,.24); }
@@ -254,9 +255,7 @@
     .filter-editor { margin: 15px 0 0; padding: 15px; border: 1px solid #bfc9bf; border-radius: 17px; background: #f8faf5; }
     .filter-editor-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .filter-editor-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
-    .filter-editor-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .filter-editor-tags button { padding: 7px 9px; border: 1px solid #cbd2ca; border-radius: 999px; background: white; cursor: pointer; font-size: 11px; }
-    .filter-editor-tags button.active { border-color: var(--green); background: var(--green-2); color: var(--green); font-weight: 820; }
+    .filter-editor .object-tag-editor { margin-top: 2px; }
     .filter-editor-title-input { width: min(100%, 310px); padding: 4px 0; border: 0; border-bottom: 1px solid #aeb9af; background: transparent; color: var(--ink); font: inherit; font-size: 18px; font-weight: 850; outline: 0; }
     .filter-editor-title-input:focus { border-bottom-color: var(--green); }
     .filter-editor-title-input::placeholder { color: #7a847c; opacity: 1; }
@@ -755,8 +754,10 @@
     const requestedVariant = routeParams.get('variant')?.toUpperCase();
     const requestedFilter = savedFilters.find(filter => filter.id === routeParams.get('filter'));
     const requestedObject = objects.find(item => item.id === Number(routeParams.get('object')));
-    const assignedTagFromGlossary = routeParams.get('assignTag')?.trim();
+    const assignedObjectTagFromGlossary = routeParams.get('assignTag')?.trim();
+    const assignedFilterTagFromGlossary = routeParams.get('addFilterTag')?.trim();
     const createdTagFromGlossary = routeParams.get('createdTag')?.trim();
+    const filterReturnContext = routeParams.get('filterContext') === '1';
     let requestedDraftTags = null;
     try {
       const parsedDraftTags = JSON.parse(routeParams.get('draftTags'));
@@ -774,7 +775,7 @@
       .map(name => ({ name, synonyms: glossaryDetails[name]?.synonyms || [], status: glossaryDetails[name]?.status || 'active' }))
       .sort((left, right) => left.name.localeCompare(right.name, 'ru'));
     const initialFilter = requestedFilter || savedFilters.find(filter => filter.id === 'all');
-    const initialObjectTags = requestedObject ? [...new Set([...(requestedDraftTags || requestedObject.tags), assignedTagFromGlossary].filter(Boolean))] : [];
+    const initialObjectTags = requestedObject ? [...new Set([...(requestedDraftTags || requestedObject.tags), assignedObjectTagFromGlossary].filter(Boolean))] : [];
     const requestedDraftYear = Number(routeParams.get('draftYear'));
     const state = {
       variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
@@ -783,7 +784,8 @@
       criterion: 'Пересмотреть первым',
       filterOrderMode: 'activity',
       filterOrder: savedFilters.filter(filter => !filter.system).map(filter => filter.id),
-      filterEditorOpen: Boolean(requestedFilter),
+      filterEditorOpen: Boolean(requestedFilter || filterReturnContext),
+      filterTagQuery: '',
       expandedTags: false,
       glossaryOpen: false,
       collectionMenuOpen: false,
@@ -804,6 +806,8 @@
       maxRemainingComparisons: Object.fromEntries([...savedFilters.map(filter => [filter.id, filter.maxRemainingComparisons]), ['current', initialFilter.maxRemainingComparisons]])
     };
 
+    if (filterReturnContext) restoreCurrentFilterDraftFromRoute();
+
     const app = document.querySelector('#app');
     const duelBackdrop = document.querySelector('#duelBackdrop');
     const glossaryBackdrop = document.querySelector('#glossaryBackdrop');
@@ -820,6 +824,54 @@
 
     function currentFilterFrom(source) {
       return { ...source, id: 'current', sourceId: source.id, dirty: false, tags: [...source.tags], objectIds: [...source.objectIds], unorderedIds: [...source.unorderedIds], task: source.task ? { ...source.task } : null };
+    }
+    function parseRouteArray(name) {
+      try {
+        const parsed = JSON.parse(routeParams.get(name));
+        return Array.isArray(parsed) ? parsed : null;
+      } catch { return null; }
+    }
+    function restoreCurrentFilterDraftFromRoute() {
+      const filter = state.currentFilter;
+      const source = savedFilters.find(item => item.id === filter.sourceId);
+      if (!source) return;
+      const wasDirty = routeParams.get('draftFilterDirty') === '1';
+      const draftTags = (parseRouteArray('draftFilterTags') || source.tags).map(tag => String(tag).trim()).filter(Boolean);
+      filter.tags = [...new Set([...draftTags, assignedFilterTagFromGlossary].filter(Boolean))];
+      filter.dirty = !sameTags(filter.tags, source.tags);
+      if (!filter.dirty) {
+        filter.name = source.name;
+        filter.showName = Boolean(source.showName);
+      } else if (wasDirty) {
+        filter.name = routeParams.get('draftFilterName')?.trim() || 'Несохранённый фильтр';
+        filter.showName = routeParams.get('draftFilterShowName') === '1';
+      } else {
+        filter.name = 'Несохранённый фильтр';
+        filter.showName = false;
+      }
+
+      const nextIds = objects.filter(item => filter.tags.every(tag => item.tags.includes(tag))).map(item => item.id);
+      const routeOrder = (parseRouteArray('draftFilterOrder') || source.objectIds.filter(id => !source.unorderedIds.includes(id))).map(Number);
+      const routeUnordered = (parseRouteArray('draftFilterUnordered') || source.unorderedIds).map(Number);
+      const nextOrdered = routeOrder.filter(id => nextIds.includes(id));
+      const orderedSet = new Set(nextOrdered);
+      const nextUnordered = routeUnordered.filter(id => nextIds.includes(id) && !orderedSet.has(id));
+      const known = new Set([...nextOrdered, ...nextUnordered]);
+      nextIds.forEach(id => { if (!known.has(id)) nextUnordered.push(id); });
+      if (nextIds.length <= 1) {
+        state.draftOrders.current = [...nextIds];
+        state.draftUnordered.current = [];
+      } else {
+        state.draftOrders.current = nextOrdered;
+        state.draftUnordered.current = nextUnordered;
+      }
+      filter.objectIds = nextIds;
+      filter.unorderedIds = [...state.draftUnordered.current];
+      if (filter.dirty) {
+        filter.task = null;
+        state.taskProgress.current = null;
+        state.maxRemainingComparisons.current = estimateRemainingComparisonUpperBound(filter.objectIds, state.draftUnordered.current);
+      }
     }
     function activeFilter() { return state.currentFilter; }
     function userSavedFilters() { return savedFilters.filter(filter => !filter.system); }
@@ -840,6 +892,21 @@
         draftTitle: draft.title,
         draftYear: String(draft.year),
         draftTags: JSON.stringify(draft.tags)
+      });
+      return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
+    }
+    function filterCreationURL(tagName) {
+      const filter = activeFilter();
+      const params = new URLSearchParams({
+        variant: 'A',
+        newTag: tagName,
+        addFilter: filter.sourceId,
+        draftFilterName: filter.name,
+        draftFilterShowName: filter.showName ? '1' : '0',
+        draftFilterDirty: filter.dirty ? '1' : '0',
+        draftFilterTags: JSON.stringify(filter.tags),
+        draftFilterOrder: JSON.stringify(state.draftOrders[filter.id]),
+        draftFilterUnordered: JSON.stringify(state.draftUnordered[filter.id])
       });
       return `tag-glossary-manual.PROTOTYPE.html?${params.toString()}`;
     }
@@ -891,7 +958,10 @@
       const limit = state.expandedTags ? filter.tags.length : 3;
       const visible = filter.tags.slice(0, limit);
       const hiddenCount = filter.tags.length - visible.length;
-      const tagMarkup = tag => `<span class="tag">#${escapeHTML(tag)}<button class="filter-tag-remove" type="button" data-remove-slice-tag="${escapeHTML(tag)}" aria-label="Удалить тег ${escapeHTML(tag)} из фильтра" title="Удалить тег">×</button></span>`;
+      const tagMarkup = tag => {
+        const archived = glossaryEntries.find(entry => normalizeTag(entry.name) === normalizeTag(tag))?.status === 'archived';
+        return `<span class="tag ${archived ? 'archived' : ''}">#${escapeHTML(tag)}${archived ? ' · в архиве' : ''}<button class="filter-tag-remove" type="button" data-remove-slice-tag="${escapeHTML(tag)}" aria-label="Удалить тег ${escapeHTML(tag)} из фильтра" title="Удалить тег">×</button></span>`;
+      };
       const tags = visible.map((tag, index) => index === visible.length - 1 ? `<span class="filter-tag-edit-group">${tagMarkup(tag)}${editButton}</span>` : tagMarkup(tag)).join('');
       return `<div class="slice-condition">${tags}${hiddenCount ? `<button class="more-tags-button" type="button" data-toggle-all-tags>ещё ${hiddenCount}</button>` : state.expandedTags && filter.tags.length > 3 ? '<button class="more-tags-button" type="button" data-toggle-all-tags>свернуть</button>' : ''}</div>`;
     }
@@ -942,9 +1012,26 @@
     }
     function filterEditorMarkup(filter) {
       if (!state.filterEditorOpen) return '';
-      const availableTags = [...new Set(objects.flatMap(item => item.tags))].sort((left, right) => left.localeCompare(right, 'ru'));
       const editorTitle = filter.dirty ? `<input class="filter-editor-title-input" type="text" value="${filter.showName ? escapeHTML(filter.name) : ''}" placeholder="Название фильтра" data-current-filter-name aria-label="Название текущего фильтра">` : `<strong>${filter.sourceId === 'all' ? 'Без фильтра' : `Фильтр «${escapeHTML(filter.name)}»`}</strong>`;
-      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div>${editorTitle}<p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div><div class="filter-editor-tags">${availableTags.map(tag => `<button class="${filter.tags.includes(tag) ? 'active' : ''}" type="button" data-toggle-slice-tag="${escapeHTML(tag)}" aria-pressed="${filter.tags.includes(tag)}">${filter.tags.includes(tag) ? '✓ ' : ''}#${escapeHTML(tag)}</button>`).join('')}</div></section>`;
+      const selected = new Set(filter.tags.map(normalizeTag));
+      const chips = filter.tags.map(tag => {
+        const archived = glossaryEntries.find(entry => normalizeTag(entry.name) === normalizeTag(tag))?.status === 'archived';
+        return `<span class="object-tag-chip ${archived ? 'archived' : ''}">#${escapeHTML(tag)}${archived ? ' · в архиве' : ''}<button type="button" data-remove-filter-editor-tag="${escapeHTML(tag)}" aria-label="Удалить тег ${escapeHTML(tag)} из фильтра">×</button></span>`;
+      }).join('');
+      const rawQuery = state.filterTagQuery.trim().replace(/^#+/, '').trim();
+      const query = normalizeTag(rawQuery);
+      const matchingEntries = glossaryEntries.filter(entry => entry.status === 'active' && !selected.has(normalizeTag(entry.name)) && [entry.name, ...entry.synonyms].some(label => normalizeTag(label).includes(query))).slice(0, 6);
+      const exactEntry = glossaryEntries.find(entry => [entry.name, ...entry.synonyms].some(label => normalizeTag(label) === query));
+      const suggestionRows = matchingEntries.map(entry => {
+        const synonym = entry.synonyms.find(label => normalizeTag(label).includes(query));
+        return `<button type="button" class="object-tag-option" data-add-filter-tag="${escapeHTML(entry.name)}">Добавить #${escapeHTML(entry.name)}${synonym && normalizeTag(synonym) !== normalizeTag(entry.name) ? `<small>Найдено по синониму «${escapeHTML(synonym)}»</small>` : ''}</button>`;
+      }).join('');
+      let queryAction = '';
+      if (query && exactEntry?.status === 'archived' && !selected.has(normalizeTag(exactEntry.name))) queryAction = `<div class="object-tag-state archived">#${escapeHTML(exactEntry.name)} находится в архиве и недоступен для добавления в фильтр</div>`;
+      else if (query && exactEntry && selected.has(normalizeTag(exactEntry.name))) queryAction = `<div class="object-tag-state">#${escapeHTML(exactEntry.name)} уже входит в фильтр</div>`;
+      else if (query && !exactEntry) queryAction = `<button type="button" class="object-tag-create" data-create-filter-tag="${escapeHTML(rawQuery)}">Создать #${escapeHTML(rawQuery)} в глоссарии и добавить в фильтр</button>`;
+      const tagResults = query ? `<div class="object-tag-results">${suggestionRows}${queryAction || (!matchingEntries.length ? '<div class="object-tag-state">Совпадений нет</div>' : '')}</div>` : '';
+      return `<section class="filter-editor" aria-label="Редактор текущего фильтра"><div class="filter-editor-head"><div>${editorTitle}<p>Срез содержит объекты со всеми включёнными тегами. Изменения применяются сразу в этом прототипе.</p></div><button class="icon-button" type="button" data-toggle-filter-editor aria-label="Закрыть редактор">×</button></div><div class="object-tag-editor"><div class="object-tag-chips">${chips || '<span class="object-tag-state">Без фильтра — показаны все объекты</span>'}</div><input class="object-tag-search" data-filter-tag-search type="search" value="${escapeHTML(state.filterTagQuery)}" placeholder="Найти или добавить тег" aria-describedby="filter-tags-help">${tagResults}</div><p id="filter-tags-help">Поиск использует названия и синонимы глоссария. Для неизвестного обозначения сначала откроется форма новой записи.</p></section>`;
     }
 
     function bottomNavigationMarkup(filter) {
@@ -1336,6 +1423,7 @@
       state.maxRemainingComparisons.current = state.maxRemainingComparisons[source.id] ?? 0;
       state.duel.pairIndex = 0;
       state.filterEditorOpen = false;
+      state.filterTagQuery = '';
       state.expandedTags = false;
       state.filterPanelOpen = false;
       render();
@@ -1631,7 +1719,7 @@
       else if (target.matches('[data-toggle-filter-order]')) toggleFilterOrder();
       else if (target.matches('[data-filter-id]')) setFilter(target.dataset.filterId);
       else if (target.matches('[data-toggle-all-tags]')) { state.expandedTags = !state.expandedTags; render(); }
-      else if (target.matches('[data-toggle-filter-editor]')) { state.filterEditorOpen = !state.filterEditorOpen; render(); }
+      else if (target.matches('[data-toggle-filter-editor]')) { state.filterEditorOpen = !state.filterEditorOpen; if (!state.filterEditorOpen) state.filterTagQuery = ''; render(); }
       else if (target.matches('[data-focus-filter-name]')) {
         state.filterEditorOpen = true;
         render();
@@ -1642,7 +1730,12 @@
         });
       }
       else if (target.matches('[data-remove-slice-tag]')) toggleActiveFilterTag(target.dataset.removeSliceTag);
-      else if (target.matches('[data-toggle-slice-tag]')) toggleActiveFilterTag(target.dataset.toggleSliceTag);
+      else if (target.matches('[data-remove-filter-editor-tag]')) toggleActiveFilterTag(target.dataset.removeFilterEditorTag);
+      else if (target.matches('[data-add-filter-tag]')) {
+        state.filterTagQuery = '';
+        toggleActiveFilterTag(target.dataset.addFilterTag);
+      }
+      else if (target.matches('[data-create-filter-tag]')) location.href = filterCreationURL(target.dataset.createFilterTag);
       else if (target.matches('[data-save-current-filter]')) saveCurrentFilter();
       else if (target.matches('[data-open-filter-panel]')) { state.filterPanelOpen = true; render(); }
       else if (target.matches('[data-close-filter-panel]')) { state.filterPanelOpen = false; renderFilterPanel(); }
@@ -1713,6 +1806,15 @@
       if (event.target.matches('[data-object-tag-search]')) {
         state.objectTagQuery = event.target.value;
         rerenderObjectDetailPreservingScroll(true);
+        return;
+      }
+      if (event.target.matches('[data-filter-tag-search]')) {
+        state.filterTagQuery = event.target.value;
+        const position = event.target.selectionStart;
+        render();
+        const input = document.querySelector('[data-filter-tag-search]');
+        input?.focus();
+        input?.setSelectionRange(position, position);
         return;
       }
       if (event.target.matches('[data-current-filter-name]')) {

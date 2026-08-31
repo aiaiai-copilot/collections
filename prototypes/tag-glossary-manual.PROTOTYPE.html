@@ -273,13 +273,26 @@
     const normalize = value => String(value ?? '').normalize('NFKC').trim().replace(/^#+/, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru');
     const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
     const routeParams = new URLSearchParams(location.search);
-    const assignmentContext = routeParams.get('newTag') && routeParams.get('assignObject') ? {
+    const objectAssignmentContext = routeParams.get('newTag') && routeParams.get('assignObject') ? {
+      kind: 'object',
       objectId: routeParams.get('assignObject'),
       draftTitle: routeParams.get('draftTitle') || 'объекту',
       draftYear: routeParams.get('draftYear') || '',
       draftTags: routeParams.get('draftTags') || '[]',
       prefill: routeParams.get('newTag').trim().replace(/^#+/, '')
     } : null;
+    const filterAssignmentContext = routeParams.get('newTag') && routeParams.get('addFilter') ? {
+      kind: 'filter',
+      sourceId: routeParams.get('addFilter'),
+      draftName: routeParams.get('draftFilterName') || 'Несохранённый фильтр',
+      draftShowName: routeParams.get('draftFilterShowName') || '0',
+      draftDirty: routeParams.get('draftFilterDirty') || '0',
+      draftTags: routeParams.get('draftFilterTags') || '[]',
+      draftOrder: routeParams.get('draftFilterOrder') || '[]',
+      draftUnordered: routeParams.get('draftFilterUnordered') || '[]',
+      prefill: routeParams.get('newTag').trim().replace(/^#+/, '')
+    } : null;
+    const assignmentContext = objectAssignmentContext || filterAssignmentContext;
     const variantFromURL = () => {
       const id = routeParams.get('variant')?.toUpperCase();
       return variants.some(item => item.id === id) ? id : 'A';
@@ -323,8 +336,26 @@
     };
     const usageLabel = tag => `${tag.objects} ${plural(tag.objects, ['объект', 'объекта', 'объектов'])} · ${tag.filters} ${plural(tag.filters, ['фильтр', 'фильтра', 'фильтров'])}`;
 
-    function objectReturnURL(assignedTag = '') {
+    function contextReturnURL(assignedTag = '') {
       if (!assignmentContext) return 'collection-workspace.PROTOTYPE.html?variant=A';
+      if (assignmentContext.kind === 'filter') {
+        const params = new URLSearchParams({
+          variant: 'A',
+          filter: assignmentContext.sourceId,
+          filterContext: '1',
+          draftFilterName: assignmentContext.draftName,
+          draftFilterShowName: assignmentContext.draftShowName,
+          draftFilterDirty: assignmentContext.draftDirty,
+          draftFilterTags: assignmentContext.draftTags,
+          draftFilterOrder: assignmentContext.draftOrder,
+          draftFilterUnordered: assignmentContext.draftUnordered
+        });
+        if (assignedTag) {
+          params.set('addFilterTag', assignedTag);
+          params.set('createdTag', assignedTag);
+        }
+        return `collection-workspace.PROTOTYPE.html?${params.toString()}`;
+      }
       const params = new URLSearchParams({
         variant: 'A',
         object: assignmentContext.objectId,
@@ -341,7 +372,7 @@
 
     function topbar() {
       return `<header class="topbar">
-        <a class="back" href="${objectReturnURL()}" aria-label="Вернуться к коллекции">←</a>
+        <a class="back" href="${contextReturnURL()}" aria-label="Вернуться к коллекции">←</a>
         <div class="topbar-copy"><strong>Глоссарий тегов</strong><small>Фильмы на вечер · ручное управление</small></div>
         <span class="proto-mark">PoC</span>
       </header>`;
@@ -426,7 +457,8 @@
       const isNew = !tag;
       const value = tag || { id: '', name: state.overlay?.prefill || '', description: '', synonyms: [], status: 'active', objects: 0, filters: 0, objectRefs: [], filterRefs: [] };
       const archived = !isNew && value.status === 'archived';
-      const assignsToObject = isNew && Boolean(assignmentContext);
+      const assignsToObject = isNew && assignmentContext?.kind === 'object';
+      const addsToFilter = isNew && assignmentContext?.kind === 'filter';
       const formTagId = value.id || '__new__';
       if (state.formTagId !== formTagId) {
         state.formTagId = formTagId;
@@ -443,9 +475,9 @@
             ${archived ? '' : `<span class="synonym-add-row"><input class="field" data-synonym-input type="text" placeholder="Одно обозначение"><button type="button" class="secondary small-button" data-action="add-synonym">Добавить</button></span><span class="synonym-help">Пробелы допустимы; завершите ввод кнопкой или Enter.</span>`}
           </span>
         </label>
-        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : assignsToObject ? `<div class="impact-box">После создания тег будет назначен объекту «${escapeHTML(assignmentContext.draftTitle)}». Отмена вернёт в форму объекта без изменений.</div>` : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
+        ${archived ? '<div class="impact-box">Архивная запись доступна только для просмотра. Восстановите её перед редактированием.</div>' : assignsToObject ? `<div class="impact-box">После создания тег будет назначен объекту «${escapeHTML(assignmentContext.draftTitle)}». Отмена вернёт в форму объекта без изменений.</div>` : addsToFilter ? '<div class="impact-box">После создания запись появится в глоссарии и будет добавлена в текущий фильтр. Отмена вернёт черновик фильтра без изменений.</div>' : isNew ? '<div class="impact-box">Создаётся только запись глоссария. Она не будет автоматически назначена объектам или добавлена в фильтры.</div>' : ''}
         <div class="form-actions">
-          ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${assignsToObject ? 'Создать в глоссарии и назначить объекту' : isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
+          ${archived ? `<button type="button" class="primary wide" data-action="restore-tag" data-tag-id="${value.id}">Восстановить</button>` : `<button type="submit" class="primary wide">${assignsToObject ? 'Создать в глоссарии и назначить объекту' : addsToFilter ? 'Создать в глоссарии и добавить в фильтр' : isNew ? 'Создать в глоссарии' : 'Сохранить изменения'}</button>`}
           ${!isNew && !archived ? `<button type="button" class="secondary" data-action="merge-tag" data-tag-id="${value.id}">Объединить дубли</button>
           <button type="button" class="danger" data-action="archive-tag" data-tag-id="${value.id}">В архив</button>` : ''}
         </div>
@@ -478,7 +510,7 @@
         const full = variant === 'B';
         return `<div class="overlay ${full ? 'full' : 'sheet'}" data-action="overlay-backdrop">
           <section class="dialog" role="dialog" aria-modal="true">
-            <div class="dialog-head"><div><div class="proto-mark">${assignmentContext && !tag ? 'Новый тег для объекта' : 'Ручной глоссарий'}</div><h2>${tag ? `#${escapeHTML(tag.name)}` : 'Новый тег'}</h2></div>${assignmentContext && !tag ? `<a class="close" href="${objectReturnURL()}" aria-label="Закрыть">×</a>` : '<button type="button" class="close" data-action="close-overlay" aria-label="Закрыть">×</button>'}</div>
+            <div class="dialog-head"><div><div class="proto-mark">${assignmentContext && !tag ? assignmentContext.kind === 'filter' ? 'Новый тег для фильтра' : 'Новый тег для объекта' : 'Ручной глоссарий'}</div><h2>${tag ? `#${escapeHTML(tag.name)}` : 'Новый тег'}</h2></div>${assignmentContext && !tag ? `<a class="close" href="${contextReturnURL()}" aria-label="Закрыть">×</a>` : '<button type="button" class="close" data-action="close-overlay" aria-label="Закрыть">×</button>'}</div>
             ${notice()}${tagForm(tag, full ? 'full' : 'sheet')}
           </section>
         </div>`;
@@ -603,7 +635,7 @@
         state.selectedId = created.id;
         state.notice = { kind: 'success', text: `#${name} создан в глоссарии, но пока нигде не используется.` };
         if (assignmentContext) {
-          location.href = objectReturnURL(name);
+          location.href = contextReturnURL(name);
           return;
         }
       }
@@ -673,8 +705,8 @@
         state.notice = null;
         return render();
       }
-      if (action === 'close-overlay' && assignmentContext) { location.href = objectReturnURL(); return; }
-      if (action === 'overlay-backdrop' && event.target === button && assignmentContext) { location.href = objectReturnURL(); return; }
+      if (action === 'close-overlay' && assignmentContext) { location.href = contextReturnURL(); return; }
+      if (action === 'overlay-backdrop' && event.target === button && assignmentContext) { location.href = contextReturnURL(); return; }
       if (action === 'close-overlay') { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
       if (action === 'overlay-backdrop' && event.target === button) { state.overlay = null; state.notice = null; state.formTagId = null; state.formName = ''; state.formDescription = ''; state.formSynonyms = []; return render(); }
       if (action === 'archive-tag') { state.overlay = { type: 'archive', tagId: button.dataset.tagId }; return render(); }
