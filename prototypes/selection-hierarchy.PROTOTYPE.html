@@ -1,0 +1,1852 @@
+<!doctype html>
+<!--
+  THROWAWAY PROTOTYPE — not production.
+  Three mobile-first variants of the first empty personal-space screen,
+  switchable via ?variant=A|B|C on this single local route.
+-->
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>PROTOTYPE — пустое личное пространство</title>
+  <style>
+    :root {
+      --ink: #17201b;
+      --muted: #657067;
+      --paper: #f5f2ea;
+      --panel: #fffdf8;
+      --line: #d9ddd5;
+      --green: #23684b;
+      --green-soft: #d8eadf;
+      --lime: #dff26f;
+      --peach: #f0c9af;
+      --blue: #c9ddec;
+      --shadow: 0 18px 55px rgba(27, 43, 34, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      min-width: 320px;
+      min-height: 100%;
+      background: #dfe4dc;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 5% 0%, rgba(223, 242, 111, .22), transparent 27rem),
+        #dfe4dc;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-rendering: optimizeLegibility;
+    }
+
+    button { color: inherit; font: inherit; }
+    button:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(35, 104, 75, .34);
+      outline-offset: 3px;
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    .prototype-shell {
+      position: relative;
+      display: flex;
+      width: min(460px, 100%);
+      height: 100dvh;
+      min-height: 100dvh;
+      margin: 0 auto;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: 0 0 60px rgba(23, 32, 27, .16);
+    }
+
+    .app-header {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      min-height: 72px;
+      flex: 0 0 auto;
+      grid-template-columns: 38px minmax(0, 1fr) 38px;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, .94);
+      backdrop-filter: blur(14px);
+    }
+
+    .app-header.a-app-header { grid-template-columns: 50px minmax(0, 1fr) 50px; }
+
+    .a-header-title {
+      overflow: hidden;
+      justify-self: center;
+      font-size: 14px;
+      font-weight: 850;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .a-flow-back {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 12px;
+      background: #eceee8;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .a-header-add {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 12px;
+      background: #eceee8;
+      cursor: pointer;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .brand {
+      display: inline-flex;
+      min-width: 0;
+      align-items: center;
+      justify-self: center;
+      gap: 9px;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--ink);
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 19px;
+    }
+
+    .header-action {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 12px;
+      background: #eceee8;
+      cursor: pointer;
+    }
+
+    .header-action svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
+    }
+
+    .screen {
+      display: flex;
+      overflow-y: auto;
+      min-height: 0;
+      flex: 1 1 auto;
+      flex-direction: column;
+      padding-bottom: calc(104px + env(safe-area-inset-bottom));
+      overscroll-behavior: contain;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .primary-action, .secondary-action, .choice-action {
+      min-height: 52px;
+      border-radius: 13px;
+      cursor: pointer;
+      font-weight: 820;
+    }
+
+    .primary-action {
+      width: 100%;
+      padding: 13px 18px;
+      border: 0;
+      background: var(--green);
+      color: white;
+    }
+
+    .secondary-action {
+      width: 100%;
+      padding: 12px 16px;
+      border: 0;
+      background: transparent;
+      color: var(--green);
+    }
+
+    /* A — one clear path: the independent element comes first. */
+    .variant-a {
+      justify-content: center;
+      padding: 28px 24px calc(88px + env(safe-area-inset-bottom));
+      text-align: center;
+    }
+
+    .a-content {
+      width: min(100%, 330px);
+      margin: auto;
+      padding: 22px 0;
+    }
+
+    .a-mark {
+      position: relative;
+      width: 48px;
+      height: 44px;
+    }
+
+    .a-card {
+      position: absolute;
+      width: 34px;
+      height: 27px;
+      border: 1.5px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .a-card:nth-child(1) { top: 1px; left: 1px; opacity: .2; transform: rotate(-9deg); }
+    .a-card:nth-child(2) { top: 7px; left: 6px; opacity: .48; transform: rotate(4deg); }
+    .a-card:nth-child(3) {
+      top: 14px;
+      left: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 17px;
+    }
+
+    .variant-a h1 {
+      max-width: 320px;
+      margin: 0 auto 22px;
+      font-size: 34px;
+      line-height: 1.03;
+      letter-spacing: -.045em;
+    }
+
+    .a-bottom-nav {
+      position: fixed;
+      z-index: 45;
+      bottom: 0;
+      left: 50%;
+      display: flex;
+      width: min(460px, 100%);
+      min-height: 68px;
+      align-items: stretch;
+      justify-content: space-between;
+      padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      border-top: 1px solid #c8cec7;
+      background: rgba(255, 253, 248, .97);
+      box-shadow: 0 -8px 26px rgba(23, 32, 27, .10);
+      backdrop-filter: blur(14px);
+    }
+
+    .a-bottom-nav button {
+      display: grid;
+      min-width: 88px;
+      min-height: 54px;
+      padding: 5px 10px;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .a-bottom-nav button:active { background: #e8ece6; }
+    .a-bottom-nav-icon { display: grid; height: 22px; place-items: center; font-size: 20px; font-weight: 800; line-height: 1; }
+    .a-bottom-nav-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+    .a-bottom-nav-label { color: var(--ink); font-size: 9px; font-weight: 850; line-height: 1; }
+    body[data-variant="A"] .prototype-switcher { display: none; }
+
+    .a-selection-screen {
+      justify-content: center;
+      padding: 28px 24px calc(88px + env(safe-area-inset-bottom));
+    }
+
+    .a-selection-form {
+      display: grid;
+      width: min(100%, 340px);
+      margin: auto;
+      gap: 20px;
+    }
+
+    .a-selection-form h1 {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-size: 34px;
+      line-height: 1.03;
+      letter-spacing: -.045em;
+    }
+
+    .a-selection-form label, .a-selection-form label > span { display: block; }
+
+    .a-selection-form label > span {
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .a-selection-form input,
+    .a-selection-form textarea {
+      width: 100%;
+      padding: 14px 15px;
+      border: 1px solid #bfc8bf;
+      border-radius: 13px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+      font-size: 16px;
+      outline: 0;
+    }
+
+    .a-selection-form textarea {
+      min-height: 128px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .a-selection-form input:focus,
+    .a-selection-form textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(35, 104, 75, .14);
+    }
+
+    .a-entry-mode {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .a-entry-mode legend {
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .a-entry-mode-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      border-radius: 13px;
+      background: #ecefe9;
+    }
+
+    .a-entry-mode label {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .a-selection-form .a-entry-mode input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .a-entry-mode label > span {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #536057;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .a-entry-mode input:checked + span {
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 1px 5px rgba(23, 32, 27, .12);
+    }
+
+    .a-entry-mode input:focus-visible + span {
+      outline: 3px solid rgba(35, 104, 75, .34);
+      outline-offset: 2px;
+    }
+
+    .a-selection-help {
+      margin: -13px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .a-selection-form-error {
+      margin: -10px 0 0;
+      padding: 11px 12px;
+      border: 1px solid #d8ba72;
+      border-radius: 11px;
+      background: #fff4d4;
+      color: #4c4026;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .a-parent-filter {
+      display: grid;
+      gap: 8px;
+    }
+
+    .a-parent-filter > span:first-child {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .a-parent-filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .a-parent-filter-tags span {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #ecefe9;
+      color: #536057;
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .a-selections-screen {
+      padding: 22px 18px calc(88px + env(safe-area-inset-bottom));
+    }
+
+    .a-selections-list {
+      display: grid;
+      width: min(100%, 370px);
+      margin: 0 auto;
+      gap: 10px;
+    }
+
+    .a-root-content {
+      width: min(100%, 370px);
+      margin: 0 auto;
+    }
+
+    .a-root-elements { margin-top: 24px; }
+    .a-root-elements:first-child { margin-top: 0; }
+
+    .a-root-elements-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .a-root-elements-head h2 { margin: 0; font-size: 18px; }
+    .a-root-elements-head small { color: var(--muted); font-size: 11px; }
+
+    .a-selection-row.a-root-selection {
+      border-color: #aebcaf;
+      box-shadow: 0 5px 16px rgba(35, 104, 75, .06);
+    }
+
+    .a-selection-row {
+      display: grid;
+      width: 100%;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid #cbd4cb;
+      border-radius: 14px;
+      background: #f4f7f2;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+
+    .a-selection-row-content {
+      display: grid;
+      min-width: 0;
+      gap: 12px;
+    }
+
+    .a-selection-row-head {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .a-selection-row strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 16px;
+    }
+
+    .a-selection-row small {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .a-selection-rule {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .a-selection-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .a-selection-tag {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: #24543f;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .a-selection-row-chevron {
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .a-elements-screen {
+      padding: 22px 18px calc(88px + env(safe-area-inset-bottom));
+    }
+
+    .a-elements-content {
+      width: min(100%, 370px);
+      margin: 0 auto;
+    }
+
+    .a-breadcrumbs {
+      display: flex;
+      overflow-x: auto;
+      min-width: 0;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 22px;
+      padding: 2px;
+      scrollbar-width: none;
+      white-space: nowrap;
+    }
+
+    .a-breadcrumbs::-webkit-scrollbar { display: none; }
+
+    .a-breadcrumbs button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #4f5e54;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .a-breadcrumbs span {
+      color: #a0a9a1;
+      font-size: 13px;
+    }
+
+    .a-breadcrumbs [aria-current="page"] {
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 850;
+      text-overflow: ellipsis;
+    }
+
+    .a-selection-notice {
+      margin-bottom: 16px;
+      padding: 13px 14px;
+      border: 1px solid #d8ba72;
+      border-radius: 13px;
+      background: #fff4d4;
+      color: #4c4026;
+    }
+
+    .a-selection-notice strong,
+    .a-selection-notice span {
+      display: block;
+    }
+
+    .a-selection-notice strong {
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .a-selection-notice span {
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .a-selection-notice.is-success {
+      border-color: #b9d2c1;
+      background: #edf7ef;
+      color: #24543f;
+    }
+
+    .a-elements-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .a-elements-title {
+      min-width: 0;
+    }
+
+    .a-elements-title h1 {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-size: 36px;
+      line-height: 1.03;
+      letter-spacing: -.045em;
+    }
+
+    .a-elements-title small {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .a-filter-label {
+      margin: -8px 0 12px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .a-elements-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: -5px 0 18px;
+    }
+
+    .a-elements-filter span {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #ecefe9;
+      color: #536057;
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .a-child-selections {
+      margin: 24px 0;
+    }
+
+    .a-section-heading,
+    .a-elements-heading {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .a-child-selections-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .a-child-selections-list .a-selection-row {
+      background: #f8faf5;
+    }
+
+    .a-elements-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .a-element-row {
+      display: grid;
+      width: 100%;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8faf5;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+      text-align: left;
+    }
+
+    .a-elements-empty {
+      padding: 36px 22px;
+      border: 1px dashed #bdc7bd;
+      border-radius: 18px;
+      background: #f8faf5;
+      text-align: center;
+    }
+
+    .a-elements-empty h2 {
+      margin: 0 0 7px;
+      font-size: 19px;
+    }
+
+    .a-elements-empty p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    /* B — define a destination first, then fill it. */
+    .variant-b {
+      position: relative;
+      padding: 26px 20px calc(104px + env(safe-area-inset-bottom));
+      background:
+        linear-gradient(160deg, rgba(240, 201, 175, .55), transparent 46%),
+        #fffaf0;
+    }
+
+    .b-intro { position: relative; z-index: 1; }
+
+    .variant-b h1 {
+      max-width: 355px;
+      margin-bottom: 13px;
+      font-family: Georgia, serif;
+      font-size: 43px;
+      font-weight: 500;
+      line-height: .99;
+      letter-spacing: -.045em;
+    }
+
+    .variant-b .lead {
+      max-width: 330px;
+      margin-bottom: 0;
+      color: #5f655f;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .b-space-preview {
+      position: relative;
+      display: flex;
+      min-height: 238px;
+      margin: 31px 0 24px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--ink);
+      border-radius: 30px;
+      background: rgba(255, 253, 248, .72);
+      box-shadow: 7px 7px 0 var(--ink);
+    }
+
+    .b-space-preview::before {
+      content: "";
+      position: absolute;
+      top: -11px;
+      left: 29px;
+      width: 112px;
+      height: 24px;
+      border: 1px solid var(--ink);
+      border-bottom: 0;
+      border-radius: 15px 15px 0 0;
+      background: var(--peach);
+    }
+
+    .b-placeholder {
+      display: grid;
+      max-width: 230px;
+      gap: 10px;
+      place-items: center;
+      text-align: center;
+    }
+
+    .b-placeholder span {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-size: 27px;
+      font-weight: 350;
+      line-height: 1;
+    }
+
+    .b-placeholder strong { font-size: 15px; }
+    .b-placeholder small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .b-actions { margin-top: auto; }
+    .variant-b .primary-action { background: var(--ink); }
+    .variant-b .secondary-action { color: var(--ink); }
+
+    /* C — both valid beginnings are peers. */
+    .variant-c {
+      padding: 24px 18px calc(104px + env(safe-area-inset-bottom));
+      background:
+        radial-gradient(circle at 100% 0, rgba(201, 221, 236, .68), transparent 18rem),
+        var(--panel);
+    }
+
+    .c-intro { padding: 5px 4px 22px; }
+
+    .variant-c h1 {
+      margin-bottom: 11px;
+      font-size: 37px;
+      line-height: 1;
+      letter-spacing: -.045em;
+    }
+
+    .variant-c .lead {
+      max-width: 350px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .c-choices {
+      display: grid;
+      gap: 11px;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+
+    .choice-action {
+      display: grid;
+      width: 100%;
+      min-height: 168px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      padding: 19px;
+      border: 1px solid var(--ink);
+      background: var(--green-soft);
+      text-align: left;
+    }
+
+    .choice-action:last-child { background: var(--blue); }
+
+    .choice-copy strong, .choice-copy small { display: block; }
+    .choice-copy strong { margin-bottom: 8px; font-size: 22px; line-height: 1.05; }
+    .choice-copy small { max-width: 245px; color: #445048; font-size: 11px; font-weight: 600; line-height: 1.45; }
+
+    .choice-number {
+      align-self: start;
+      color: rgba(23, 32, 27, .52);
+      font-family: Georgia, serif;
+      font-size: 32px;
+      font-weight: 400;
+    }
+
+    .choice-arrow {
+      display: grid;
+      width: 37px;
+      height: 37px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-size: 20px;
+    }
+
+    .prototype-switcher {
+      position: fixed;
+      z-index: 50;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      left: 50%;
+      display: grid;
+      width: min(370px, calc(100vw - 24px));
+      min-height: 70px;
+      grid-template-columns: 48px minmax(0, 1fr) 48px;
+      align-items: center;
+      padding: 7px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 20px;
+      background: rgba(23, 32, 27, .96);
+      color: white;
+      box-shadow: 0 13px 38px rgba(10, 16, 12, .3);
+      backdrop-filter: blur(16px);
+    }
+
+    .prototype-switcher button {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .11);
+      color: white;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .switcher-label { min-width: 0; padding: 0 8px; text-align: center; }
+    .switcher-label strong, .switcher-label small { display: block; }
+    .switcher-label strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .switcher-label small { margin-top: 4px; color: #b9c5bc; font-size: 8px; letter-spacing: .02em; }
+
+    .intent-backdrop {
+      position: fixed;
+      z-index: 70;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(13, 18, 15, .58);
+      backdrop-filter: blur(7px);
+    }
+
+    .intent-backdrop.open { display: flex; }
+
+    .intent-sheet {
+      width: min(428px, 100%);
+      padding: 21px;
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .28);
+    }
+
+    .intent-sheet h2 { margin-bottom: 8px; font-size: 25px; letter-spacing: -.025em; }
+    .intent-sheet p { margin-bottom: 18px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .intent-sheet button { width: 100%; min-height: 48px; border: 0; border-radius: 13px; background: var(--ink); color: white; cursor: pointer; font-weight: 820; }
+
+    .prototype-stamp {
+      position: fixed;
+      z-index: 31;
+      top: 10px;
+      right: max(10px, calc(50% - 220px));
+      padding: 5px 7px;
+      border-radius: 7px;
+      background: rgba(23, 32, 27, .84);
+      color: white;
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 520px) {
+      body { background: var(--panel); }
+      .prototype-shell { box-shadow: none; }
+      .prototype-stamp { display: none; }
+    }
+
+    @media (max-width: 380px) {
+      .brand > span:last-child { display: none; }
+      .variant-b h1 { font-size: 38px; }
+      .choice-action { min-height: 152px; }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .screen { animation: screen-in .18s ease-out; }
+      .primary-action, .secondary-action, .choice-action, .prototype-switcher button { transition: transform .14s ease, background .14s ease; }
+      .primary-action:active, .secondary-action:active, .choice-action:active, .prototype-switcher button:active { transform: scale(.985); }
+      @keyframes screen-in { from { opacity: .45; transform: translateY(4px); } }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" class="prototype-shell"></main>
+
+  <div class="prototype-stamp">Не production</div>
+
+  <nav class="prototype-switcher" aria-label="Варианты пустого экрана">
+    <button type="button" data-previous-variant aria-label="Предыдущий вариант">←</button>
+    <div class="switcher-label" aria-live="polite">
+      <strong id="variantLabel"></strong>
+      <small id="stateSummary"></small>
+    </div>
+    <button type="button" data-next-variant aria-label="Следующий вариант">→</button>
+  </nav>
+
+  <section id="intentBackdrop" class="intent-backdrop" aria-hidden="true"></section>
+
+  <script>
+    const variants = [
+      { id: 'A', name: 'Элемент сначала' },
+      { id: 'B', name: 'Подборка сначала' },
+      { id: 'C', name: 'Два равных пути' }
+    ];
+
+    const routeParams = new URLSearchParams(location.search);
+    const requestedVariant = routeParams.get('variant')?.toUpperCase();
+    const state = {
+      variant: variants.some(item => item.id === requestedVariant) ? requestedVariant : 'A',
+      stage: (!requestedVariant || requestedVariant === 'A') && ['new-entry', 'new-selection', 'element'].includes(routeParams.get('stage')) ? routeParams.get('stage') === 'element' ? 'element' : 'new-entry' : 'empty',
+      personalSpace: { elementCount: 0, selectionCount: 0 },
+      elements: [],
+      selections: [],
+      activeSelectionId: null,
+      activeElementId: routeParams.get('element') || null,
+      selectionRouteIds: [],
+      creationParentId: null,
+      creationMode: 'element',
+      entryDraft: { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' },
+      entryFormError: null,
+      notice: null,
+      lastIntent: null
+    };
+    let idSequence = 0;
+
+    const app = document.querySelector('#app');
+    const variantLabel = document.querySelector('#variantLabel');
+    const stateSummary = document.querySelector('#stateSummary');
+    const intentBackdrop = document.querySelector('#intentBackdrop');
+
+    function searchIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>';
+    }
+
+    function escapeHTML(value = '') {
+      return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
+    }
+
+    function nextId(prefix) {
+      idSequence += 1;
+      return `${prefix}-${Date.now()}-${idSequence}`;
+    }
+
+    function normalizeTagName(value = '') {
+      return String(value)
+        .normalize('NFKC')
+        .trim()
+        .replace(/^#+/, '')
+        .replace(/\s+/g, ' ')
+        .toLocaleLowerCase('ru-RU');
+    }
+
+    function parseSelectionTags(value = '') {
+      const tagsByKey = new Map();
+      String(value).split(',').forEach(rawTag => {
+        const displayName = rawTag.normalize('NFKC').trim().replace(/^#+/, '').replace(/\s+/g, ' ');
+        const key = normalizeTagName(displayName);
+        if (key && !tagsByKey.has(key)) tagsByKey.set(key, displayName);
+      });
+      return [...tagsByKey.values()];
+    }
+
+    function selectionFilterKey(tags = []) {
+      return tags.map(normalizeTagName).filter(Boolean).sort().join('\u001f');
+    }
+
+    function isStrictlyBroader(parent, child) {
+      const parentTags = new Set(parent.tags.map(normalizeTagName));
+      const childTags = new Set(child.tags.map(normalizeTagName));
+      return parentTags.size < childTags.size && [...parentTags].every(tag => childTags.has(tag));
+    }
+
+    function directSemanticChildren(parent) {
+      return state.selections.filter(child => {
+        if (!isStrictlyBroader(parent, child)) return false;
+        return !state.selections.some(intermediate => (
+          intermediate.id !== parent.id
+          && intermediate.id !== child.id
+          && isStrictlyBroader(parent, intermediate)
+          && isStrictlyBroader(intermediate, child)
+        ));
+      });
+    }
+
+    function semanticRoots() {
+      return state.selections.filter(selection => (
+        !state.selections.some(candidate => candidate.id !== selection.id && isStrictlyBroader(candidate, selection))
+      ));
+    }
+
+    function semanticPathToSelection(targetId) {
+      function findPath(selection, path = []) {
+        const nextPath = [...path, selection.id];
+        if (selection.id === targetId) return nextPath;
+        for (const child of directSemanticChildren(selection)) {
+          if (nextPath.includes(child.id)) continue;
+          const found = findPath(child, nextPath);
+          if (found) return found;
+        }
+        return null;
+      }
+      for (const root of semanticRoots()) {
+        const found = findPath(root);
+        if (found) return found;
+      }
+      return state.selections.some(selection => selection.id === targetId) ? [targetId] : [];
+    }
+
+    function elementMatchesSelection(element, selection) {
+      const filterTags = new Set(selection.tags.map(normalizeTagName));
+      const elementTags = new Set(element.tags.map(normalizeTagName));
+      return [...filterTags].every(tag => elementTags.has(tag));
+    }
+
+    function elementsForSelection(selection) {
+      return state.elements.filter(element => elementMatchesSelection(element, selection));
+    }
+
+    function elementsOutsideSelections(elements, selections) {
+      return elements.filter(element => !selections.some(selection => elementMatchesSelection(element, selection)));
+    }
+
+    function settingsIcon() {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z"></path></svg>';
+    }
+
+    function headerMarkup() {
+      if (state.variant === 'A' && state.stage === 'new-entry') return `<header class="app-header a-app-header">
+        <button class="a-flow-back" type="button" data-cancel-new-entry aria-label="Назад">←</button>
+        <span class="a-header-title">Добавление</span>
+        <span aria-hidden="true"></span>
+      </header>`;
+      if (state.variant === 'A' && state.stage === 'selection') {
+        const selection = activeSelection();
+        return `<header class="app-header a-app-header">
+          <button class="a-flow-back" type="button" data-step-back-selection aria-label="Назад">←</button>
+          <span class="a-header-title">${selection ? `Подборка ${escapeHTML(selection.name)}` : 'Подборка'}</span>
+          <button class="a-header-add" type="button" data-start-entry aria-label="Добавить элемент или подборку">＋</button>
+        </header>`;
+      }
+      if (state.variant === 'A' && state.stage === 'element') {
+        const element = activeElement();
+        return `<header class="app-header a-app-header">
+          <button class="a-flow-back" type="button" data-step-back-element aria-label="Назад">←</button>
+          <span class="a-header-title">${element ? escapeHTML(element.title) : 'Элемент'}</span>
+          <span aria-hidden="true"></span>
+        </header>`;
+      }
+      if (state.variant === 'A') return `<header class="app-header a-app-header">
+        <div class="a-mark" aria-label="Личное пространство"><span class="a-card"></span><span class="a-card"></span><span class="a-card">＋</span></div>
+        <span class="a-header-title">Мои подборки</span>
+        <button class="a-header-add" type="button" data-start-entry aria-label="Добавить элемент или подборку">＋</button>
+      </header>`;
+      return `<header class="app-header">
+        <button class="header-action" type="button" data-stub="settings" aria-label="Настройки">${settingsIcon()}</button>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">И</span><span>Моё пространство</span></div>
+        <button class="header-action" type="button" data-stub="search" aria-label="Поиск">${searchIcon()}</button>
+      </header>`;
+    }
+
+    function noticeMarkup() {
+      if (state.notice?.type === 'duplicate-filter') {
+        const selection = activeSelection();
+        return selection
+          ? `<div class="a-selection-notice" role="status"><strong>Такая подборка уже существует</strong><span>Новая подборка не создана. Открыта «${escapeHTML(selection.name)}» с тем же фильтром.</span></div>`
+          : '';
+      }
+      if (state.notice?.type === 'element-created') {
+        return `<div class="a-selection-notice is-success" role="status"><strong>Элемент добавлен</strong><span>«${escapeHTML(state.notice.title)}» сохранён в личном пространстве.</span></div>`;
+      }
+      if (state.notice?.type === 'element-updated') {
+        return `<div class="a-selection-notice is-success" role="status"><strong>Элемент сохранён</strong><span>«${escapeHTML(state.notice.title)}» обновлён.</span></div>`;
+      }
+      return '';
+    }
+
+    function variantAMarkup() {
+      const notice = noticeMarkup();
+      if (state.selections.length || state.elements.length) {
+        const roots = semanticRoots();
+        const rows = roots.map(selection => selectionRowMarkup(selection, true)).join('');
+        const visibleElements = elementsOutsideSelections(state.elements, roots);
+        const elements = visibleElements.length
+          ? `<section class="a-root-elements" aria-label="Элементы личного пространства">
+              <div class="a-root-elements-head"><h2>Элементы</h2><small>${pluralElements(visibleElements.length)}</small></div>
+              ${elementsListMarkup(visibleElements)}
+            </section>`
+          : '';
+        return `<section class="screen a-selections-screen" aria-label="Мои подборки и элементы">
+          <div class="a-root-content">
+            ${notice}
+            ${rows ? `<div class="a-selections-list">${rows}</div>` : ''}
+            ${elements}
+          </div>
+        </section>${bottomNavigationAMarkup()}`;
+      }
+      return `<section class="screen variant-a" aria-label="Пустое личное пространство">
+        <div class="a-content">
+          ${notice}
+          <button class="primary-action" type="button" data-start-entry>Добавить</button>
+        </div>
+      </section>${bottomNavigationAMarkup()}`;
+    }
+
+    function elementsListMarkup(elements) {
+      return `<div class="a-elements-list">${elements.map(element => `<button class="a-element-row" type="button" data-open-element="${escapeHTML(element.id)}" aria-label="Открыть элемент «${escapeHTML(element.title)}»"><span>${escapeHTML(element.title)}</span><span aria-hidden="true">›</span></button>`).join('')}</div>`;
+    }
+
+    function selectionRowMarkup(selection, root = false) {
+      const rule = selection.tags.length
+        ? `<span class="a-selection-tags" aria-label="Фильтр по тегам">${selection.tags.map(tag => `<span class="a-selection-tag">${escapeHTML(tag)}</span>`).join('')}</span>`
+        : '';
+      const row = `<button class="a-selection-row${root ? ' a-root-selection' : ''}" type="button" data-open-selection="${escapeHTML(selection.id)}">
+        <span class="a-selection-row-content">
+          <span class="a-selection-row-head"><strong>${escapeHTML(selection.name)}</strong><small>${pluralElements(elementsForSelection(selection).length)}</small></span>
+          ${rule}
+        </span>
+        <span class="a-selection-row-chevron" aria-hidden="true">›</span>
+      </button>`;
+      return row;
+    }
+
+    function activeSelection() {
+      return state.selections.find(selection => selection.id === state.activeSelectionId) || null;
+    }
+
+    function activeElement() {
+      return state.elements.find(element => element.id === state.activeElementId) || null;
+    }
+
+    function pluralElements(count) {
+      const modulo100 = count % 100;
+      const modulo10 = count % 10;
+      const word = modulo100 >= 11 && modulo100 <= 14
+        ? 'элементов'
+        : modulo10 === 1
+          ? 'элемент'
+          : modulo10 >= 2 && modulo10 <= 4
+            ? 'элемента'
+            : 'элементов';
+      return `${count} ${word}`;
+    }
+
+    function selectionBreadcrumbsMarkup() {
+      const routeSelections = state.selectionRouteIds
+        .map(id => state.selections.find(selection => selection.id === id))
+        .filter(Boolean);
+      const items = ['<button type="button" data-open-selections>Всё</button>'];
+      routeSelections.forEach((selection, index) => {
+        items.push('<span aria-hidden="true">›</span>');
+        if (index === routeSelections.length - 1) items.push(`<span aria-current="page">${escapeHTML(selection.name)}</span>`);
+        else items.push(`<button type="button" data-open-route-index="${index}">${escapeHTML(selection.name)}</button>`);
+      });
+      return `<nav class="a-breadcrumbs" aria-label="Хлебные крошки">${items.join('')}</nav>`;
+    }
+
+    function newEntryBreadcrumbsMarkup() {
+      if (!state.creationParentId) return '';
+      const routeSelections = state.selectionRouteIds
+        .map(id => state.selections.find(selection => selection.id === id))
+        .filter(Boolean);
+      const items = ['<button type="button" data-open-selections>Всё</button>'];
+      routeSelections.forEach((selection, index) => {
+        items.push('<span aria-hidden="true">›</span>');
+        items.push(`<button type="button" data-open-route-index="${index}">${escapeHTML(selection.name)}</button>`);
+      });
+      items.push('<span aria-hidden="true">›</span><span aria-current="page">Добавление</span>');
+      return `<nav class="a-breadcrumbs" aria-label="Хлебные крошки">${items.join('')}</nav>`;
+    }
+
+    function elementBreadcrumbsMarkup(element) {
+      const routeSelections = state.selectionRouteIds
+        .map(id => state.selections.find(selection => selection.id === id))
+        .filter(Boolean);
+      const items = ['<button type="button" data-open-selections>Всё</button>'];
+      routeSelections.forEach((selection, index) => {
+        items.push('<span aria-hidden="true">›</span>');
+        items.push(`<button type="button" data-open-route-index="${index}">${escapeHTML(selection.name)}</button>`);
+      });
+      items.push('<span aria-hidden="true">›</span>');
+      items.push(`<span aria-current="page">${escapeHTML(element.name || element.title)}</span>`);
+      return `<nav class="a-breadcrumbs" aria-label="Хлебные крошки">${items.join('')}</nav>`;
+    }
+
+    function selectionElementsMarkup() {
+      const selection = activeSelection();
+      if (!selection) return variantAMarkup();
+      const selectionElements = elementsForSelection(selection);
+      const count = selectionElements.length;
+      const children = directSemanticChildren(selection);
+      const visibleElements = elementsOutsideSelections(selectionElements, children);
+      const notice = noticeMarkup();
+      const tags = selection.tags.length
+        ? `<div class="a-elements-filter" aria-label="Теги подборки">${selection.tags.map(tag => `<span>#${escapeHTML(tag)}</span>`).join('')}</div>`
+        : '';
+      const elements = visibleElements.length
+        ? `<h2 class="a-elements-heading">Элементы</h2>${elementsListMarkup(visibleElements)}`
+        : count === 0
+          ? '<h2 class="a-elements-heading">Элементы</h2><div class="a-elements-empty"><h2>Пока здесь пусто</h2><p>Ни один элемент пока не соответствует фильтру.</p></div>'
+          : '';
+      const childSelections = children.length
+        ? `<section class="a-child-selections" aria-label="Подборки с уточнённым фильтром">
+            <div class="a-child-selections-list">${children.map(child => selectionRowMarkup(child)).join('')}</div>
+          </section>`
+        : '';
+      return `<section class="screen a-elements-screen" aria-labelledby="selection-title">
+        <div class="a-elements-content">
+          ${notice}
+          ${selectionBreadcrumbsMarkup()}
+          <div class="a-elements-head">
+            <div class="a-elements-title"><h1 id="selection-title">${escapeHTML(selection.name)}</h1><small>${pluralElements(count)}</small></div>
+          </div>
+          ${tags}
+          ${childSelections}
+          ${elements}
+        </div>
+      </section>${bottomNavigationAMarkup()}`;
+    }
+
+    function elementDetailMarkup() {
+      const element = activeElement();
+      if (!element) return variantAMarkup();
+      const tags = element.tags.join(', ');
+      return `<section class="screen a-selection-screen" aria-labelledby="element-detail-title">
+        <form class="a-selection-form" data-element-detail-form data-element-id="${escapeHTML(element.id)}">
+          ${elementBreadcrumbsMarkup(element)}
+          <p class="eyebrow">Элемент</p>
+          <h1 id="element-detail-title">Детальная форма</h1>
+          <label><span>Название элемента</span><input type="text" name="elementTitle" maxlength="120" autocomplete="off" value="${escapeHTML(element.title)}" required></label>
+          <label><span>Содержимое</span><textarea name="elementContent" maxlength="5000" placeholder="Текст, ссылка или заметка">${escapeHTML(element.content || '')}</textarea></label>
+          <label><span>Теги</span><input type="text" name="elementTags" maxlength="240" autocomplete="off" placeholder="Например, спокойное, фильмы" value="${escapeHTML(tags)}"></label>
+          <p class="a-selection-help">Содержимое и теги сохраняются вместе с элементом. Подборки найдут его по совпадению фильтров.</p>
+          <button class="primary-action" type="submit">Сохранить</button>
+        </form>
+      </section>${bottomNavigationAMarkup()}`;
+    }
+
+    function newEntryMarkup() {
+      const parent = state.selections.find(selection => selection.id === state.creationParentId) || null;
+      const parentFilter = parent && parent.tags.length
+        ? `<div class="a-parent-filter"><span>${state.creationMode === 'element' ? 'Теги текущей подборки' : 'Унаследованный фильтр'}</span><div class="a-parent-filter-tags">${parent.tags.map(tag => `<span>#${escapeHTML(tag)}</span>`).join('')}</div></div>`
+        : '';
+      const isElement = state.creationMode === 'element';
+      const formError = state.entryFormError
+        ? `<p class="a-selection-form-error" role="alert">${escapeHTML(state.entryFormError)}</p>`
+        : '';
+      const fields = isElement
+        ? `<h1 id="new-entry-title">Новый элемент</h1>
+          <label><span>Название элемента</span><input type="text" name="elementTitle" maxlength="120" autocomplete="off" placeholder="Например, Тихое место" value="${escapeHTML(state.entryDraft.elementTitle)}" required autofocus></label>
+          <label><span>Содержимое</span><textarea name="elementContent" maxlength="5000" placeholder="Текст, ссылка или заметка">${escapeHTML(state.entryDraft.elementContent)}</textarea></label>
+          ${parentFilter}
+          <label><span>${parent ? 'Дополнительные теги' : 'Теги'}</span><input type="text" name="elementTags" maxlength="240" autocomplete="off" placeholder="Например, спокойное, фильмы" value="${escapeHTML(state.entryDraft.elementTags)}"></label>
+          <p class="a-selection-help">${parent ? `Теги фильтра «${escapeHTML(parent.name)}» добавятся автоматически, поэтому элемент сразу появится в этой подборке.` : 'Несколько тегов указываются через запятую. Подборки найдут элемент по совпадению своих фильтров.'}</p>`
+        : `<h1 id="new-entry-title">${parent ? 'Новая уточняющая подборка' : 'Новая подборка'}</h1>
+          <label><span>Название</span><input type="text" name="selectionName" maxlength="80" autocomplete="off" placeholder="Например, На вечер" value="${escapeHTML(state.entryDraft.selectionName)}" required autofocus></label>
+          ${parentFilter}
+          <label><span>${parent ? 'Добавить теги' : 'Фильтр по тегам'}</span><input type="text" name="selectionTags" maxlength="240" autocomplete="off" placeholder="${parent ? 'Например, любимое' : 'Например, фильмы, спокойное'}" value="${escapeHTML(state.entryDraft.selectionTags)}"></label>
+          <p class="a-selection-help">${parent ? `Новая подборка унаследует фильтр «${escapeHTML(parent.name)}». Добавьте хотя бы один новый тег, чтобы сделать её конкретнее.` : 'Несколько тегов указываются через запятую. В подборку попадут элементы со всеми выбранными тегами. Пустой фильтр покажет всё личное пространство.'}</p>`;
+      return `<section class="screen a-selection-screen" aria-labelledby="new-entry-title">
+        <form class="a-selection-form" data-new-entry-form>
+          ${newEntryBreadcrumbsMarkup()}
+          <fieldset class="a-entry-mode">
+            <legend>Добавить</legend>
+            <div class="a-entry-mode-options">
+              <label><input type="radio" name="entryType" value="element" data-entry-mode ${isElement ? 'checked' : ''}><span>Элемент</span></label>
+              <label><input type="radio" name="entryType" value="selection" data-entry-mode ${isElement ? '' : 'checked'}><span>Подборка</span></label>
+            </div>
+          </fieldset>
+          ${fields}
+          ${formError}
+          <button class="primary-action" type="submit">${isElement ? 'Добавить элемент' : 'Создать подборку'}</button>
+        </form>
+      </section>${bottomNavigationAMarkup()}`;
+    }
+
+    function bottomNavigationAMarkup() {
+      return `<nav class="a-bottom-nav" aria-label="Основные действия">
+        <button type="button" data-stub="settings" aria-label="Настройки">
+          <span class="a-bottom-nav-icon" aria-hidden="true">⚙</span>
+          <span class="a-bottom-nav-label">Настройки</span>
+        </button>
+        <button type="button" data-stub="search" aria-label="Поиск">
+          <span class="a-bottom-nav-icon" aria-hidden="true">${searchIcon()}</span>
+          <span class="a-bottom-nav-label">Поиск</span>
+        </button>
+      </nav>`;
+    }
+
+    function variantBMarkup() {
+      return `<section class="screen variant-b" aria-labelledby="variant-b-title">
+        <div class="b-intro">
+          <p class="eyebrow">Новое личное пространство</p>
+          <h1 id="variant-b-title">С чего начнётся ваша подборка?</h1>
+          <p class="lead">Задайте направление, а затем наполняйте его элементами. Само личное пространство останется шире любой подборки.</p>
+        </div>
+        <div class="b-space-preview" aria-hidden="true">
+          <div class="b-placeholder"><span>＋</span><strong>Первая подборка</strong><small>Пока без элементов. Её можно наполнить следующим шагом.</small></div>
+        </div>
+        <div class="b-actions">
+          <button class="primary-action" type="button" data-intent="selection">Создать подборку</button>
+          <button class="secondary-action" type="button" data-intent="element">Добавить элемент без подборки</button>
+        </div>
+      </section>`;
+    }
+
+    function variantCMarkup() {
+      return `<section class="screen variant-c" aria-labelledby="variant-c-title">
+        <div class="c-intro">
+          <p class="eyebrow">Здесь пока пусто</p>
+          <h1 id="variant-c-title">Выберите начало</h1>
+          <p class="lead">Оба пути равноправны: элементы существуют сами по себе, а подборки помогают находить связанные.</p>
+        </div>
+        <div class="c-choices">
+          <button class="choice-action" type="button" data-intent="element">
+            <span class="choice-copy"><span class="choice-number">01</span><strong>Добавить элемент</strong><small>Сохранить первую вещь в личном пространстве.</small></span>
+            <span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="choice-action" type="button" data-intent="selection">
+            <span class="choice-copy"><span class="choice-number">02</span><strong>Создать подборку</strong><small>Сначала обозначить направление для будущих элементов.</small></span>
+            <span class="choice-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>`;
+    }
+
+    function intentCopy(intent) {
+      if (intent === 'element') return {
+        title: 'Начать с элемента',
+        text: 'Прототип зафиксировал намерение добавить независимый элемент. Поле и формат элемента будут проверяться в следующем ticket.'
+      };
+      if (intent === 'selection') return {
+        title: 'Начать с подборки',
+        text: 'Прототип зафиксировал намерение создать подборку. Название и условия подборки будут проверяться после выбора первого экрана.'
+      };
+      if (intent === 'add-element') return {
+        title: 'Добавить элемент',
+        text: 'Экран добавления элемента не входит в текущий шаг прототипа. Здесь будет создаваться независимый элемент личного пространства с тегами фильтра подборки.'
+      };
+      return {
+        title: 'Пока недоступно',
+        text: 'Это локальная заглушка пустого состояния; поиск и настройки не входят в вопрос текущего ticket.'
+      };
+    }
+
+    function renderIntent() {
+      if (!state.lastIntent) {
+        intentBackdrop.classList.remove('open');
+        intentBackdrop.setAttribute('aria-hidden', 'true');
+        intentBackdrop.innerHTML = '';
+        return;
+      }
+      const copy = intentCopy(state.lastIntent);
+      intentBackdrop.innerHTML = `<div class="intent-sheet" role="dialog" aria-modal="true" aria-labelledby="intent-title">
+        <p class="eyebrow">Локальная заглушка</p>
+        <h2 id="intent-title">${copy.title}</h2>
+        <p>${copy.text}</p>
+        <button type="button" data-close-intent>${copy.closeLabel || 'Вернуться к экрану'}</button>
+      </div>`;
+      intentBackdrop.classList.add('open');
+      intentBackdrop.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => intentBackdrop.querySelector('[data-close-intent]')?.focus());
+    }
+
+    function syncVariantRoute() {
+      const url = new URL(location.href);
+      url.searchParams.set('variant', state.variant);
+      if (state.variant === 'A' && state.stage !== 'empty') url.searchParams.set('stage', state.stage);
+      else url.searchParams.delete('stage');
+      if (state.variant === 'A' && ['selection', 'element'].includes(state.stage) && state.activeSelectionId) url.searchParams.set('selection', state.activeSelectionId);
+      else url.searchParams.delete('selection');
+      if (state.variant === 'A' && ['selection', 'element'].includes(state.stage) && state.selectionRouteIds.length) url.searchParams.set('path', state.selectionRouteIds.join(','));
+      else url.searchParams.delete('path');
+      if (state.variant === 'A' && state.stage === 'element' && state.activeElementId) url.searchParams.set('element', state.activeElementId);
+      else url.searchParams.delete('element');
+      history.replaceState({}, '', url);
+    }
+
+    function setVariant(nextVariant) {
+      const variant = variants.find(item => item.id === nextVariant) || variants[0];
+      state.variant = variant.id;
+      state.stage = 'empty';
+      state.activeSelectionId = null;
+      state.activeElementId = null;
+      state.selectionRouteIds = [];
+      state.creationParentId = null;
+      state.creationMode = 'element';
+      state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+      state.entryFormError = null;
+      state.notice = null;
+      state.lastIntent = null;
+      syncVariantRoute();
+      render();
+    }
+
+    function cycleVariant(direction) {
+      const currentIndex = variants.findIndex(item => item.id === state.variant);
+      const nextIndex = (currentIndex + direction + variants.length) % variants.length;
+      setVariant(variants[nextIndex].id);
+    }
+
+    function renderState() {
+      const active = variants.find(item => item.id === state.variant);
+      variantLabel.textContent = `${active.id} · ${active.name}`;
+      stateSummary.textContent = state.lastIntent
+        ? `Намерение: ${state.lastIntent === 'element' ? 'элемент' : state.lastIntent === 'selection' ? 'подборка' : 'локальная заглушка'} · состояние в памяти`
+        : `← → на клавиатуре · ${state.elements.length} элементов · ${state.selections.length} подборок · в памяти`;
+    }
+
+    function render() {
+      document.body.dataset.variant = state.variant;
+      const content = state.variant === 'B'
+        ? variantBMarkup()
+        : state.variant === 'C'
+          ? variantCMarkup()
+          : state.stage === 'new-entry'
+          ? newEntryMarkup()
+          : state.stage === 'element'
+            ? elementDetailMarkup()
+          : state.stage === 'selection'
+              ? selectionElementsMarkup()
+              : variantAMarkup();
+      app.innerHTML = headerMarkup() + content;
+      renderIntent();
+      renderState();
+      if (state.variant === 'A' && state.stage === 'new-entry') {
+        const fieldName = state.creationMode === 'element' ? 'elementTitle' : 'selectionName';
+        requestAnimationFrame(() => app.querySelector(`[name="${fieldName}"]`)?.focus());
+      }
+    }
+
+    document.addEventListener('click', event => {
+      const previous = event.target.closest('[data-previous-variant]');
+      const next = event.target.closest('[data-next-variant]');
+      const startEntry = event.target.closest('[data-start-entry]');
+      const cancelEntry = event.target.closest('[data-cancel-new-entry]');
+      const openElement = event.target.closest('[data-open-element]');
+      const openSelection = event.target.closest('[data-open-selection]');
+      const openSelections = event.target.closest('[data-open-selections]');
+      const stepBackElement = event.target.closest('[data-step-back-element]');
+      const stepBackSelection = event.target.closest('[data-step-back-selection]');
+      const openRouteIndex = event.target.closest('[data-open-route-index]');
+      const intent = event.target.closest('[data-intent]');
+      const stub = event.target.closest('[data-stub]');
+      if (previous) cycleVariant(-1);
+      else if (next) cycleVariant(1);
+      else if (startEntry) {
+        const parent = state.stage === 'selection' ? activeSelection() : null;
+        state.creationParentId = parent?.id || null;
+        state.activeElementId = null;
+        if (!parent) state.selectionRouteIds = [];
+        state.creationMode = 'element';
+        state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+        state.entryFormError = null;
+        state.stage = 'new-entry';
+        state.notice = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (cancelEntry) {
+        const returnToParent = state.selections.some(selection => selection.id === state.creationParentId);
+        state.stage = returnToParent ? 'selection' : 'empty';
+        state.activeSelectionId = returnToParent ? state.creationParentId : null;
+        if (!returnToParent) state.selectionRouteIds = [];
+        state.creationParentId = null;
+        state.activeElementId = null;
+        state.creationMode = 'element';
+        state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+        state.entryFormError = null;
+        state.notice = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (stepBackElement) {
+        const parentSelection = state.selectionRouteIds.length ? activeSelection() : null;
+        state.activeElementId = null;
+        state.activeSelectionId = parentSelection?.id || null;
+        state.stage = parentSelection ? 'selection' : 'empty';
+        if (!parentSelection) state.selectionRouteIds = [];
+        state.notice = null;
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (stepBackSelection) {
+        if (state.selectionRouteIds.length > 1) {
+          state.selectionRouteIds = state.selectionRouteIds.slice(0, -1);
+          state.activeSelectionId = state.selectionRouteIds.at(-1) || null;
+          state.stage = 'selection';
+        } else {
+          state.activeSelectionId = null;
+          state.selectionRouteIds = [];
+          state.stage = 'empty';
+        }
+        state.notice = null;
+        state.activeElementId = null;
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (openRouteIndex) {
+        const routeIndex = Number(openRouteIndex.dataset.openRouteIndex);
+        state.selectionRouteIds = state.selectionRouteIds.slice(0, routeIndex + 1);
+        state.activeSelectionId = state.selectionRouteIds.at(-1) || null;
+        state.stage = 'selection';
+        state.activeElementId = null;
+        state.notice = null;
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (openElement) {
+        const element = state.elements.find(item => item.id === openElement.dataset.openElement);
+        if (!element) return;
+        const parentSelection = state.stage === 'selection' ? activeSelection() : null;
+        state.activeElementId = element.id;
+        if (!parentSelection) {
+          state.activeSelectionId = null;
+          state.selectionRouteIds = [];
+        }
+        state.stage = 'element';
+        state.notice = null;
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (openSelection) {
+        const nextSelectionId = openSelection.dataset.openSelection;
+        const currentSelection = activeSelection();
+        const followsCurrentRoute = state.stage === 'selection'
+          && currentSelection
+          && directSemanticChildren(currentSelection).some(child => child.id === nextSelectionId);
+        state.activeSelectionId = nextSelectionId;
+        state.activeElementId = null;
+        state.selectionRouteIds = followsCurrentRoute
+          ? [...state.selectionRouteIds, nextSelectionId]
+          : semanticPathToSelection(nextSelectionId);
+        state.stage = 'selection';
+        state.notice = null;
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (openSelections) {
+        state.activeSelectionId = null;
+        state.activeElementId = null;
+        state.selectionRouteIds = [];
+        state.stage = 'empty';
+        state.creationParentId = null;
+        state.entryFormError = null;
+        state.notice = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+      } else if (intent) {
+        state.lastIntent = intent.dataset.intent;
+        renderIntent();
+        renderState();
+      } else if (stub) {
+        state.lastIntent = stub.dataset.stub;
+        renderIntent();
+        renderState();
+      } else if (event.target.closest('[data-close-intent]')) {
+        state.lastIntent = null;
+        renderIntent();
+        renderState();
+      } else if (event.target === intentBackdrop) {
+        state.lastIntent = null;
+        renderIntent();
+        renderState();
+      }
+    });
+
+    document.addEventListener('submit', event => {
+      if (event.target.matches('[data-element-detail-form]')) {
+        event.preventDefault();
+        const element = activeElement();
+        const title = event.target.elements.elementTitle.value.trim();
+        if (!element || !title) {
+          event.target.elements.elementTitle.focus();
+          return;
+        }
+        element.title = title;
+        element.content = event.target.elements.elementContent.value.trim();
+        element.tags = parseSelectionTags(event.target.elements.elementTags.value);
+        const parentSelection = state.selectionRouteIds.length ? activeSelection() : null;
+        state.activeElementId = null;
+        state.activeSelectionId = parentSelection?.id || null;
+        state.stage = parentSelection ? 'selection' : 'empty';
+        if (!parentSelection) state.selectionRouteIds = [];
+        state.notice = { type: 'element-updated', title };
+        state.entryFormError = null;
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+        return;
+      }
+      if (!event.target.matches('[data-new-entry-form]')) return;
+      event.preventDefault();
+      const parent = state.selections.find(selection => selection.id === state.creationParentId) || null;
+      if (state.creationMode === 'element') {
+        const title = event.target.elements.elementTitle.value.trim();
+        if (!title) {
+          event.target.elements.elementTitle.focus();
+          return;
+        }
+        state.entryDraft.elementTitle = title;
+        state.entryDraft.elementContent = event.target.elements.elementContent.value;
+        state.entryDraft.elementTags = event.target.elements.elementTags.value;
+        const enteredTags = parseSelectionTags(state.entryDraft.elementTags);
+        const tags = parent ? parseSelectionTags([...parent.tags, ...enteredTags].join(',')) : enteredTags;
+        state.elements.push({ id: nextId('element'), title, content: state.entryDraft.elementContent.trim(), tags });
+        state.personalSpace.elementCount = state.elements.length;
+        state.activeSelectionId = parent?.id || null;
+        state.activeElementId = null;
+        state.stage = parent ? 'selection' : 'empty';
+        if (!parent) state.selectionRouteIds = [];
+        state.creationParentId = null;
+        state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+        state.entryFormError = null;
+        state.notice = { type: 'element-created', title };
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+        return;
+      }
+      const name = event.target.elements.selectionName.value.trim();
+      if (!name) {
+        event.target.elements.selectionName.focus();
+        return;
+      }
+      state.entryDraft.selectionName = name;
+      state.entryDraft.selectionTags = event.target.elements.selectionTags.value;
+      const enteredTags = parseSelectionTags(state.entryDraft.selectionTags);
+      const tags = parent ? parseSelectionTags([...parent.tags, ...enteredTags].join(',')) : enteredTags;
+      if (parent && !isStrictlyBroader(parent, { tags })) {
+        state.entryFormError = 'Добавьте хотя бы один новый тег — фильтр должен быть конкретнее родительского.';
+        render();
+        requestAnimationFrame(() => app.querySelector('[name="selectionTags"]')?.focus());
+        return;
+      }
+      const duplicate = state.selections.find(selection => selectionFilterKey(selection.tags) === selectionFilterKey(tags));
+      if (duplicate) {
+        state.activeSelectionId = duplicate.id;
+        state.selectionRouteIds = parent ? [...state.selectionRouteIds, duplicate.id] : semanticPathToSelection(duplicate.id);
+        state.stage = 'selection';
+        state.creationParentId = null;
+        state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+        state.entryFormError = null;
+        state.notice = { type: 'duplicate-filter' };
+        state.lastIntent = null;
+        syncVariantRoute();
+        render();
+        return;
+      }
+      const newSelection = { id: nextId('selection'), name, tags };
+      state.selections.push(newSelection);
+      state.personalSpace.selectionCount = state.selections.length;
+      state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+      state.activeSelectionId = parent ? newSelection.id : null;
+      state.selectionRouteIds = parent ? [...state.selectionRouteIds, newSelection.id] : [];
+      state.stage = parent ? 'selection' : 'empty';
+      state.creationParentId = null;
+      state.entryFormError = null;
+      state.notice = null;
+      state.lastIntent = null;
+      syncVariantRoute();
+      render();
+    });
+
+    document.addEventListener('input', event => {
+      if (!event.target.closest('[data-new-entry-form]')) return;
+      if (event.target.name === 'elementTitle') state.entryDraft.elementTitle = event.target.value;
+      else if (event.target.name === 'elementContent') state.entryDraft.elementContent = event.target.value;
+      else if (event.target.name === 'elementTags') state.entryDraft.elementTags = event.target.value;
+      else if (event.target.name === 'selectionName') state.entryDraft.selectionName = event.target.value;
+      else if (event.target.name === 'selectionTags') state.entryDraft.selectionTags = event.target.value;
+    });
+
+    document.addEventListener('change', event => {
+      if (!event.target.matches('[data-entry-mode]')) return;
+      state.creationMode = event.target.value === 'selection' ? 'selection' : 'element';
+      state.entryFormError = null;
+      requestAnimationFrame(render);
+    });
+
+    document.addEventListener('keydown', event => {
+      const editing = event.target.matches('input, textarea, select, [contenteditable="true"]');
+      if (state.variant !== 'A' && !editing && event.key === 'ArrowLeft') cycleVariant(-1);
+      else if (state.variant !== 'A' && !editing && event.key === 'ArrowRight') cycleVariant(1);
+      else if (event.key === 'Escape' && state.lastIntent) {
+        state.lastIntent = null;
+        renderIntent();
+        renderState();
+      } else if (event.key === 'Escape' && state.variant === 'A' && state.stage === 'new-entry') {
+        const returnToParent = state.selections.some(selection => selection.id === state.creationParentId);
+        state.stage = returnToParent ? 'selection' : 'empty';
+        state.activeSelectionId = returnToParent ? state.creationParentId : null;
+        if (!returnToParent) state.selectionRouteIds = [];
+        state.creationParentId = null;
+        state.creationMode = 'element';
+        state.entryDraft = { elementTitle: '', elementContent: '', elementTags: '', selectionName: '', selectionTags: '' };
+        state.entryFormError = null;
+        state.notice = null;
+        syncVariantRoute();
+        render();
+      } else if (event.key === 'Escape' && state.variant === 'A' && state.stage === 'element') {
+        const parentSelection = state.selectionRouteIds.length ? activeSelection() : null;
+        state.activeElementId = null;
+        state.activeSelectionId = parentSelection?.id || null;
+        state.stage = parentSelection ? 'selection' : 'empty';
+        if (!parentSelection) state.selectionRouteIds = [];
+        state.notice = null;
+        syncVariantRoute();
+        render();
+      } else if (event.key === 'Escape' && state.variant === 'A' && state.stage === 'selection') {
+        if (state.selectionRouteIds.length > 1) {
+          state.selectionRouteIds = state.selectionRouteIds.slice(0, -1);
+          state.activeSelectionId = state.selectionRouteIds.at(-1) || null;
+          state.stage = 'selection';
+        } else {
+          state.activeSelectionId = null;
+          state.selectionRouteIds = [];
+          state.stage = 'empty';
+        }
+        state.notice = null;
+        syncVariantRoute();
+        render();
+      }
+    });
+
+    if (requestedVariant !== state.variant) syncVariantRoute();
+    render();
+  </script>
+</body>
+</html>
