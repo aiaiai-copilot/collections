@@ -1,7 +1,7 @@
 # HANDOFF
 
 **Date:** 2026-09-05
-**Branch:** `codex/collection-workspace-prototype` — контрольная точка `f2f8f7d7e7e158b15636ff4cda774c847a06546b` (`prototype: checkpoint selection hierarchy before DAG navigation`, 2026-09-05); остаются соседние незакоммиченные изменения. Следующий отдельный handoff-коммит содержит только этот файл.
+**Branch:** `codex/collection-workspace-prototype` — полная контрольная точка `87d7cfa81b543bcf7547b116ea4a999d55cfaed6` (`chore: checkpoint collections prototype and product research`, 2026-09-05). Все продуктовые и исследовательские изменения закоммичены; после отдельного коммита этого HANDOFF рабочее дерево чистое.
 
 Репозиторий содержит два соседних концепта. Текущая работа — отдельный локальный прототип «Иерархии подборок»; действующая спецификация «Коллекций» остаётся в корневом `CONTEXT.md`. Состояние текущего прототипа хранится только в памяти вкладки.
 
@@ -13,7 +13,7 @@
 
 Отправная точка: [Контрольная точка перед новым навигационным концептом DAG](.scratch/selection-hierarchy-prototype/checkpoint-2026-09-05.md). В ней собраны принятые UI-решения, ограничения текущей реализации, точки входа в код и сценарий с несколькими родителями. Она заменяет временный handoff `/tmp/collections-handoff.jsJMqy/selection-hierarchy-prototype.md`, который описывал ещё не созданный прототип.
 
-Рекомендуемое имя новой ветки — `codex/dag-navigation-concept`. Создать её в новой сессии от контрольной точки выше или последующего handoff-коммита. Предпочтителен отдельный worktree: базовый checkout содержит соседнюю незакоммиченную работу. Ветка, worktree и отдельная Codex-задача пока не созданы; текущая ветка не переключалась.
+Рекомендуемое имя новой ветки — `codex/dag-navigation-concept`. Создать её в новой сессии от полной контрольной точки `87d7cfa81b543bcf7547b116ea4a999d55cfaed6` или последующего handoff-коммита. Полная база включает и «Иерархию подборок», и актуальные артефакты «Коллекций». Для параллельной работы предпочтителен отдельный worktree. Ветка, worktree и отдельная Codex-задача пока не созданы; текущая ветка не переключалась.
 
 ### Чтение и организация новой сессии
 
@@ -43,25 +43,28 @@
 
 В предыдущем шаге этой сессии локально проверены создание элемента с содержимым, открытие из верхнего уровня и подборки, изменение, сохранение и возврат. Формы просмотрены при 390×844; ошибок страницы в этих сценариях не было. При фиксации повторно проверены синтаксис inline JavaScript и diff; HTML не изменялся.
 
+Перед полной фиксацией «Коллекций» прошли все 14 локальных тестов `node --test prototypes/linear-order.PROTOTYPE.test.mjs`, проверка синтаксиса встроенного JavaScript трёх HTML-прототипов и `git diff --check`. Тесты линейного порядка вычислительные, без backend, сети и записи данных. Эта проверка не является полной приёмкой UI или продуктовой спецификации.
+
 Проверки использовали локальный `file://`, backend/API у прототипа нет. Production, deployment и push не выполнялись. При фиксации на локальном порту 8765 слушающего процесса не обнаружено; состояние остальных ранее запущенных приложений не инвентаризировалось. Временные screenshots не нужны для продолжения.
 
-### Что осталось вне коммитов этой сессии
+### Полная зафиксированная база
 
-Соседние изменения сохранены на диске исходного checkout и не включены в контрольную точку «Иерархии подборок»:
+После первоначальной фиксации «Иерархии подборок» пользователь отдельно попросил закоммитить и соседние изменения «Коллекций». В полную базу вошли:
 
 - `.scratch/collections/issues/06-sorting-integration.md`, `.scratch/collections/map.md`, корневой `CONTEXT.md`.
 - `prototypes/collection-workspace.PROTOTYPE.html`, `prototypes/tag-glossary-manual.PROTOTYPE.html`.
-- Новые `.scratch/collections/issues/09-linear-order-feasibility.md`, `10-collection-slice-quick-browse.md`, `11-save-confirmation-icon.md`.
-- Новые `prototypes/linear-order.PROTOTYPE.mjs`, `prototypes/linear-order.PROTOTYPE.test.mjs`.
-- Новый effort `.scratch/collections-product-prototype/` и исследования `docs/research/product-prototype-foundation.md`, `docs/research/self-hosted-and-yandex-product-foundation.md`.
+- `.scratch/collections/issues/09-linear-order-feasibility.md`, `10-collection-slice-quick-browse.md`, `11-save-confirmation-icon.md`.
+- `prototypes/linear-order.PROTOTYPE.mjs`, `prototypes/linear-order.PROTOTYPE.test.mjs`.
+- Effort `.scratch/collections-product-prototype/` и исследования `docs/research/product-prototype-foundation.md`, `docs/research/self-hosted-and-yandex-product-foundation.md`.
 
-Эти изменения не окажутся автоматически в новом worktree. Прототип «Иерархии подборок» самодостаточен и уже содержит использованную визуальную основу; текущий незакоммиченный прототип «Коллекций» доступен в исходном checkout только как референс.
+Все эти файлы теперь доступны в новом worktree от полной базы. Незакоммиченной работы по состоянию на завершение фиксации нет. Прототип «Коллекций» используется как референс; фиксация его состояния не означает выбора этого концепта или утверждения продуктовой спецификации.
 
 ### Сохраняемый контекст соседнего продуктового effort
 
-Черновик спецификации действующих «Коллекций» — `.scratch/collections-product-prototype/issues/03-specify-demonstration-product.md`; он не является заданием на новую DAG-навигацию. Промежуточная основа Beget/PostgreSQL/NestJS/SPA и OpenAPI 3.1 зафиксирована в ticket «Выбрать продуктовую основу» того effort. Walking skeleton остаётся заблокированным на утверждении спецификации (`Blocked by: 01, 03`), реализация не начиналась. Открытые продуктовые решения по прежнему handoff: граница первого показа, теги/формат элемента, RPO/RTO и диагностика, судьба демонстрационных данных.
+Черновик спецификации действующих «Коллекций» — `.scratch/collections-product-prototype/issues/03-specify-demonstration-product.md`; он не является заданием на новую DAG-навигацию. Промежуточная основа Beget/PostgreSQL/NestJS/SPA и OpenAPI 3.1 зафиксирована в ticket «Выбрать технический фундамент демонстрационного продукта» того effort. Walking skeleton остаётся заблокированным на утверждении спецификации (`Blocked by: 01, 03`), реализация не начиналась. Открытые продуктовые решения по прежнему handoff: граница первого показа, теги/формат элемента, RPO/RTO и диагностика, судьба демонстрационных данных.
 
 ### Коммиты этой фиксации
 
 - `f2f8f7d7e7e158b15636ff4cda774c847a06546b` — `prototype: checkpoint selection hierarchy before DAG navigation`: HTML, словарь, карты, решения и контрольная точка альтернативного концепта.
-- Этот HANDOFF сохраняется следующим отдельным коммитом `docs(handoff): prepare separate DAG navigation session`.
+- `87d7cfa81b543bcf7547b116ea4a999d55cfaed6` — `chore: checkpoint collections prototype and product research`: все оставшиеся изменения «Коллекций» и актуализация ссылки на полную базу в контрольной точке.
+- Этот HANDOFF сохраняется следующим отдельным коммитом `docs(handoff): record complete project checkpoint`.
