@@ -8,8 +8,8 @@
   const original = { newEntryMarkup, elementDetailMarkup, bottomNavigationAMarkup };
   const nav = {
     variant: ['A', 'B', 'C'].includes(requestedVariant) ? requestedVariant : 'A',
-    names: { A: 'Над содержимым', B: 'Панель снизу', C: 'Контекст сбоку' },
-    focus: [], frames: [], index: 0, expanded: false, height: 150, view: 'refine',
+    names: { A: 'Выбранное сверху', B: 'Выбранное снизу', C: 'Выбранное сбоку' },
+    focus: [], frames: [], index: 0, expanded: false, height: 'auto', view: 'refine',
     primary: 'refine', metric: 'elements', fixture: routeParams.get('fixture') === 'dag',
     session: `dag-${Date.now()}`, pendingNotice: null
   };
@@ -213,10 +213,26 @@
     </div>`;
   }
 
-  function legendMarkup() { return '<p class="dag-legend">＋ добавить тег · × снять · ↗ только этот тег</p>'; }
-  function VariantA() { return `<section class="dag-panel" aria-label="Навигация по тегам">${selectedMarkup()}${cloudMarkup()}${legendMarkup()}</section>`; }
-  function VariantB() { return `<section class="dag-panel dag-bottom-panel" aria-label="Навигация по тегам">${selectedMarkup()}${cloudMarkup()}${legendMarkup()}</section>`; }
-  function VariantC() { return `<section class="dag-panel dag-columns-panel" aria-label="Навигация по тегам">${selectedMarkup()}${cloudMarkup()}${legendMarkup()}</section>`; }
+  function VariantA() { return `<div class="dag-filter-workspace dag-selected-top">${selectedMarkup()}${cloudMarkup()}</div>`; }
+  function VariantB() { return `<div class="dag-filter-workspace dag-selected-bottom">${cloudMarkup()}${selectedMarkup()}</div>`; }
+  function VariantC() { return `<div class="dag-filter-workspace dag-selected-side">${selectedMarkup()}${cloudMarkup()}</div>`; }
+
+  function filterMarkup(control, title) {
+    const source = nav.index ? frameName(nav.frames[nav.index - 1]) : '';
+    const workspace = nav.variant === 'B' ? VariantB() : nav.variant === 'C' ? VariantC() : VariantA();
+    return `<section class="screen dag-focus-screen" aria-label="Фильтрация">
+      <section class="dag-focus-panel" aria-label="Навигация по тегам">
+        <div class="dag-filter-top"><nav class="dag-filter-rail" aria-label="Переходы">
+          <button type="button" class="dag-back" data-dag-back aria-label="${escapeHTML(source ? `Назад: ${source}` : 'Назад')}" ${nav.index ? '' : 'disabled'}>←</button>
+          <span class="dag-filter-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
+          <button type="button" class="dag-home" data-dag-all ${state.stage === 'empty' ? 'aria-current="page"' : ''}>Всё</button>
+        </nav>${noticeMarkup()}</div>
+        ${workspace}
+        <div class="dag-filter-footer">${control}</div>
+        <section id="dag-results" hidden></section>
+      </section>
+    </section>`;
+  }
 
   function scopeMarkup() {
     const all = state.stage === 'empty';
@@ -232,26 +248,29 @@
     const control = `<div class="dag-results-control ${nav.variant === 'B' ? 'dag-fixed-control' : ''}"><p role="status">Всего: <strong>${pluralElements(relevant.length)}</strong></p>
       ${emptySpace ? '' : `<button type="button" class="dag-view-toggle ${showingResults ? 'is-open' : ''}" data-dag-view-toggle aria-expanded="${showingResults}" aria-controls="dag-results">${showingResults ? 'Продолжить фильтрацию' : 'Посмотреть результаты'}</button>`}
     </div>`;
+    if (!showingResults && !emptySpace) return filterMarkup(control, all ? 'Все теги' : title);
     const rows = `<div class="dag-results">${children.map(item => selectionRowMarkup(item, all)).join('')}</div>
       ${visible.length ? `<section class="dag-elements"><h2>Элементы</h2>${elementsListMarkup(visible)}</section>` : ''}
       ${!children.length && !visible.length ? `<div class="dag-empty">${all ? 'Здесь появятся ваши подборки и элементы' : 'Пока нет подходящих элементов'}${all ? '<button class="primary-action" type="button" data-start-entry>Добавить</button>' : ''}</div>` : ''}`;
     const content = `<section id="dag-results" class="dag-content" aria-label="Результаты" ${showingResults || emptySpace ? '' : 'hidden'}>${showingResults || emptySpace ? rows : ''}</section>`;
-    const panel = showingResults || (!state.selections.length && !nav.focus.length) ? '' : nav.variant === 'B' ? VariantB() : nav.variant === 'C' ? VariantC() : VariantA();
     return nav.variant === 'B'
-      ? `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${content}</section>${control}${panel}${original.bottomNavigationAMarkup()}`
-      : `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${control}${panel}${content}</section>${original.bottomNavigationAMarkup()}`;
+      ? `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${content}</section>${control}${original.bottomNavigationAMarkup()}`
+      : `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${control}${content}</section>${original.bottomNavigationAMarkup()}`;
   }
 
   function fitCloud() {
     const cloud = app.querySelector('.dag-cloud');
     const more = app.querySelector('[data-dag-more]');
     if (!cloud || !more) return;
-    if (nav.expanded) { more.hidden = false; more.textContent = 'Свернуть облако'; return; }
     // A resize and a render can schedule this twice for the same DOM.
     // Always measure the complete candidate set, including previously hidden tags.
     [...cloud.children].forEach(child => { child.hidden = false; });
-    const bottom = cloud.getBoundingClientRect().bottom;
-    const overflow = [...cloud.children].filter(child => child.classList.contains('dag-tag') && child.getBoundingClientRect().bottom > bottom + 1);
+    more.hidden = !nav.expanded;
+    if (nav.expanded) { more.textContent = 'Свернуть облако'; return; }
+    const overflowTags = () => [...cloud.children].filter(child => child.classList.contains('dag-tag') && child.getBoundingClientRect().bottom > cloud.getBoundingClientRect().bottom + 1);
+    // Let the cloud use the entire available rectangle before reserving disclosure space.
+    if (overflowTags().length) more.hidden = false;
+    const overflow = overflowTags();
     overflow.forEach(child => { child.hidden = true; });
     const hidden = overflow.length;
     more.hidden = hidden === 0;
@@ -261,10 +280,13 @@
   render = () => {
     document.body.dataset.variant = 'A';
     document.body.dataset.navigation = nav.variant;
-    app.style.setProperty('--cloud-height', `${nav.height}px`);
+    const filtering = ['empty', 'selection'].includes(state.stage) && nav.view === 'refine' && (state.elements.length || state.selections.length || nav.focus.length);
+    document.body.dataset.filtering = String(Boolean(filtering));
+    document.body.dataset.cloudSizing = nav.height === 'auto' ? 'auto' : 'fixed';
+    app.style.setProperty('--cloud-height', `${nav.height === 'auto' ? 150 : nav.height}px`);
     const content = state.stage === 'new-entry' ? original.newEntryMarkup()
       : state.stage === 'element' ? original.elementDetailMarkup() : scopeMarkup();
-    app.innerHTML = headerMarkup() + content;
+    app.innerHTML = (filtering ? '' : headerMarkup()) + content;
     variantLabel.textContent = `${nav.variant} · ${nav.names[nav.variant]}`;
     stateSummary.textContent = `${state.selections.length} подборок · ${state.elements.length} элементов · в памяти`;
     renderIntent();
@@ -330,7 +352,7 @@
   function showLab() {
     lab.innerHTML = `<h2>Эксперимент с навигацией</h2><p>Данные живут только в этой вкладке. Загрузка примера заменит текущее содержимое вкладки. Варианты A/B/C меняют только компоновку.</p>
       <div class="dag-lab-actions"><button type="button" data-fixture="dag">Загрузить пример DAG</button><button type="button" data-fixture="empty">Начать с пустого</button></div>
-      <label>Высота облака<select data-lab-height>${[100, 150, 230].map(value => `<option value="${value}" ${nav.height === value ? 'selected' : ''}>${value} px</option>`).join('')}</select></label>
+      <label>Высота облака<select data-lab-height><option value="auto" ${nav.height === 'auto' ? 'selected' : ''}>По доступному месту</option>${[100, 150, 230].map(value => `<option value="${value}" ${nav.height === value ? 'selected' : ''}>${value} px</option>`).join('')}</select></label>
       <label>Размер тега<select data-lab-metric><option value="elements" ${nav.metric === 'elements' ? 'selected' : ''}>По релевантным элементам</option><option value="nodes" ${nav.metric === 'nodes' ? 'selected' : ''}>По явно заданным подборкам</option></select></label>
       <label>Обычное касание<select data-lab-primary><option value="refine" ${nav.primary === 'refine' ? 'selected' : ''}>Добавить / снять тег</option><option value="switch" ${nav.primary === 'switch' ? 'selected' : ''}>Переключиться на один тег</option></select></label>
       <p>В облаке вес по элементам считает результат добавления тега. Выбранные теги имеют одинаковый размер. ↗ переключает контекст на один тег.</p>
@@ -420,7 +442,7 @@
   }, true);
 
   document.addEventListener('change', event => {
-    if (event.target.hasAttribute('data-lab-height')) nav.height = Number(event.target.value);
+    if (event.target.hasAttribute('data-lab-height')) nav.height = event.target.value === 'auto' ? 'auto' : Number(event.target.value);
     else if (event.target.hasAttribute('data-lab-metric')) nav.metric = event.target.value;
     else if (event.target.hasAttribute('data-lab-primary')) nav.primary = event.target.value;
     else return;

@@ -1,5 +1,6 @@
 /* THROWAWAY: three navigation layouts on the existing selection-hierarchy page. */
 body[data-navigation] .prototype-shell { height: calc(100dvh - 76px); min-height: 0; }
+body[data-filtering="true"] .prototype-shell { width: 100%; }
 body[data-navigation] .prototype-switcher { display: flex; bottom: 9px; width: min(440px, calc(100% - 20px)); }
 body[data-navigation] .prototype-switcher .dag-lab-button { width: 38px; flex: 0 0 38px; font-size: 19px; }
 body[data-navigation] .switcher-label { flex: 1; }
@@ -56,23 +57,42 @@ body[data-navigation] .a-selection-screen { padding-bottom: 28px; }
 .dag-empty { display: grid; align-content: center; min-height: 160px; color: var(--muted); font-size: 13px; text-align: center; }
 .dag-empty .primary-action { margin-top: 14px; }
 .dag-origin { margin: 0 0 15px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-/* B gives the cloud a persistent surface within thumb reach, independent of list scroll. */
-.dag-bottom-panel { flex: 0 0 auto; margin: 0; border-radius: 22px 22px 0 0; padding: 12px 16px; box-shadow: 0 -6px 18px #2435200b; max-height: 57dvh; overflow: auto; }
-.dag-bottom-panel .dag-selected-zone { margin-bottom: 8px; padding-bottom: 9px; }
-.dag-bottom-panel .dag-panel-label { margin-bottom: 5px; }
-.dag-bottom-panel .dag-cloud { height: var(--cloud-height, 155px); }
-.dag-bottom-panel .dag-cloud.is-expanded { height: auto; }
-.dag-bottom-panel .dag-legend { margin-top: 4px; }
-/* C spends width on the current context; the cloud has a taller, narrower rectangle. */
-.dag-columns-panel { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 1.6fr); gap: 12px; padding: 12px; }
-.dag-columns-panel .dag-selected-zone { border: 0; border-right: 1px solid #d7dfd0; padding: 0 10px 0 0; margin: 0; min-width: 0; }
-.dag-columns-panel .dag-selected { display: flex; flex-direction: column; align-items: flex-start; }
-.dag-columns-panel .dag-selected .dag-tag { flex-wrap: wrap; width: 100%; }
-.dag-columns-panel .dag-selected .dag-tag-other { border: 0; border-top: 1px solid #ffffff29; flex-basis: 100%; min-height: 30px; }
-.dag-columns-panel .dag-cloud-zone { min-width: 0; }
-.dag-columns-panel .dag-cloud { height: calc(var(--cloud-height, 155px) * 1.45); justify-content: flex-start; }
-.dag-columns-panel .dag-cloud.is-expanded { height: auto; }
-.dag-columns-panel .dag-legend { grid-column: 1 / -1; }
+/* Fullscreen filtering: the workspace gets all space between its navigation and result action. */
+.dag-focus-screen { padding: 0; overflow: hidden; }
+.dag-focus-panel { flex: 1; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; padding: 16px; background: #f0f4ec; }
+.dag-focus-panel > [hidden] { display: none; }
+.dag-filter-top { min-width: 0; }
+.dag-filter-rail { display: flex; align-items: center; gap: 10px; }
+.dag-filter-rail button { flex: 0 0 44px; min-height: 44px; border: 0; border-radius: 12px; background: #ffffff9c; cursor: pointer; }
+.dag-filter-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: 13px; font-weight: 750; }
+.dag-filter-workspace { display: flex; flex-direction: column; min-height: 0; gap: 12px; }
+.dag-focus-panel .dag-selected-zone { flex: 0 1 auto; min-height: 0; max-height: 40%; overflow: auto; margin: 0; padding: 0 0 12px; }
+.dag-focus-panel .dag-cloud-zone { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.dag-focus-panel .dag-panel-label { flex: 0 0 auto; }
+.dag-focus-panel .dag-cloud { flex: 1; min-height: 0; height: auto; max-height: none; justify-content: flex-start; }
+body[data-cloud-sizing="fixed"] .dag-focus-panel .dag-cloud { flex: 0 1 auto; height: var(--cloud-height); }
+.dag-focus-panel .dag-more { flex: 0 0 auto; }
+.dag-focus-panel .dag-results-control { position: static; margin: 0; padding: 0; border: 0; background: transparent; }
+.dag-selected-bottom .dag-selected-zone { border: 0; border-top: 1px solid #d7dfd0; padding: 12px 0 0; }
+.dag-selected-side { display: grid; grid-template-columns: minmax(140px, .75fr) minmax(0, 2fr); }
+.dag-selected-side .dag-selected-zone { max-height: none; border: 0; border-right: 1px solid #d7dfd0; padding: 0 12px 0 0; }
+.dag-selected-side .dag-selected { flex-direction: column; align-items: flex-start; }
+.dag-selected-side .dag-selected .dag-tag { flex-wrap: wrap; width: 100%; }
+.dag-selected-side .dag-selected .dag-tag-other { border: 0; border-top: 1px solid #ffffff29; flex-basis: 100%; min-height: 30px; }
+@media (max-width: 360px) {
+  .dag-selected-side { display: flex; }
+  .dag-selected-side .dag-selected-zone { max-height: 40%; border: 0; border-bottom: 1px solid #d7dfd0; padding: 0 0 12px; }
+  .dag-selected-side .dag-selected { flex-direction: row; }
+  .dag-selected-side .dag-selected .dag-tag { width: auto; flex-wrap: nowrap; }
+  .dag-selected-side .dag-selected .dag-tag-other { flex: 0 0 37px; border: 0; border-left: 1px solid #ffffff29; min-height: 44px; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .dag-focus-panel { padding: 8px 16px; gap: 8px; }
+  .dag-filter-workspace { gap: 8px; }
+  .dag-focus-panel .dag-selected-zone { padding-block: 0; }
+  .dag-focus-panel .dag-panel-label { margin-bottom: 5px; }
+  .dag-focus-panel .dag-results-control { grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr); align-items: center; }
+}
 .dag-lab { width: min(460px, calc(100% - 24px)); max-height: 85dvh; padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); color: var(--ink); }
 .dag-lab::backdrop { background: #17201b80; }
 .dag-lab h2 { font-size: 19px; margin-bottom: 8px; }
@@ -82,4 +102,4 @@ body[data-navigation] .a-selection-screen { padding-bottom: 28px; }
 .dag-lab-actions { display: flex; gap: 7px; flex-wrap: wrap; }
 .dag-lab pre { max-height: 240px; overflow: auto; font-size: 10px; background: #edf1e9; padding: 10px; }
 .dag-lab summary { font-size: 12px; cursor: pointer; margin: 15px 0; }
-@media (max-height: 690px) { .dag-bottom-panel { max-height: 48dvh; } .dag-header { min-height: 54px; padding-block: 5px; } }
+@media (max-height: 690px) { .dag-header { min-height: 54px; padding-block: 5px; } }
