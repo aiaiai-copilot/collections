@@ -1,7 +1,8 @@
 <!doctype html>
 <!--
   THROWAWAY PROTOTYPE — not production.
-  Three mobile-first variants of the first empty personal-space screen,
+  DAG navigation experiment based on checkpoint 7f583fa variant A.
+  Three mobile-first navigation panels on the existing personal-space screen,
   switchable via ?variant=A|B|C on this single local route.
 -->
 <html lang="ru">
@@ -9,7 +10,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <title>PROTOTYPE — пустое личное пространство</title>
+  <title>PROTOTYPE — DAG-навигация подборок</title>
   <style>
     :root {
       --ink: #17201b;
@@ -991,6 +992,7 @@
       @keyframes screen-in { from { opacity: .45; transform: translateY(4px); } }
     }
   </style>
+  <link rel="stylesheet" href="dag-navigation.PROTOTYPE.css?v=3">
 </head>
 <body>
   <main id="app" class="prototype-shell"></main>
@@ -1348,9 +1350,9 @@
     }
 
     function newEntryMarkup() {
-      const parent = state.selections.find(selection => selection.id === state.creationParentId) || null;
+      const parent = state.creationContext || state.selections.find(selection => selection.id === state.creationParentId) || null;
       const parentFilter = parent && parent.tags.length
-        ? `<div class="a-parent-filter"><span>${state.creationMode === 'element' ? 'Теги текущей подборки' : 'Унаследованный фильтр'}</span><div class="a-parent-filter-tags">${parent.tags.map(tag => `<span>#${escapeHTML(tag)}</span>`).join('')}</div></div>`
+        ? `<div class="a-parent-filter"><span>${state.creationMode === 'element' ? parent.id ? 'Теги текущей подборки' : 'Теги текущего набора' : 'Унаследованный фильтр'}</span><div class="a-parent-filter-tags">${parent.tags.map(tag => `<span>#${escapeHTML(tag)}</span>`).join('')}</div></div>`
         : '';
       const isElement = state.creationMode === 'element';
       const formError = state.entryFormError
@@ -1362,12 +1364,12 @@
           <label><span>Содержимое</span><textarea name="elementContent" maxlength="5000" placeholder="Текст, ссылка или заметка">${escapeHTML(state.entryDraft.elementContent)}</textarea></label>
           ${parentFilter}
           <label><span>${parent ? 'Дополнительные теги' : 'Теги'}</span><input type="text" name="elementTags" maxlength="240" autocomplete="off" placeholder="Например, спокойное, фильмы" value="${escapeHTML(state.entryDraft.elementTags)}"></label>
-          <p class="a-selection-help">${parent ? `Теги фильтра «${escapeHTML(parent.name)}» добавятся автоматически, поэтому элемент сразу появится в этой подборке.` : 'Несколько тегов указываются через запятую. Подборки найдут элемент по совпадению своих фильтров.'}</p>`
+          <p class="a-selection-help">${parent ? parent.id ? `Теги фильтра «${escapeHTML(parent.name)}» добавятся автоматически, поэтому элемент сразу появится в этой подборке.` : 'Выбранные теги добавятся автоматически, поэтому элемент будет соответствовать текущему набору.' : 'Несколько тегов указываются через запятую. Подборки найдут элемент по совпадению своих фильтров.'}</p>`
         : `<h1 id="new-entry-title">${parent ? 'Новая уточняющая подборка' : 'Новая подборка'}</h1>
           <label><span>Название</span><input type="text" name="selectionName" maxlength="80" autocomplete="off" placeholder="Например, На вечер" value="${escapeHTML(state.entryDraft.selectionName)}" required autofocus></label>
           ${parentFilter}
           <label><span>${parent ? 'Добавить теги' : 'Фильтр по тегам'}</span><input type="text" name="selectionTags" maxlength="240" autocomplete="off" placeholder="${parent ? 'Например, любимое' : 'Например, фильмы, спокойное'}" value="${escapeHTML(state.entryDraft.selectionTags)}"></label>
-          <p class="a-selection-help">${parent ? `Новая подборка унаследует фильтр «${escapeHTML(parent.name)}». Добавьте хотя бы один новый тег, чтобы сделать её конкретнее.` : 'Несколько тегов указываются через запятую. В подборку попадут элементы со всеми выбранными тегами. Пустой фильтр покажет всё личное пространство.'}</p>`;
+          <p class="a-selection-help">${parent ? parent.id ? `Новая подборка унаследует фильтр «${escapeHTML(parent.name)}». Добавьте хотя бы один новый тег, чтобы сделать её конкретнее.` : 'Новая подборка унаследует выбранные теги. Добавьте хотя бы один новый тег, чтобы сделать её конкретнее.' : 'Несколько тегов указываются через запятую. В подборку попадут элементы со всеми выбранными тегами. Пустой фильтр покажет всё личное пространство.'}</p>`;
       return `<section class="screen a-selection-screen" aria-labelledby="new-entry-title">
         <form class="a-selection-form" data-new-entry-form>
           ${newEntryBreadcrumbsMarkup()}
@@ -1848,5 +1850,6 @@
     if (requestedVariant !== state.variant) syncVariantRoute();
     render();
   </script>
+  <script src="dag-navigation.PROTOTYPE.js?v=3"></script>
 </body>
 </html>
