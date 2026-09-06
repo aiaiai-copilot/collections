@@ -226,6 +226,9 @@
     const more = app.querySelector('[data-dag-more]');
     if (!cloud || !more) return;
     if (nav.expanded) { more.hidden = false; more.textContent = 'Свернуть облако'; return; }
+    // A resize and a render can schedule this twice for the same DOM.
+    // Always measure the complete candidate set, including previously hidden tags.
+    [...cloud.children].forEach(child => { child.hidden = false; });
     const bottom = cloud.getBoundingClientRect().bottom;
     const overflow = [...cloud.children].filter(child => child.classList.contains('dag-tag') && child.getBoundingClientRect().bottom > bottom + 1);
     overflow.forEach(child => { child.hidden = true; });
