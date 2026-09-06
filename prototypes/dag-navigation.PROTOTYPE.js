@@ -1,6 +1,7 @@
 /* THROWAWAY UI experiment, based on checkpoint 7f583fa variant A.
  * Three structurally different navigation panels on the existing route,
  * switchable via ?variant=A|B|C. Data and all edits stay in this tab's memory.
+ * Refinement shows tags and the total count; results open only on request.
  * Navigation choices below are hypotheses for comparison, not product decisions.
  */
 (() => {
@@ -8,7 +9,7 @@
   const nav = {
     variant: ['A', 'B', 'C'].includes(requestedVariant) ? requestedVariant : 'A',
     names: { A: 'Над содержимым', B: 'Панель снизу', C: 'Контекст сбоку' },
-    focus: [], frames: [], index: 0, expanded: false, height: 150,
+    focus: [], frames: [], index: 0, expanded: false, height: 150, view: 'refine',
     primary: 'refine', metric: 'elements', fixture: routeParams.get('fixture') === 'dag',
     session: `dag-${Date.now()}`, pendingNotice: null
   };
@@ -39,7 +40,7 @@
   function snapshot() {
     return {
       stage: state.stage, selectionId: state.activeSelectionId,
-      elementId: state.activeElementId, tags: [...nav.focus],
+      elementId: state.activeElementId, tags: [...nav.focus], view: nav.view,
       creationContext: state.creationContext, creationMode: state.creationMode,
       draft: clone(state.entryDraft), scroll: app.querySelector('.screen')?.scrollTop || 0
     };
@@ -66,12 +67,13 @@
     nav.pendingNotice = null;
     state.lastIntent = null;
     nav.focus = [...frame.tags];
+    nav.view = frame.view === 'results' ? 'results' : 'refine';
     nav.expanded = false;
   }
 
   function currentUrl() {
     const url = new URL(location.href);
-    ['path', 'stage', 'selection', 'element', 'tags'].forEach(key => url.searchParams.delete(key));
+    ['path', 'stage', 'selection', 'element', 'tags', 'view'].forEach(key => url.searchParams.delete(key));
     url.searchParams.set('variant', nav.variant);
     if (nav.fixture) url.searchParams.set('fixture', 'dag');
     else url.searchParams.delete('fixture');
@@ -79,6 +81,7 @@
     if (state.activeSelectionId) url.searchParams.set('selection', state.activeSelectionId);
     else if (nav.focus.length) url.searchParams.set('tags', JSON.stringify(nav.focus));
     if (state.activeElementId) url.searchParams.set('element', state.activeElementId);
+    if (nav.view === 'results') url.searchParams.set('view', 'results');
     return url;
   }
 
@@ -98,7 +101,18 @@
   }
 
   function scopeFrame(tags, selectionId = null) {
-    return { stage: selectionId || tags.length ? 'selection' : 'empty', tags, selectionId, elementId: null, scroll: 0 };
+    return { stage: selectionId || tags.length ? 'selection' : 'empty', tags, selectionId, elementId: null, view: 'refine', scroll: 0 };
+  }
+
+  function toggleResults() {
+    nav.view = nav.view === 'results' ? 'refine' : 'results';
+    // This changes the current presentation, not the route through the DAG.
+    syncVariantRoute();
+    render();
+    requestAnimationFrame(() => {
+      app.querySelector('[data-dag-view-toggle]')?.focus({ preventScroll: true });
+      nav.frames[nav.index] = snapshot();
+    });
   }
 
   function navigateTags(tags) {
@@ -133,7 +147,7 @@
 
   function describeState() {
     return {
-      variant: nav.variant, stage: state.stage, navigationTags: nav.focus,
+      variant: nav.variant, stage: state.stage, navigationTags: nav.focus, view: nav.view,
       selectionId: state.activeSelectionId, elementId: state.activeElementId,
       history: nav.frames.slice(0, nav.index + 1).map(frameName),
       primaryAction: nav.primary, weight: nav.metric, cloudHeight: nav.height,
@@ -210,15 +224,22 @@
     const children = all ? semanticRoots() : directSemanticChildren(scope);
     const relevant = all ? state.elements : matches(nav.focus);
     const visible = elementsOutsideSelections(relevant, children);
+    const showingResults = nav.view === 'results';
+    const emptySpace = all && !state.selections.length && !state.elements.length;
     const title = all ? 'Мои подборки' : scope?.id ? scope.name : 'По выбранным тегам';
-    const heading = `<div class="dag-heading"><h1>${escapeHTML(title)}</h1><p>${pluralElements(relevant.length)}</p></div>`;
-    const content = `<div class="dag-results">${children.map(item => selectionRowMarkup(item, all)).join('')}</div>
+    const heading = `<div class="dag-heading"><h1>${escapeHTML(title)}</h1></div>`;
+    const context = showingResults && nav.focus.length ? `<div class="dag-result-context" aria-label="Выбранные теги">${nav.focus.map(tag => `<span class="a-selection-tag">${escapeHTML(tag)}</span>`).join('')}</div>` : '';
+    const control = `<div class="dag-results-control ${nav.variant === 'B' ? 'dag-fixed-control' : ''}"><p role="status">Всего: <strong>${pluralElements(relevant.length)}</strong></p>
+      ${emptySpace ? '' : `<button type="button" class="dag-view-toggle ${showingResults ? 'is-open' : ''}" data-dag-view-toggle aria-expanded="${showingResults}" aria-controls="dag-results">${showingResults ? 'Продолжить фильтрацию' : 'Посмотреть результаты'}</button>`}
+    </div>`;
+    const rows = `<div class="dag-results">${children.map(item => selectionRowMarkup(item, all)).join('')}</div>
       ${visible.length ? `<section class="dag-elements"><h2>Элементы</h2>${elementsListMarkup(visible)}</section>` : ''}
       ${!children.length && !visible.length ? `<div class="dag-empty">${all ? 'Здесь появятся ваши подборки и элементы' : 'Пока нет подходящих элементов'}${all ? '<button class="primary-action" type="button" data-start-entry>Добавить</button>' : ''}</div>` : ''}`;
-    const panel = !state.selections.length && !nav.focus.length ? '' : nav.variant === 'B' ? VariantB() : nav.variant === 'C' ? VariantC() : VariantA();
+    const content = `<section id="dag-results" class="dag-content" aria-label="Результаты" ${showingResults || emptySpace ? '' : 'hidden'}>${showingResults || emptySpace ? rows : ''}</section>`;
+    const panel = showingResults || (!state.selections.length && !nav.focus.length) ? '' : nav.variant === 'B' ? VariantB() : nav.variant === 'C' ? VariantC() : VariantA();
     return nav.variant === 'B'
-      ? `<section class="screen dag-screen">${noticeMarkup()}${heading}${content}</section>${panel}${original.bottomNavigationAMarkup()}`
-      : `<section class="screen dag-screen">${noticeMarkup()}${heading}${panel}${content}</section>${original.bottomNavigationAMarkup()}`;
+      ? `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${content}</section>${control}${panel}${original.bottomNavigationAMarkup()}`
+      : `<section class="screen dag-screen">${noticeMarkup()}${heading}${context}${control}${panel}${content}</section>${original.bottomNavigationAMarkup()}`;
   }
 
   function fitCloud() {
@@ -321,7 +342,7 @@
   document.addEventListener('click', event => {
     const target = event.target.closest('button');
     if (!target) return;
-    const handled = target.matches('[data-previous-variant], [data-next-variant], [data-dag-back], [data-dag-all], [data-dag-action], [data-dag-more], [data-dag-lab], [data-fixture], [data-close-lab], [data-start-entry], [data-cancel-new-entry], [data-open-element], [data-open-selection], [data-step-back-element], [data-step-back-selection], [data-open-selections]');
+    const handled = target.matches('[data-previous-variant], [data-next-variant], [data-dag-back], [data-dag-all], [data-dag-action], [data-dag-more], [data-dag-view-toggle], [data-dag-lab], [data-fixture], [data-close-lab], [data-start-entry], [data-cancel-new-entry], [data-open-element], [data-open-selection], [data-step-back-element], [data-step-back-selection], [data-open-selections]');
     if (!handled) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (target.hasAttribute('data-previous-variant')) cycleVariant(-1);
@@ -332,6 +353,7 @@
       const tag = target.dataset.tag;
       navigateTags(target.dataset.dagAction === 'switch' ? [tag] : target.dataset.dagAction === 'add' ? [...nav.focus, tag] : without(nav.focus, tag));
     } else if (target.hasAttribute('data-dag-more')) { nav.expanded = !nav.expanded; render(); }
+    else if (target.hasAttribute('data-dag-view-toggle')) toggleResults();
     else if (target.hasAttribute('data-dag-lab')) showLab();
     else if (target.hasAttribute('data-close-lab')) lab.close();
     else if (target.hasAttribute('data-fixture')) {
@@ -423,6 +445,7 @@
   let initialTags = [];
   try { const parsed = JSON.parse(routeParams.get('tags') || '[]'); if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) initialTags = normalize(parsed); } catch { /* An invalid prototype URL starts at Everything. */ }
   const initial = requestedSelection ? scopeFrame([...requestedSelection.tags], requestedSelection.id) : scopeFrame(initialTags, selectionByTags(initialTags)?.id && initialTags.length ? selectionByTags(initialTags).id : null);
+  initial.view = routeParams.get('view') === 'results' ? 'results' : 'refine';
   restore(initial); nav.frames = [snapshot()]; syncVariantRoute(); render();
   console.info('DAG prototype state', clone(describeState()));
 })();
