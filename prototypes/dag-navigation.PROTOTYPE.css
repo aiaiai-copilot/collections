@@ -55,6 +55,7 @@ body[data-navigation] .a-selection-screen { padding-bottom: 28px; }
 .dag-empty { display: grid; align-content: center; min-height: 160px; color: var(--muted); font-size: 13px; text-align: center; }
 .dag-empty .primary-action { margin-top: 14px; }
 .dag-origin { margin: 0 0 15px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.dag-notice-open { justify-self: start; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: left; text-decoration: underline; overflow-wrap: anywhere; cursor: pointer; }
 /* Fullscreen filtering: the workspace gets all space between its navigation and result action. */
 .dag-focus-screen { padding: 0; overflow: hidden; }
 .dag-focus-panel { flex: 1; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; padding: 16px; background: #f0f4ec; }

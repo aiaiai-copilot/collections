@@ -5,7 +5,7 @@
  * Navigation choices below are hypotheses for comparison, not product decisions.
  */
 (() => {
-  const original = { newEntryMarkup, elementDetailMarkup, bottomNavigationAMarkup };
+  const original = { newEntryMarkup, elementDetailMarkup, bottomNavigationAMarkup, noticeMarkup };
   const nav = {
     variant: ['A', 'B', 'C'].includes(requestedVariant) ? requestedVariant : 'A',
     names: { A: 'Выбранное сверху', B: 'Выбранное снизу', C: 'Выбранное сбоку' },
@@ -156,12 +156,24 @@
     };
   }
 
+  function homeMarkup() {
+    if (nav.variant === 'A' && state.stage === 'empty') return '';
+    return `<button type="button" class="dag-home" data-dag-all ${state.stage === 'empty' ? 'aria-current="page"' : ''}>Всё</button>`;
+  }
+
+  noticeMarkup = () => {
+    const element = nav.variant === 'A' && state.notice?.type === 'element-created'
+      ? state.elements.find(item => item.id === state.notice.elementId) : null;
+    if (!element) return original.noticeMarkup();
+    return `<div class="a-selection-notice is-success" role="status"><strong>Элемент добавлен</strong><button type="button" class="dag-notice-open" data-open-element="${escapeHTML(element.id)}" aria-label="Открыть добавленный элемент «${escapeHTML(element.title)}»">Открыть «${escapeHTML(element.title)}»</button></div>`;
+  };
+
   headerMarkup = () => {
-    const title = state.stage === 'new-entry' ? 'Добавление' : state.stage === 'element' ? 'Элемент' : 'Мои подборки';
+    const title = state.stage === 'new-entry' ? 'Добавление' : state.stage === 'element' ? 'Элемент' : nav.variant === 'A' && state.stage === 'empty' ? 'Всё' : 'Мои подборки';
     const source = nav.index ? frameName(nav.frames[nav.index - 1]) : '';
     return `<header class="app-header dag-header">
       <button type="button" class="a-flow-back dag-back" data-dag-back aria-label="${escapeHTML(source ? `Назад: ${source}` : 'Назад') }" ${nav.index ? '' : 'disabled'}>←</button>
-      <button type="button" class="dag-home" data-dag-all ${state.stage === 'empty' ? 'aria-current="page"' : ''}>Всё</button>
+      ${homeMarkup()}
       <span class="a-header-title">${title}</span>
       ${['empty', 'selection'].includes(state.stage) ? '<button type="button" class="a-header-add" data-start-entry aria-label="Добавить элемент или подборку">＋</button>' : '<span style="width:44px"></span>'}
     </header>`;
@@ -234,7 +246,8 @@
         <div class="dag-filter-top"><nav class="dag-filter-rail" aria-label="Переходы">
           <button type="button" class="dag-back" data-dag-back aria-label="${escapeHTML(source ? `Назад: ${source}` : 'Назад')}" ${nav.index ? '' : 'disabled'}>←</button>
           <span class="dag-filter-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
-          <button type="button" class="dag-home" data-dag-all ${state.stage === 'empty' ? 'aria-current="page"' : ''}>Всё</button>
+          ${homeMarkup()}
+          ${nav.variant === 'A' ? '<button type="button" data-start-entry aria-label="Добавить элемент или подборку" title="Добавить элемент или подборку">＋</button>' : ''}
         </nav>${noticeMarkup()}</div>
         ${workspace}
         <div class="dag-filter-footer">${control}</div>
@@ -251,13 +264,13 @@
     const visible = elementsOutsideSelections(relevant, children);
     const showingResults = nav.view === 'results';
     const emptySpace = all && !state.selections.length && !state.elements.length;
-    const title = all ? 'Мои подборки' : scope?.id ? scope.name : 'По выбранным тегам';
+    const title = all ? nav.variant === 'A' ? 'Всё' : 'Мои подборки' : scope?.id ? scope.name : 'По выбранным тегам';
     const heading = `<div class="dag-heading"><h1>${escapeHTML(title)}</h1></div>`;
     const context = showingResults && nav.focus.length ? `<div class="dag-result-context" aria-label="Выбранные теги">${nav.focus.map(tag => `<span class="a-selection-tag">${escapeHTML(tag)}</span>`).join('')}</div>` : '';
     const control = `<div class="dag-results-control ${nav.variant === 'B' ? 'dag-fixed-control' : ''}"><p role="status">Всего: <strong>${pluralElements(relevant.length)}</strong></p>
       ${emptySpace ? '' : `<button type="button" class="dag-view-toggle ${showingResults ? 'is-open' : ''}" data-dag-view-toggle aria-expanded="${showingResults}" aria-controls="dag-results">${showingResults ? 'Продолжить фильтрацию' : 'Посмотреть результаты'}</button>`}
     </div>`;
-    if (!showingResults && !emptySpace) return filterMarkup(control, all ? 'Все теги' : title);
+    if (!showingResults && !emptySpace) return filterMarkup(control, all && nav.variant !== 'A' ? 'Все теги' : title);
     const rows = `<div class="dag-results">${children.map(item => selectionRowMarkup(item, all)).join('')}</div>
       ${visible.length ? `<section class="dag-elements"><h2>Элементы</h2>${elementsListMarkup(visible)}</section>` : ''}
       ${!children.length && !visible.length ? `<div class="dag-empty">${all ? 'Здесь появятся ваши подборки и элементы' : 'Пока нет подходящих элементов'}${all ? '<button class="primary-action" type="button" data-start-entry>Добавить</button>' : ''}</div>` : ''}`;
@@ -466,9 +479,10 @@
       const title = fields.elementTitle.value.trim();
       if (!title) { fields.elementTitle.focus(); return; }
       const tags = normalize([...(parent?.tags || []), ...parseSelectionTags(fields.elementTags.value)]);
-      state.elements.push({ id: nextId('element'), title, content: fields.elementContent.value.trim(), tags });
+      const element = { id: nextId('element'), title, content: fields.elementContent.value.trim(), tags };
+      state.elements.push(element);
       state.personalSpace.elementCount = state.elements.length;
-      finishAtOrigin({ type: 'element-created', title });
+      finishAtOrigin({ type: 'element-created', title, elementId: element.id });
       return;
     }
     const name = fields.selectionName.value.trim();
@@ -487,7 +501,7 @@
     const selection = { id: nextId('selection'), name, tags };
     state.selections.push(selection);
     state.personalSpace.selectionCount = state.selections.length;
-    if (parent) visit(scopeFrame(tags, selection.id), true);
+    if (parent || nav.variant === 'A') visit(scopeFrame(tags, selection.id), true);
     else finishAtOrigin();
   }, true);
 
