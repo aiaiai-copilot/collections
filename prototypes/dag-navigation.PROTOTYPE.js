@@ -125,9 +125,12 @@
 
   function back() { if (nav.index > 0) history.back(); }
 
-  function finishAtOrigin(notice = null) {
+  function finishAtOrigin(notice = null, view = null) {
     if (nav.index === 0) { nav.pendingNotice = notice; visit(scopeFrame([], null), true); return; }
-    const origin = clone(nav.frames[nav.index - 1]);
+    const originIndex = nav.index - 1;
+    const origin = clone(nav.frames[originIndex]);
+    if (view) origin.view = view;
+    nav.frames[originIndex] = clone(origin);
     // Submitted forms must not reappear on Forward. Mutations remain in memory.
     visit(origin, true);
     nav.pendingNotice = notice;
@@ -164,8 +167,11 @@
   noticeMarkup = () => {
     const element = nav.variant === 'A' && state.notice?.type === 'element-created'
       ? state.elements.find(item => item.id === state.notice.elementId) : null;
-    if (!element) return original.noticeMarkup();
-    return `<div class="a-selection-notice is-success" role="status"><strong>Элемент добавлен</strong><button type="button" class="dag-notice-open" data-open-element="${escapeHTML(element.id)}" aria-label="Открыть добавленный элемент «${escapeHTML(element.title)}»">Открыть «${escapeHTML(element.title)}»</button></div>`;
+    if (element) return `<div class="a-selection-notice is-success" role="status"><strong>Элемент добавлен</strong><button type="button" class="dag-notice-open" data-open-element="${escapeHTML(element.id)}" aria-label="Открыть добавленный элемент «${escapeHTML(element.title)}»">Открыть «${escapeHTML(element.title)}»</button></div>`;
+    const selection = nav.variant === 'A' && state.notice?.type === 'selection-created'
+      ? state.selections.find(item => item.id === state.notice.selectionId) : null;
+    if (selection) return `<div class="a-selection-notice is-success" role="status"><strong>Подборка создана</strong><button type="button" class="dag-notice-open" data-open-selection="${escapeHTML(selection.id)}" aria-label="Открыть созданную подборку «${escapeHTML(selection.name)}»">Открыть «${escapeHTML(selection.name)}»</button></div>`;
+    return original.noticeMarkup();
   };
 
   headerMarkup = () => {
@@ -428,7 +434,13 @@
     if (target.hasAttribute('data-previous-variant')) cycleVariant(-1);
     else if (target.hasAttribute('data-next-variant')) cycleVariant(1);
     else if (target.matches('[data-dag-back], [data-step-back-element], [data-step-back-selection], [data-cancel-new-entry]')) back();
-    else if (target.matches('[data-dag-all], [data-open-selections]')) { if (state.stage !== 'empty') visit(scopeFrame([])); }
+    else if (target.matches('[data-dag-all], [data-open-selections]')) {
+      if (state.stage !== 'empty' || nav.view !== 'results') {
+        const all = scopeFrame([]);
+        if (nav.variant === 'A') all.view = 'results';
+        visit(all);
+      }
+    }
     else if (target.hasAttribute('data-dag-action')) {
       const tag = target.dataset.tag;
       navigateTags(target.dataset.dagAction === 'switch' ? [tag] : target.dataset.dagAction === 'add' ? [...nav.focus, tag] : without(nav.focus, tag));
@@ -501,7 +513,8 @@
     const selection = { id: nextId('selection'), name, tags };
     state.selections.push(selection);
     state.personalSpace.selectionCount = state.selections.length;
-    if (parent || nav.variant === 'A') visit(scopeFrame(tags, selection.id), true);
+    if (nav.variant === 'A') finishAtOrigin({ type: 'selection-created', selectionId: selection.id, title: selection.name }, 'results');
+    else if (parent) visit(scopeFrame(tags, selection.id), true);
     else finishAtOrigin();
   }, true);
 
