@@ -9,7 +9,8 @@
   const nav = {
     variant: ['A', 'B', 'C'].includes(requestedVariant) ? requestedVariant : 'A',
     names: { A: 'Выбранное сверху', B: 'Выбранное снизу', C: 'Выбранное сбоку' },
-    focus: [], frames: [], index: 0, expanded: false, height: 'auto', view: 'refine',
+    focus: [], frames: [], index: 0, expanded: false, view: 'refine',
+    tagScale: 100, cloudWidth: 100, cloudHeight: 100,
     primary: 'refine', metric: 'elements', fixture: routeParams.get('fixture') === 'dag',
     session: `dag-${Date.now()}`, pendingNotice: null
   };
@@ -150,7 +151,8 @@
       variant: nav.variant, stage: state.stage, navigationTags: nav.focus, view: nav.view,
       selectionId: state.activeSelectionId, elementId: state.activeElementId,
       history: nav.frames.slice(0, nav.index + 1).map(frameName),
-      primaryAction: nav.primary, weight: nav.metric, cloudHeight: nav.height,
+      primaryAction: nav.primary, weight: nav.metric, tagScalePercent: nav.tagScale,
+      cloudRectanglePercent: { width: nav.cloudWidth, height: nav.cloudHeight },
       selections: state.selections, elements: state.elements
     };
   }
@@ -206,10 +208,15 @@
     const candidates = cloudCandidates();
     const max = Math.max(1, ...candidates.map(item => item[nav.metric]));
     return `<div class="dag-cloud-zone"><p class="dag-panel-label"><span>УТОЧНИТЬ</span><span aria-hidden="true">↓</span></p>
+      <div class="dag-cloud-stage"><div class="dag-cloud-frame">
       <div class="dag-cloud ${nav.expanded ? 'is-expanded' : ''}" aria-label="Теги уточняющих подборок">
         ${candidates.length ? candidates.map(item => tagMarkup(item.tag, false, item[nav.metric], Math.round(13 + 11 * Math.log1p(item[nav.metric]) / Math.log1p(max)))).join('') : '<p class="dag-cloud-empty">Уточняющих подборок пока нет</p>'}
       </div>
-      <button type="button" class="dag-more" data-dag-more hidden>Показать все теги</button>
+      <div class="dag-cloud-edge">
+        <span class="dag-cloud-summary" data-dag-cloud-summary></span>
+        <button type="button" class="dag-more" data-dag-more hidden>Показать все теги</button>
+        <button type="button" class="dag-resize" data-dag-resize aria-label="Размер облака" title="Потяните угол для изменения размера. Нажмите, чтобы занять всю область. Стрелки меняют размер; Home восстанавливает его.">⤢</button>
+      </div></div></div>
     </div>`;
   }
 
@@ -225,6 +232,11 @@
         <div class="dag-filter-top"><nav class="dag-filter-rail" aria-label="Переходы">
           <button type="button" class="dag-back" data-dag-back aria-label="${escapeHTML(source ? `Назад: ${source}` : 'Назад')}" ${nav.index ? '' : 'disabled'}>←</button>
           <span class="dag-filter-title" title="${escapeHTML(title)}">${escapeHTML(title)}</span>
+          <div class="dag-zoom" role="group" aria-label="Масштаб облака">
+            <button type="button" data-dag-zoom="-25" aria-label="Уменьшить масштаб тегов" ${nav.tagScale <= 75 ? 'disabled' : ''}>−</button>
+            <button type="button" data-dag-zoom="reset" aria-label="Масштаб ${nav.tagScale}%. Вернуть 100%" title="Вернуть масштаб 100%">${nav.tagScale}%</button>
+            <button type="button" data-dag-zoom="25" aria-label="Увеличить масштаб тегов" ${nav.tagScale >= 175 ? 'disabled' : ''}>＋</button>
+          </div>
           <button type="button" class="dag-home" data-dag-all ${state.stage === 'empty' ? 'aria-current="page"' : ''}>Всё</button>
         </nav>${noticeMarkup()}</div>
         ${workspace}
@@ -262,28 +274,71 @@
     const cloud = app.querySelector('.dag-cloud');
     const more = app.querySelector('[data-dag-more]');
     if (!cloud || !more) return;
+    const summary = app.querySelector('[data-dag-cloud-summary]');
     // A resize and a render can schedule this twice for the same DOM.
     // Always measure the complete candidate set, including previously hidden tags.
     [...cloud.children].forEach(child => { child.hidden = false; });
     more.hidden = !nav.expanded;
-    if (nav.expanded) { more.textContent = 'Свернуть облако'; return; }
+    if (nav.expanded) { more.textContent = 'Свернуть облако'; summary.hidden = true; return; }
     const overflowTags = () => [...cloud.children].filter(child => child.classList.contains('dag-tag') && child.getBoundingClientRect().bottom > cloud.getBoundingClientRect().bottom + 1);
-    // Let the cloud use the entire available rectangle before reserving disclosure space.
+    // The footer remains available for disclosure and the resize handle.
     if (overflowTags().length) more.hidden = false;
     const overflow = overflowTags();
     overflow.forEach(child => { child.hidden = true; });
     const hidden = overflow.length;
     more.hidden = hidden === 0;
-    more.textContent = `Ещё ${hidden} тегов`;
+    more.textContent = `Ещё ${hidden}`;
+    summary.hidden = !more.hidden;
+    summary.textContent = `Теги: ${cloud.querySelectorAll('.dag-tag').length}`;
   }
+
+  function applyCloudSize() {
+    app.style.setProperty('--cloud-frame-width', `${nav.cloudWidth}%`);
+    app.style.setProperty('--cloud-frame-height', `${nav.cloudHeight}%`);
+    fitCloud();
+  }
+
+  function resizeCloud(width, height) {
+    nav.cloudWidth = Math.max(35, Math.min(100, Math.round(width)));
+    nav.cloudHeight = Math.max(35, Math.min(100, Math.round(height)));
+    applyCloudSize();
+  }
+
+  let cloudDrag = null;
+  document.addEventListener('pointerdown', event => {
+    const handle = event.target.closest('[data-dag-resize]');
+    if (!handle || event.button !== 0) return;
+    event.preventDefault();
+    handle.focus({ preventScroll: true });
+    const frame = handle.closest('.dag-cloud-frame').getBoundingClientRect();
+    const stage = handle.closest('.dag-cloud-stage').getBoundingClientRect();
+    cloudDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, width: frame.width, height: frame.height, stage, moved: false };
+    handle.setPointerCapture(event.pointerId);
+  });
+  document.addEventListener('pointermove', event => {
+    if (!cloudDrag || event.pointerId !== cloudDrag.id) return;
+    const dx = event.clientX - cloudDrag.x;
+    const dy = event.clientY - cloudDrag.y;
+    if (Math.hypot(dx, dy) < 3 && !cloudDrag.moved) return;
+    cloudDrag.moved = true;
+    resizeCloud((cloudDrag.width + dx) / cloudDrag.stage.width * 100, (cloudDrag.height + dy) / cloudDrag.stage.height * 100);
+  });
+  document.addEventListener('pointerup', event => {
+    if (!cloudDrag || event.pointerId !== cloudDrag.id) return;
+    if (!cloudDrag.moved) resizeCloud(100, 100);
+    cloudDrag = null;
+  });
+  document.addEventListener('pointercancel', () => { cloudDrag = null; });
 
   render = () => {
     document.body.dataset.variant = 'A';
     document.body.dataset.navigation = nav.variant;
     const filtering = ['empty', 'selection'].includes(state.stage) && nav.view === 'refine' && (state.elements.length || state.selections.length || nav.focus.length);
     document.body.dataset.filtering = String(Boolean(filtering));
-    document.body.dataset.cloudSizing = nav.height === 'auto' ? 'auto' : 'fixed';
-    app.style.setProperty('--cloud-height', `${nav.height === 'auto' ? 150 : nav.height}px`);
+    cloudDrag = null;
+    app.style.setProperty('--tag-scale', nav.tagScale / 100);
+    app.style.setProperty('--cloud-frame-width', `${nav.cloudWidth}%`);
+    app.style.setProperty('--cloud-frame-height', `${nav.cloudHeight}%`);
     const content = state.stage === 'new-entry' ? original.newEntryMarkup()
       : state.stage === 'element' ? original.elementDetailMarkup() : scopeMarkup();
     app.innerHTML = (filtering ? '' : headerMarkup()) + content;
@@ -352,10 +407,13 @@
   function showLab() {
     lab.innerHTML = `<h2>Эксперимент с навигацией</h2><p>Данные живут только в этой вкладке. Загрузка примера заменит текущее содержимое вкладки. Варианты A/B/C меняют только компоновку.</p>
       <div class="dag-lab-actions"><button type="button" data-fixture="dag">Загрузить пример DAG</button><button type="button" data-fixture="empty">Начать с пустого</button></div>
-      <label>Высота облака<select data-lab-height><option value="auto" ${nav.height === 'auto' ? 'selected' : ''}>По доступному месту</option>${[100, 150, 230].map(value => `<option value="${value}" ${nav.height === value ? 'selected' : ''}>${value} px</option>`).join('')}</select></label>
-      <label>Размер тега<select data-lab-metric><option value="elements" ${nav.metric === 'elements' ? 'selected' : ''}>По релевантным элементам</option><option value="nodes" ${nav.metric === 'nodes' ? 'selected' : ''}>По явно заданным подборкам</option></select></label>
+      <label>Ширина области, %<input type="number" min="35" max="100" step="5" data-lab-width value="${nav.cloudWidth}"></label>
+      <label>Высота области, %<input type="number" min="35" max="100" step="5" data-lab-height value="${nav.cloudHeight}"></label>
+      <label>Масштаб тегов<select data-lab-scale>${[75, 100, 125, 150, 175].map(value => `<option value="${value}" ${nav.tagScale === value ? 'selected' : ''}>${value}%</option>`).join('')}</select></label>
+      <label>Вес тега<select data-lab-metric><option value="elements" ${nav.metric === 'elements' ? 'selected' : ''}>По релевантным элементам</option><option value="nodes" ${nav.metric === 'nodes' ? 'selected' : ''}>По явно заданным подборкам</option></select></label>
       <label>Обычное касание<select data-lab-primary><option value="refine" ${nav.primary === 'refine' ? 'selected' : ''}>Добавить / снять тег</option><option value="switch" ${nav.primary === 'switch' ? 'selected' : ''}>Переключиться на один тег</option></select></label>
-      <p>В облаке вес по элементам считает результат добавления тега. Выбранные теги имеют одинаковый размер. ↗ переключает контекст на один тег.</p>
+      <p>В облаке вес по элементам считает результат добавления тега. Масштаб умножает размер названий тегов в облаке, сохраняя соотношения. Выбранные теги остаются обычным набором. ↗ переключает контекст на один тег.</p>
+      <p>Потяните угол облака, чтобы изменить прямоугольник. Нажатие на угол или клавиша Home возвращает всю область; стрелки меняют ширину и высоту. Проценты задают долю доступного места с минимумом 140×128 px, если экран позволяет. Эти действия сохраняют фильтры.</p>
       <details><summary>Состояние эксперимента</summary><pre>${escapeHTML(JSON.stringify(describeState(), null, 2))}</pre></details>
       <button type="button" data-close-lab>Вернуться к панели</button>`;
     if (!lab.open) lab.showModal();
@@ -364,7 +422,7 @@
   document.addEventListener('click', event => {
     const target = event.target.closest('button');
     if (!target) return;
-    const handled = target.matches('[data-previous-variant], [data-next-variant], [data-dag-back], [data-dag-all], [data-dag-action], [data-dag-more], [data-dag-view-toggle], [data-dag-lab], [data-fixture], [data-close-lab], [data-start-entry], [data-cancel-new-entry], [data-open-element], [data-open-selection], [data-step-back-element], [data-step-back-selection], [data-open-selections]');
+    const handled = target.matches('[data-previous-variant], [data-next-variant], [data-dag-back], [data-dag-all], [data-dag-action], [data-dag-more], [data-dag-view-toggle], [data-dag-zoom], [data-dag-resize], [data-dag-lab], [data-fixture], [data-close-lab], [data-start-entry], [data-cancel-new-entry], [data-open-element], [data-open-selection], [data-step-back-element], [data-step-back-selection], [data-open-selections]');
     if (!handled) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (target.hasAttribute('data-previous-variant')) cycleVariant(-1);
@@ -376,6 +434,12 @@
       navigateTags(target.dataset.dagAction === 'switch' ? [tag] : target.dataset.dagAction === 'add' ? [...nav.focus, tag] : without(nav.focus, tag));
     } else if (target.hasAttribute('data-dag-more')) { nav.expanded = !nav.expanded; render(); }
     else if (target.hasAttribute('data-dag-view-toggle')) toggleResults();
+    else if (target.hasAttribute('data-dag-zoom')) {
+      nav.tagScale = target.dataset.dagZoom === 'reset' ? 100 : Math.max(75, Math.min(175, nav.tagScale + Number(target.dataset.dagZoom)));
+      render();
+      app.querySelector(`[data-dag-zoom="${target.dataset.dagZoom}"]`)?.focus({ preventScroll: true });
+    }
+    else if (target.hasAttribute('data-dag-resize')) { if (event.detail === 0) resizeCloud(100, 100); }
     else if (target.hasAttribute('data-dag-lab')) showLab();
     else if (target.hasAttribute('data-close-lab')) lab.close();
     else if (target.hasAttribute('data-fixture')) {
@@ -442,7 +506,13 @@
   }, true);
 
   document.addEventListener('change', event => {
-    if (event.target.hasAttribute('data-lab-height')) nav.height = event.target.value === 'auto' ? 'auto' : Number(event.target.value);
+    if (event.target.matches('[data-lab-width], [data-lab-height]')) {
+      const value = Number(event.target.value);
+      if (!event.target.value || !Number.isFinite(value)) return;
+      resizeCloud(event.target.hasAttribute('data-lab-width') ? value : nav.cloudWidth, event.target.hasAttribute('data-lab-height') ? value : nav.cloudHeight);
+      event.target.value = event.target.hasAttribute('data-lab-width') ? nav.cloudWidth : nav.cloudHeight;
+    }
+    else if (event.target.hasAttribute('data-lab-scale')) nav.tagScale = Number(event.target.value);
     else if (event.target.hasAttribute('data-lab-metric')) nav.metric = event.target.value;
     else if (event.target.hasAttribute('data-lab-primary')) nav.primary = event.target.value;
     else return;
@@ -452,6 +522,12 @@
   document.addEventListener('keydown', event => {
     const editing = event.target.matches('input, textarea, select, [contenteditable]');
     if (lab.open) { if (event.key === 'Escape') event.stopImmediatePropagation(); return; }
+    if (event.target.matches('[data-dag-resize]') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home'].includes(event.key)) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (event.key === 'Home') resizeCloud(100, 100);
+      else resizeCloud(nav.cloudWidth + (event.key === 'ArrowRight' ? 5 : event.key === 'ArrowLeft' ? -5 : 0), nav.cloudHeight + (event.key === 'ArrowDown' ? 5 : event.key === 'ArrowUp' ? -5 : 0));
+      return;
+    }
     if (editing && event.key !== 'Escape') return;
     if (['ArrowLeft', 'ArrowRight', 'Escape'].includes(event.key)) {
       event.preventDefault(); event.stopImmediatePropagation();
