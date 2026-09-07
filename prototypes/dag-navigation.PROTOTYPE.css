@@ -56,6 +56,27 @@ body[data-navigation] .a-selection-screen { padding-bottom: 28px; }
 .dag-empty .primary-action { margin-top: 14px; }
 .dag-origin { margin: 0 0 15px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .dag-notice-open { justify-self: start; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: left; text-decoration: underline; overflow-wrap: anywhere; cursor: pointer; }
+.dag-toast {
+  position: fixed;
+  z-index: 20;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #173b2b2e;
+  background: #245f48;
+  color: white;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, 0);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.dag-toast.is-leaving { opacity: 0; transform: translate(-50%, -8px); }
 /* Fullscreen filtering: the workspace gets all space between its navigation and result action. */
 .dag-focus-screen { padding: 0; overflow: hidden; }
 .dag-focus-panel { flex: 1; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; padding: 16px; background: #f0f4ec; }

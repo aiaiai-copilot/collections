@@ -14,6 +14,7 @@
     primary: 'refine', metric: 'elements', fixture: routeParams.get('fixture') === 'dag',
     session: `dag-${Date.now()}`, pendingNotice: null
   };
+  let toastTimer = null;
   state.variant = 'A';
   state.stage = 'empty';
   state.activeSelectionId = null;
@@ -125,11 +126,10 @@
 
   function back() { if (nav.index > 0) history.back(); }
 
-  function finishAtOrigin(notice = null, view = null) {
+  function finishAtOrigin(notice = null) {
     if (nav.index === 0) { nav.pendingNotice = notice; visit(scopeFrame([], null), true); return; }
     const originIndex = nav.index - 1;
     const origin = clone(nav.frames[originIndex]);
-    if (view) origin.view = view;
     nav.frames[originIndex] = clone(origin);
     // Submitted forms must not reappear on Forward. Mutations remain in memory.
     visit(origin, true);
@@ -168,9 +168,9 @@
     const element = nav.variant === 'A' && state.notice?.type === 'element-created'
       ? state.elements.find(item => item.id === state.notice.elementId) : null;
     if (element) return `<div class="a-selection-notice is-success" role="status"><strong>Элемент добавлен</strong><button type="button" class="dag-notice-open" data-open-element="${escapeHTML(element.id)}" aria-label="Открыть добавленный элемент «${escapeHTML(element.title)}»">Открыть «${escapeHTML(element.title)}»</button></div>`;
-    const selection = nav.variant === 'A' && state.notice?.type === 'selection-created'
-      ? state.selections.find(item => item.id === state.notice.selectionId) : null;
-    if (selection) return `<div class="a-selection-notice is-success" role="status"><strong>Подборка создана</strong><button type="button" class="dag-notice-open" data-open-selection="${escapeHTML(selection.id)}" aria-label="Открыть созданную подборку «${escapeHTML(selection.name)}»">Открыть «${escapeHTML(selection.name)}»</button></div>`;
+    if (nav.variant === 'A' && state.notice?.type === 'selection-created') {
+      return `<div class="dag-toast" role="status" data-dag-toast>Подборка «${escapeHTML(state.notice.title)}» создана</div>`;
+    }
     return original.noticeMarkup();
   };
 
@@ -347,6 +347,19 @@
     const content = state.stage === 'new-entry' ? original.newEntryMarkup()
       : state.stage === 'element' ? original.elementDetailMarkup() : scopeMarkup();
     app.innerHTML = (filtering ? '' : headerMarkup()) + content;
+    clearTimeout(toastTimer);
+    if (state.notice?.type === 'selection-created') {
+      const notice = state.notice;
+      toastTimer = setTimeout(() => {
+        if (state.notice !== notice) return;
+        const toast = app.querySelector('[data-dag-toast]');
+        toast?.classList.add('is-leaving');
+        setTimeout(() => {
+          if (state.notice === notice) state.notice = null;
+          toast?.remove();
+        }, 180);
+      }, 4000);
+    }
     variantLabel.textContent = `${nav.variant} · ${nav.names[nav.variant]}`;
     stateSummary.textContent = `${state.selections.length} подборок · ${state.elements.length} элементов · в памяти`;
     renderIntent();
@@ -435,11 +448,7 @@
     else if (target.hasAttribute('data-next-variant')) cycleVariant(1);
     else if (target.matches('[data-dag-back], [data-step-back-element], [data-step-back-selection], [data-cancel-new-entry]')) back();
     else if (target.matches('[data-dag-all], [data-open-selections]')) {
-      if (state.stage !== 'empty' || nav.view !== 'results') {
-        const all = scopeFrame([]);
-        if (nav.variant === 'A') all.view = 'results';
-        visit(all);
-      }
+      if (state.stage !== 'empty') visit(scopeFrame([]));
     }
     else if (target.hasAttribute('data-dag-action')) {
       const tag = target.dataset.tag;
@@ -513,7 +522,7 @@
     const selection = { id: nextId('selection'), name, tags };
     state.selections.push(selection);
     state.personalSpace.selectionCount = state.selections.length;
-    if (nav.variant === 'A') finishAtOrigin({ type: 'selection-created', selectionId: selection.id, title: selection.name }, 'results');
+    if (nav.variant === 'A') finishAtOrigin({ type: 'selection-created', title: selection.name });
     else if (parent) visit(scopeFrame(tags, selection.id), true);
     else finishAtOrigin();
   }, true);
