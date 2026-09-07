@@ -1,5 +1,5 @@
 /* THROWAWAY UI experiment, based on checkpoint 7f583fa variant A.
- * Three structurally different navigation panels on the existing route,
+ * Continue refining A; B/C remain earlier sketches on the existing route,
  * switchable via ?variant=A|B|C. Data and all edits stay in this tab's memory.
  * Refinement shows tags and the total count; results open only on request.
  * Navigation choices below are hypotheses for comparison, not product decisions.
@@ -198,7 +198,7 @@
   }
 
   function selectedMarkup() {
-    return `<div class="dag-selected-zone"><p class="dag-panel-label"><span>ВЫБРАНО</span><span aria-hidden="true">↑</span></p><div class="dag-selected">
+    return `<div class="dag-selected-zone"><p class="dag-panel-label"><span>ВЫБРАНО</span>${nav.variant === 'A' ? '' : '<span aria-hidden="true">↑</span>'}</p><div class="dag-selected">
       ${nav.focus.length ? nav.focus.map(tag => tagMarkup(tag, true, matches(without(nav.focus, tag)).length, 13)).join('') : '<span class="dag-all-label">Все теги</span>'}
     </div></div>`;
   }
@@ -206,7 +206,7 @@
   function cloudMarkup() {
     const candidates = cloudCandidates();
     const max = Math.max(1, ...candidates.map(item => item[nav.metric]));
-    return `<div class="dag-cloud-zone"><p class="dag-panel-label"><span>УТОЧНИТЬ</span><span aria-hidden="true">↓</span></p>
+    return `<div class="dag-cloud-zone">${nav.variant === 'A' ? '' : '<p class="dag-panel-label"><span>УТОЧНИТЬ</span><span aria-hidden="true">↓</span></p>'}
       <div class="dag-cloud-stage"><div class="dag-cloud-frame">
       <div class="dag-cloud" aria-label="Теги уточняющих подборок">
         ${candidates.length ? candidates.map(item => tagMarkup(item.tag, false, item[nav.metric], Math.round(13 + 11 * Math.log1p(item[nav.metric]) / Math.log1p(max)))).join('') : '<p class="dag-cloud-empty">Уточняющих подборок пока нет</p>'}
