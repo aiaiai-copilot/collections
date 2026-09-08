@@ -41,6 +41,9 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   the current navigation set.
 - Downward `directions` are derived from every strict saved-node superset,
   across the full remaining depth. Already selected tags are excluded.
+- Each cloud button represents one tag to add, not a saved node or its name.
+  The destination is the whole resulting set: an exact saved-node match shows
+  its name and ID above the selected tags; otherwise it is `temporary`.
 - For a current set F and each strict descendant N, at least one retained
   direction t must belong to tags(N) minus F. Repeating this invariant at each
   step preserves a path to every target, provided its required cloud fits.
@@ -100,6 +103,9 @@ Every event contains `type`, an action-specific payload, and serializable
 | `cloudResize` | Request dimensions; emit `from`, `requested`, actual `to`, and `limited`. Pointer cancellation additionally emits `cancelled`. No route entry is added. |
 
 `back`, `broaden`, and `all` deliberately have different event types and can
-produce different locations from the same starting state. The final selected
-tag is not removed through `broaden`: the explicit `all` action owns the
-transition from the DAG to the top-level state.
+produce different locations from the same starting state. Every selected tag
+can be removed, including the final one. Removing the final tag visits `all`
+with an empty set and no node ID; it still emits `broaden` with `removedTag`,
+not an explicit `all` action. The previous location remains in actual history
+and can be restored with `back`. No saved filter is modified, and no
+empty-filter saved node is implicitly opened or created.

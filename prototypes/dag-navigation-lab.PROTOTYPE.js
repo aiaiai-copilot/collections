@@ -605,27 +605,21 @@
       if (state.location.tags.length === 0) {
         return '<span class="selected-empty">Набор пуст: выберите направление вниз</span>';
       }
-      var mayBroaden = state.location.tags.length > 1;
       return state.location.tags
         .map(function (tag) {
-          var disabled = mayBroaden ? '' : ' disabled';
-          var suffix = mayBroaden
-            ? '<span class="selected-tag__remove" aria-hidden="true">−</span>'
-            : '';
-          var title = mayBroaden
-            ? 'Убрать тег и перейти к более широкому набору'
-            : 'Последний тег не снимается: для выхода используйте «Всё»';
+          var title = state.location.tags.length === 1
+            ? 'Убрать последний тег и перейти во «Всё»'
+            : 'Убрать тег и перейти к более широкому набору';
           return (
             '<button class="selected-tag" type="button" data-broaden="' +
             escapeHtml(tag) +
             '" title="' +
             escapeHtml(title) +
             '"' +
-            disabled +
             '><span>' +
             escapeHtml(tag) +
             '</span>' +
-            suffix +
+            '<span class="selected-tag__remove" aria-hidden="true">−</span>' +
             '</button>'
           );
         })
