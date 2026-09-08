@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Лаборатория DAG-навигации — PROTOTYPE</title>
+    <link rel="stylesheet" href="./dag-navigation-lab.PROTOTYPE.css" />
+  </head>
+  <body>
+    <!--
+      THROWAWAY UI PROTOTYPE.
+      One isolated variant A (selected tags above a downward cloud) on a new
+      standalone page. B/C are intentionally absent by the experiment brief.
+    -->
+    <header class="lab-bar">
+      <div class="lab-bar__identity">
+        <span class="lab-kicker">THROWAWAY · UI LAB</span>
+        <h1>Навигатор по DAG</h1>
+      </div>
+
+      <div class="lab-controls" aria-label="Техническое управление сценарием">
+        <label class="scenario-picker">
+          <span>Синтетический сценарий</span>
+          <select id="scenarioSelect"></select>
+        </label>
+        <button class="lab-button" id="resetScenario" type="button">Перезапустить</button>
+      </div>
+    </header>
+
+    <main class="workbench">
+      <section class="preview" aria-labelledby="previewTitle">
+        <div class="preview__heading">
+          <div>
+            <span class="section-index">Вариант A</span>
+            <h2 id="previewTitle">Выбранные теги сверху, направления вниз</h2>
+          </div>
+          <span class="viewport-badge">390 × 800</span>
+        </div>
+        <p class="scenario-note" id="scenarioNote"></p>
+
+        <div class="device" aria-label="Мобильный viewport лаборатории">
+          <div id="navigatorHost"></div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-labelledby="inspectorTitle">
+        <div class="inspector__heading">
+          <div>
+            <span class="section-index section-index--dark">Техническая область</span>
+            <h2 id="inspectorTitle">Состояние и события</h2>
+          </div>
+          <span class="live-dot">live</span>
+        </div>
+
+        <section class="inspector-block">
+          <h3>Последнее событие компонента</h3>
+          <pre id="lastEvent">—</pre>
+        </section>
+
+        <section class="inspector-block inspector-block--state">
+          <h3>Полный снимок состояния</h3>
+          <pre id="stateInspector"></pre>
+        </section>
+
+        <section class="inspector-block inspector-block--log">
+          <div class="inspector-block__row">
+            <h3>Журнал</h3>
+            <button id="clearLog" class="text-button" type="button">Очистить</button>
+          </div>
+          <ol id="eventLog" class="event-log"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./dag-navigation-lab.PROTOTYPE.js"></script>
+  </body>
+</html>
