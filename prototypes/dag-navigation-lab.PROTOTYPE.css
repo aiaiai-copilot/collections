@@ -392,6 +392,16 @@ select:focus-visible {
   overflow: clip;
 }
 
+.cloud-stage--scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #8b9c8e transparent;
+  touch-action: pan-y;
+}
+
 .direction {
   flex: none;
   max-width: 100%;

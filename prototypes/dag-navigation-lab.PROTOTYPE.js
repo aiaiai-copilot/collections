@@ -283,7 +283,7 @@
       id: 'overflow',
       label: '5 · Много длинных направлений',
       description:
-        '24 независимых направления: сокращать нечего. Если все кнопки не помещаются даже в максимальной области, лаборатория явно показывает недостаток места.',
+        '24 независимых направления: сокращать нечего. Если покрытие не помещается даже в максимальной области, уменьшайте масштаб и прокручивайте облако; инструменты остаются снизу.',
       fixture: largeOverflow,
       initial: initialState(place('node', ['атлас'], 'atlas'), [place('all', [], null)], {
         width: 58,
@@ -392,6 +392,10 @@
     );
     var state = clone(options.initialState);
     var visibleDirectionTags = [];
+    var availableDirectionTags = [];
+    var cloudMode = 'fit';
+    var scrollFallback = false;
+    var cloudScroll = { top: 0, max: 0 };
     var resizeFrame = null;
     var dragCleanup = null;
     var coverage = null;
@@ -476,6 +480,7 @@
           relevantCount: relevantCount(targetTags),
           savedNodeCount: entry[1].size,
           coveredNodeIds: Array.from(entry[1]),
+          available: availableDirectionTags.includes(tag),
           visible: visibleDirectionTags.includes(tag),
         };
       });
@@ -525,11 +530,14 @@
           width: state.cloud.width,
           height: state.cloud.height,
           tagScale: state.cloud.tagScale,
+          mode: cloudMode,
+          availableDirectionCount: availableDirectionTags.length,
           visibleDirectionCount: derivedDirections.filter(function (entry) {
             return entry.visible;
           }).length,
           totalDirectionCount: derivedDirections.length,
           actualPixels: actualPixels,
+          scroll: cloudScroll,
           coverage: coverage,
           limit: layoutLimit,
         },
@@ -659,6 +667,9 @@
     function layoutAt(cloud) {
       var stage = element.querySelector('.cloud-stage');
       var shell = element.querySelector('.cloud-shell');
+      // Measure in-place fit from the top, independent of prior scrolling.
+      stage.classList.remove('cloud-stage--scroll');
+      stage.scrollTop = 0;
       shell.style.width = cloud.width + '%';
       shell.style.height = cloudHeightPixels(cloud.height) + 'px';
       shell.style.setProperty('--tag-scale', cloud.tagScale / 100);
@@ -688,60 +699,107 @@
       });
     }
 
-    function showLayout(plan) {
+    function canScrollCloud(plan) {
+      var stage = element.querySelector('.cloud-stage');
+      var shell = element.querySelector('.cloud-shell');
+      return plan.representable && stage.clientHeight >= 45 &&
+        shell.querySelector('.cloud-tools').getBoundingClientRect().bottom <=
+          shell.getBoundingClientRect().bottom + 0.5;
+    }
+
+    function scrollProgress() {
+      var stage = element.querySelector('.cloud-stage');
+      var maximum = stage.scrollHeight - stage.clientHeight;
+      return maximum > 0 ? stage.scrollTop / maximum : 0;
+    }
+
+    function updateVisibleDirections() {
+      var stage = element.querySelector('.cloud-stage');
+      var box = stage.getBoundingClientRect();
+      var candidates = directions();
+      visibleDirectionTags = [];
+      stage.querySelectorAll('.direction').forEach(function (button, index) {
+        if (button.hidden) return;
+        var bounds = button.getBoundingClientRect();
+        if (bounds.top >= box.top - 0.5 && bounds.bottom <= box.bottom + 0.5 &&
+            bounds.left >= box.left - 0.5 && bounds.right <= box.left + stage.clientWidth + 0.5) {
+          visibleDirectionTags.push(candidates[index].tag);
+        }
+      });
+      cloudScroll = {
+        top: Math.round(stage.scrollTop),
+        max: Math.max(0, stage.scrollHeight - stage.clientHeight),
+      };
+    }
+
+    function showLayout(plan, progress) {
       var stage = element.querySelector('.cloud-stage');
       var shell = element.querySelector('.cloud-shell');
       var targets = descendantNodes();
       var candidates = directions();
-      visibleDirectionTags = plan.fits
-        ? plan.entries.map(function (entry) { return entry.tag; })
-        : [];
+      var scrolling = !plan.fits && scrollFallback && canScrollCloud(plan);
+      cloudMode = plan.fits ? 'fit' : scrolling ? 'scroll' : 'blocked';
+      if (plan.fits) scrollFallback = false;
+      var available = plan.fits ? plan.entries : scrolling ? candidates : [];
+      availableDirectionTags = available.map(function (entry) { return entry.tag; });
+      stage.classList.toggle('cloud-stage--scroll', scrolling);
+      stage.setAttribute('aria-label', scrolling ? 'Облако тегов с вертикальной прокруткой' : 'Облако тегов');
+      if (scrolling) stage.setAttribute('tabindex', '0');
+      else stage.removeAttribute('tabindex');
       stage.querySelectorAll('.direction').forEach(function (button, index) {
-        button.hidden = !visibleDirectionTags.includes(candidates[index].tag);
+        button.hidden = !availableDirectionTags.includes(candidates[index].tag);
       });
       var covered = targets.filter(function (target) {
-        return plan.fits && plan.entries.some(function (entry) {
+        return available.some(function (entry) {
           return entry.coveredNodeIds.includes(target.id);
         });
       });
       coverage = {
-        status: plan.fits ? 'complete' : plan.representable ? 'insufficient-space' : 'unrepresentable',
+        status: plan.fits || scrolling ? 'complete' : plan.representable ? 'insufficient-space' : 'unrepresentable',
         totalNodeCount: targets.length,
         coveredNodeIds: covered.map(function (entry) { return entry.id; }),
         uncoveredNodeIds: targets.filter(function (entry) {
           return !covered.includes(entry);
         }).map(function (entry) { return entry.id; }),
-        retainedTags: plan.entries.map(function (entry) { return entry.tag; }),
+        retainedTags: (cloudMode === 'blocked' ? plan.entries : available).map(function (entry) { return entry.tag; }),
       };
       var bounds = shell.getBoundingClientRect();
       actualPixels = { width: Math.round(bounds.width), height: Math.round(bounds.height) };
       var empty = stage.querySelector('.cloud-empty');
-      empty.hidden = plan.fits && targets.length > 0;
+      empty.hidden = (plan.fits || scrolling) && targets.length > 0;
       empty.textContent = !plan.representable
         ? 'Узел с пустым фильтром требует отдельного перехода.'
-        : !plan.fits
-          ? state.cloud.tagScale > 75
-            ? 'Все направления не помещаются. Уменьшите масштаб; если это не поможет, нужна большая область.'
-            : 'Даже при минимальном масштабе для всех направлений нужна большая область.'
+        : cloudMode === 'blocked'
+          ? 'Для облака и его управления нужна большая высота экрана.'
           : 'Сохранённых уточнений глубже этого набора нет.';
       var status = element.querySelector('.cloud-status');
       status.dataset.status = coverage.status;
-      status.textContent = !plan.fits
-        ? 'Полное покрытие недоступно'
-        : layoutLimit && layoutLimit.kind === 'size'
-          ? 'Предел сжатия: все ветви остаются доступны'
-          : layoutLimit && layoutLimit.kind === 'scale'
-            ? 'Предел масштаба: все ветви остаются доступны'
-            : 'Все ветви доступны';
+      status.textContent = scrolling
+        ? state.cloud.tagScale > 75
+          ? '↕ Уменьшайте масштаб и прокручивайте облако. Все ветви доступны.'
+          : '↕ Прокрутите облако. Масштаб минимальный; все ветви доступны.'
+        : !plan.fits
+          ? 'Полное покрытие недоступно'
+          : layoutLimit && layoutLimit.kind === 'size'
+            ? 'Предел сжатия: все ветви остаются доступны'
+            : layoutLimit && layoutLimit.kind === 'scale'
+              ? 'Предел масштаба: все ветви остаются доступны'
+              : 'Все ветви доступны';
       element.querySelector('[data-direction-count]').textContent =
-        visibleDirectionTags.length + ' / ' + candidates.length;
+        availableDirectionTags.length + ' / ' + candidates.length;
       element.querySelector('[data-scale="reset"]').textContent = state.cloud.tagScale + '%';
       element.querySelector('[data-scale="down"]').disabled = state.cloud.tagScale <= 75;
       element.querySelector('[data-scale="up"]').disabled = state.cloud.tagScale >= 175;
+      stage.scrollTop = scrolling
+        ? (progress || 0) * Math.max(0, stage.scrollHeight - stage.clientHeight)
+        : 0;
+      updateVisibleDirections();
     }
 
     function fitDirections() {
       // Scope changes and viewport changes may require a larger rectangle.
+      var progress = scrollProgress();
+      scrollFallback = false;
       var requested = clone(state.cloud);
       var plan = layoutAt(requested);
       if (!plan.fits && plan.representable) {
@@ -765,10 +823,11 @@
           state.cloud = accepted;
         } else {
           state.cloud = maximum;
+          scrollFallback = larger.representable;
         }
         plan = layoutAt(state.cloud);
       }
-      showLayout(plan);
+      showLayout(plan, progress);
     }
 
     function scheduleFit() {
@@ -788,25 +847,36 @@
         return;
       }
       var before = snapshot();
+      var progress = scrollProgress();
       var from = state.cloud.tagScale;
       var trial = Object.assign({}, state.cloud, { tagScale: next });
       var plan = layoutAt(trial);
-      var accepted = plan.fits || (coverage.status !== 'complete' && next < from);
+      // Once scrolling is active, a smaller scale must not be blocked just
+      // because it would fit in a different, larger rectangle.
+      var fallback = !plan.fits && plan.representable && cloudMode === 'scroll';
+      if (!plan.fits && plan.representable && !fallback) {
+        fallback = !layoutAt(Object.assign({}, trial, { width: 100, height: 100 })).fits;
+      }
+      var accepted = plan.fits || fallback || (coverage.status !== 'complete' && next < from);
       layoutLimit = accepted ? null : { kind: 'scale', requested: next };
-      if (accepted) state.cloud = trial;
-      showLayout(layoutAt(state.cloud));
+      if (accepted) {
+        state.cloud = trial;
+        scrollFallback = fallback;
+      }
+      showLayout(layoutAt(state.cloud), progress);
       notifyState();
       emit('scaleChange', { from: from, requested: next, to: state.cloud.tagScale, limited: !accepted }, before);
     }
 
     function applyCloudSize(width, height) {
+      var progress = scrollProgress();
       var nextWidth = clamp(Math.round(width), 46, 100);
       var nextHeight = clamp(Math.round(height), 35, 100);
       var from = clone(state.cloud);
       var requested = Object.assign({}, from, { width: nextWidth, height: nextHeight });
       var plan = layoutAt(requested);
       var accepted = requested;
-      var limited = !plan.fits;
+      var limited = !(plan.fits || (scrollFallback && canScrollCloud(plan)));
       if (limited) {
         accepted = from;
         if (coverage.status === 'complete') {
@@ -818,7 +888,8 @@
               width: Math.round(from.width + (nextWidth - from.width) * fraction),
               height: Math.round(from.height + (nextHeight - from.height) * fraction),
             });
-            if (layoutAt(trial).fits) {
+            var trialPlan = layoutAt(trial);
+            if (trialPlan.fits || (scrollFallback && canScrollCloud(trialPlan))) {
               accepted = trial;
               low = fraction;
             } else high = fraction;
@@ -827,7 +898,7 @@
       }
       state.cloud = accepted;
       layoutLimit = limited ? { kind: 'size', requested: { width: nextWidth, height: nextHeight } } : null;
-      showLayout(layoutAt(state.cloud));
+      showLayout(layoutAt(state.cloud), progress);
       return { requested: { width: nextWidth, height: nextHeight }, limited: limited };
     }
 
@@ -915,6 +986,7 @@
 
     function render() {
       visibleDirectionTags = [];
+      availableDirectionTags = [];
       var derivedDirections = directions();
       var historyTarget = state.history.length
         ? describeLocation(state.history[state.history.length - 1]).name
@@ -962,7 +1034,7 @@
         'px;--tag-scale:' +
         state.cloud.tagScale / 100 +
         '">' +
-        '<div class="cloud-stage">' +
+        '<div class="cloud-stage" role="region" aria-label="Облако тегов">' +
         directionMarkup(derivedDirections) +
         '<p class="cloud-empty" hidden></p>' +
         '</div>' +
@@ -1074,6 +1146,12 @@
           changeCloudSize(state.cloud.width, state.cloud.height + 5);
         }
       });
+
+      element.querySelector('.cloud-stage').addEventListener('scroll', function () {
+        if (cloudMode !== 'scroll') return;
+        updateVisibleDirections();
+        notifyState();
+      }, { passive: true });
 
       fitDirections();
       notifyState();

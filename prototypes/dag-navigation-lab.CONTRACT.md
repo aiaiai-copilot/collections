@@ -46,23 +46,36 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   its name and ID above the selected tags; otherwise it is `temporary`.
 - For a current set F and each strict descendant N, at least one retained
   direction t must belong to tags(N) minus F. Repeating this invariant at each
-  step preserves a path to every target, provided its required cloud fits.
+  step preserves a path to every target, either in place or through scrolling.
   Coverage is by node identity, independent of result count (including zero).
 - A shortcut may be hidden only if the remaining directions still cover every
   target. The lab uses stable removal in reverse weight order, checking actual
   button geometry after each removal. This is an inclusion-minimal cover when
   fully reduced, not a claim of globally minimum tag count or rectangle area.
-- `cloud.width`, `cloud.height`, and `cloud.tagScale` are independent. The
-  cloud never scrolls. Resize requests stop at a feasible boundary; scale
-  requests that would break coverage are rejected without resizing the cloud.
+- `cloud.width`, `cloud.height`, and `cloud.tagScale` are independent. Normally,
+  resize requests stop at a feasible boundary and scale requests that would
+  break in-place coverage are rejected without resizing the cloud.
 - Width is a percentage of the host; height 35–100 maps from the smaller of
   172px and available height to the entire available height, excluding labels
   and the result action. The prototype keeps the existing width range 46–100.
 - Initial mounting, navigation, and viewport changes can grow the rectangle
   up to available space to preserve coverage. They never change tag scale.
-- If the retained covering set still does not fit at full size, no partial
-  cloud is offered as navigation. An explicit insufficient-space message is
-  shown; scale reduction, back, all, and requestResults remain available.
+- If the covering set cannot fit even at full size at the chosen scale,
+  vertical scrolling becomes available. All candidate tags are rendered in
+  that fallback; off-screen tags remain reachable by scroll and keyboard.
+  Only the tag region scrolls, leaving scale and resize controls fixed.
+  The user can combine a smaller scale with scrolling; scale never changes
+  automatically. In fallback, resizing may also rely on scrolling for coverage.
+- Each layout change rechecks in-place fit. When a covering set fits again
+  in the current rectangle, scrolling is removed automatically. While fallback
+  is active, scale changes remain available even if a larger rectangle could
+  fit the new scale without scrolling. Ordinary shrink requests cannot bypass
+  the coverage boundary by enabling scrolling when full-size fit is possible.
+- Scaling and resizing preserve relative scroll progress while scrolling
+  remains necessary. Navigation starts the new cloud at its top. Scrolling
+  changes presentation only, with no route entry or navigation event.
+- `insufficient-space` remains only for hosts too short to offer a usable
+  tag region and fixed controls; scrolling cannot repair that geometry.
 - An empty-filter saved node at `all` cannot be reached by adding a tag. If
   supplied in a fixture, the prototype reports `unrepresentable`; it never
   silently excludes that node when calculating coverage. A separate entry
@@ -74,7 +87,9 @@ The cloud snapshot includes:
 {
   width, height, tagScale,
   actualPixels: { width, height },
-  visibleDirectionCount, totalDirectionCount,
+  mode: 'fit' | 'scroll' | 'blocked',
+  visibleDirectionCount, availableDirectionCount, totalDirectionCount,
+  scroll: { top, max },
   coverage: {
     status: 'complete' | 'insufficient-space' | 'unrepresentable',
     totalNodeCount, coveredNodeIds, uncoveredNodeIds, retainedTags,
@@ -83,9 +98,12 @@ The cloud snapshot includes:
 }
 ```
 
-Each direction exposes `coveredNodeIds` for the technical inspector.
-`retainedTags` records the covering plan even when it cannot be rendered;
-`coveredNodeIds` records only the coverage of actually available buttons.
+Each direction exposes `coveredNodeIds`, `available` (rendered and reachable),
+and `visible` (fully inside the current tag viewport) for the inspector.
+`retainedTags` records the available set, or the failed covering plan in a
+blocked layout. `coverage.coveredNodeIds` includes coverage reachable through
+scrolling, not just the currently visible tags. The UI counter shows available
+directions out of all candidates. Scroll changes update `onStateChange` only.
 
 ## Events
 
