@@ -128,8 +128,17 @@ directions out of all candidates. Scroll changes update `onStateChange` only.
   spaces inside a tag are preserved. Enter/button appends the normalized batch
   atomically. Empty/duplicate-only input adds no history or navigation event.
   Unknown tags are allowed as zero-result queries; no tag or collection is saved.
-  Suggestions use the existing fixture vocabulary, including item-only tags.
-- `tagInput: { draft, feedback }` and `pendingMode` are observable UI state.
+  Suggestions use the existing fixture vocabulary, including item-only tags,
+  but only retain tags with a positive result count after addition. The context
+  includes selected tags plus complete comma/semicolon-separated draft tokens;
+  the last token is a case-insensitive substring to complete, not a requirement.
+  Selected/completed tags are excluded. Suggestions carry the count, sorted by
+  descending count then label. Selecting one preserves the preceding batch;
+  the count is display metadata, never part of the inserted tag.
+  Zero-result user nodes remain navigable in the cloud: this restriction is
+  only for input suggestions, not DAG coverage or arbitrary manual queries.
+- `tagInput: { draft, feedback, suggestions: [{tag, value, relevantCount}] }`
+  and `pendingMode` are observable UI state.
   Typing updates the inspector but not navigation/results. Submission updates
   location, count, cloud and node kind immediately; results remain an outgoing
   event only, without cards or an application results screen.

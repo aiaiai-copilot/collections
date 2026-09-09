@@ -589,7 +589,9 @@
       return {
         mode: state.mode,
         pendingMode: pendingMode,
-        tagInput: clone(tagInput),
+        tagInput: Object.assign(clone(tagInput), {
+          suggestions: state.mode === 'free' ? manualSuggestions() : [],
+        }),
         location: describeLocation(state.location),
         history: state.history.map(function (entry) {
           return Object.assign(describeLocation(entry), { mode: entry.mode });
@@ -1089,6 +1091,40 @@
         }).join('') : '<span class="selected-empty">Корневой узел · выше только «Всё»</span>') + '</div></section>';
     }
 
+    function manualSuggestions() {
+      var draft = tagInput.draft;
+      var separator = Math.max(draft.lastIndexOf(','), draft.lastIndexOf(';'));
+      var prefix = draft.slice(0, separator + 1);
+      var fragment = draft.slice(separator + 1).trim().toLocaleLowerCase('ru');
+      var context = normalizeTags(state.location.tags.concat(prefix.split(/[,;]+/)));
+      return vocabulary.filter(function (tag) {
+        return !context.includes(tag) && tag.includes(fragment);
+      }).map(function (tag) {
+        return {
+          tag: tag,
+          value: prefix + (prefix ? ' ' : '') + tag,
+          relevantCount: relevantCount(context.concat(tag)),
+        };
+      }).filter(function (entry) { return entry.relevantCount > 0; })
+        .sort(function (left, right) {
+          return right.relevantCount - left.relevantCount || left.tag.localeCompare(right.tag, 'ru');
+        });
+    }
+
+    function suggestionMarkup() {
+      return manualSuggestions().map(function (entry) {
+        var label = entry.tag + ' · ' + entry.relevantCount + ' результ.';
+        return '<option value="' + escapeHtml(entry.value) + '" label="' + escapeHtml(label) + '">' +
+          escapeHtml(label) + '</option>';
+      }).join('');
+    }
+
+    function manualHint() {
+      return tagInput.feedback || (manualSuggestions().length
+        ? 'Пробел — часть тега. Enter — добавить. Ничего не сохраняется.'
+        : 'Подходящих подсказок нет. Ручной ввод доступен.');
+    }
+
     function manualMarkup() {
       if (state.mode !== 'free') return '';
       return '<form class="tag-input" aria-label="Ручной ввод тегов">' +
@@ -1096,9 +1132,8 @@
         '<input id="manualTags" name="tags" type="text" autocomplete="off" list="tagVocabulary"' +
         ' placeholder="Тег или теги через запятую" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
         '<button type="submit" aria-label="Добавить введённые теги">+</button></div>' +
-        '<datalist id="tagVocabulary">' + vocabulary.filter(function (tag) { return !state.location.tags.includes(tag); })
-          .map(function (tag) { return '<option value="' + escapeHtml(tag) + '"></option>'; }).join('') + '</datalist>' +
-        '<p id="tagInputHint" role="status">' + escapeHtml(tagInput.feedback || 'Пробел — часть тега. Enter — добавить. Ничего не сохраняется.') + '</p>' +
+        '<datalist id="tagVocabulary">' + suggestionMarkup() + '</datalist>' +
+        '<p id="tagInputHint" role="status">' + escapeHtml(manualHint()) + '</p>' +
         '<span class="node-legend"><span class="node-legend__user">Пользовательский</span> · ' +
         '<span class="node-legend__intermediate">Промежуточный</span></span></form>';
     }
@@ -1215,7 +1250,8 @@
         input.addEventListener('input', function () {
           tagInput.draft = input.value;
           tagInput.feedback = '';
-          form.querySelector('#tagInputHint').textContent = 'Пробел — часть тега. Enter — добавить. Ничего не сохраняется.';
+          form.querySelector('#tagVocabulary').innerHTML = suggestionMarkup();
+          form.querySelector('#tagInputHint').textContent = manualHint();
           notifyState();
         });
         input.addEventListener('keydown', function (event) {
