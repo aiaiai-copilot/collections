@@ -133,8 +133,9 @@ directions out of all candidates. Scroll changes update `onStateChange` only.
   includes selected tags plus complete comma/semicolon-separated draft tokens;
   the last token is a case-insensitive substring to complete, not a requirement.
   Selected/completed tags are excluded. Suggestions carry the count, sorted by
-  descending count then label. Selecting one preserves the preceding batch;
-  the count is display metadata, never part of the inserted tag.
+  descending count then label. The native suggestion value displays the count
+  in parentheses on the first line (`тег (3)`); selecting one preserves the
+  preceding batch and strips that display metadata before insertion.
   Zero-result user nodes remain navigable in the cloud: this restriction is
   only for input suggestions, not DAG coverage or arbitrary manual queries.
 - `tagInput: { draft, feedback, suggestions: [{tag, value, relevantCount}] }`

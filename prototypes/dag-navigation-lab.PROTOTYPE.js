@@ -1113,10 +1113,16 @@
 
     function suggestionMarkup() {
       return manualSuggestions().map(function (entry) {
-        var label = entry.tag + ' · ' + entry.relevantCount + ' результ.';
-        return '<option value="' + escapeHtml(entry.value) + '" label="' + escapeHtml(label) + '">' +
-          escapeHtml(label) + '</option>';
+        var displayValue = entry.value + ' (' + entry.relevantCount + ')';
+        return '<option value="' + escapeHtml(displayValue) + '"></option>';
       }).join('');
+    }
+
+    function resolveSuggestionValue(value) {
+      var selected = manualSuggestions().filter(function (entry) {
+        return entry.value + ' (' + entry.relevantCount + ')' === value;
+      })[0];
+      return selected ? selected.value : value;
     }
 
     function manualHint() {
@@ -1248,6 +1254,7 @@
       if (form) {
         var input = form.querySelector('input');
         input.addEventListener('input', function () {
+          input.value = resolveSuggestionValue(input.value);
           tagInput.draft = input.value;
           tagInput.feedback = '';
           form.querySelector('#tagVocabulary').innerHTML = suggestionMarkup();
@@ -1259,7 +1266,7 @@
         });
         form.addEventListener('submit', function (event) {
           event.preventDefault();
-          var typed = normalizeTags(input.value.split(/[,;\n]+/));
+          var typed = normalizeTags(resolveSuggestionValue(input.value).split(/[,;\n]+/));
           var added = typed.filter(function (tag) { return !state.location.tags.includes(tag); });
           if (!added.length) {
             tagInput.feedback = typed.length ? 'Эти теги уже выбраны.' : 'Введите хотя бы один тег.';
