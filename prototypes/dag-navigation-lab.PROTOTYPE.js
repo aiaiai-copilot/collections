@@ -332,7 +332,7 @@
       id: 'manual',
       label: '8 · Ручной фильтр между пользовательскими узлами',
       description:
-        'Есть только {фильм} и {фильм, спокойное, вечер}. В свободном режиме введите «фильм, спокойное»: три результата вместо одного у узкой подборки. «документальное» встречается только у элементов; неизвестный тег даёт ноль без создания сущностей.',
+        'Есть только {фильм} и {фильм, спокойное, вечер}. В свободном режиме введите «фильм спокойное»: три результата вместо одного у узкой подборки. «документальное» встречается только у элементов; неизвестный тег даёт ноль без создания сущностей.',
       fixture: {
         nodes: sharedCultureNodes().filter(function (entry) { return ['films', 'evening-films'].includes(entry.id); }),
         items: sharedCultureItems(),
@@ -1093,10 +1093,10 @@
 
     function manualSuggestions() {
       var draft = tagInput.draft;
-      var separator = Math.max(draft.lastIndexOf(','), draft.lastIndexOf(';'), draft.lastIndexOf(' '), draft.lastIndexOf('\t'), draft.lastIndexOf('\n'));
+      var separator = draft.lastIndexOf(' ');
       var prefix = draft.slice(0, separator + 1);
       var fragment = draft.slice(separator + 1).trim().toLocaleLowerCase('ru');
-      var context = normalizeTags(state.location.tags.concat(prefix.split(/[,;\s]+/)));
+      var context = normalizeTags(state.location.tags.concat(prefix.split(/ +/)));
       return vocabulary.filter(function (tag) {
         return !context.includes(tag) && tag.includes(fragment);
       }).map(function (tag) {
@@ -1127,7 +1127,7 @@
 
     function manualHint() {
       return tagInput.feedback || (manualSuggestions().length
-        ? 'Пробел, запятая или ; разделяют теги. _ объединяет слова в теге. Enter — добавить.'
+        ? 'Пробел разделяет теги. _ объединяет слова в теге. Enter — добавить.'
         : 'Подходящих подсказок нет. Ручной ввод доступен.');
     }
 
@@ -1136,7 +1136,7 @@
       return '<form class="tag-input" aria-label="Ручной ввод тегов">' +
         '<label for="manualTags">Добавить теги к срезу</label><div class="tag-input__row">' +
         '<input id="manualTags" name="tags" type="text" autocomplete="off" list="tagVocabulary"' +
-        ' placeholder="Теги через пробел, запятую или ;" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
+        ' placeholder="Теги через пробел" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
         '<button type="submit" aria-label="Добавить введённые теги">+</button></div>' +
         '<datalist id="tagVocabulary">' + suggestionMarkup() + '</datalist>' +
         '<p id="tagInputHint" role="status">' + escapeHtml(manualHint()) + '</p>' +
@@ -1266,7 +1266,7 @@
         });
         form.addEventListener('submit', function (event) {
           event.preventDefault();
-          var typed = normalizeTags(resolveSuggestionValue(input.value).split(/[,;\s]+/));
+          var typed = normalizeTags(resolveSuggestionValue(input.value).split(/ +/));
           var added = typed.filter(function (tag) { return !state.location.tags.includes(tag); });
           if (!added.length) {
             tagInput.feedback = typed.length ? 'Эти теги уже выбраны.' : 'Введите хотя бы один тег.';

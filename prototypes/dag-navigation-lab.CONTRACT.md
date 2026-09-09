@@ -124,14 +124,14 @@ directions out of all candidates. Scroll changes update `onStateChange` only.
   and its mode, including intermediate states; no history is silently skipped.
 - Selected tags are removable in `free`; in `nodes` they are read-only, with
   a visible prompt to use free mode. Broader node buttons can remove a bundle.
-- Manual input belongs to `free`: whitespace, comma or semicolon separates tags;
+- Manual input belongs to `free`: a space separates tags;
   an underscore remains inside one tag and stands for a word boundary
   (`короткий_метр`). Enter/button appends the normalized batch atomically.
   Empty/duplicate-only input adds no history or navigation event.
   Unknown tags are allowed as zero-result queries; no tag or collection is saved.
   Suggestions use the existing fixture vocabulary, including item-only tags,
   but only retain tags with a positive result count after addition. The context
-  includes selected tags plus complete comma/semicolon-separated draft tokens;
+  includes selected tags plus complete space-separated draft tokens;
   the last token is a case-insensitive substring to complete, not a requirement.
   Selected/completed tags are excluded. Suggestions carry the count, sorted by
   descending count then label. The native suggestion value displays the count
