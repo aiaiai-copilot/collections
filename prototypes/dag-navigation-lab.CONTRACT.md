@@ -69,6 +69,11 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   vertical scrolling becomes available. All candidate tags are rendered in
   that fallback; off-screen tags remain reachable by scroll and keyboard.
   Only the tag region scrolls, leaving scale and resize controls fixed.
+  In scroll mode, fixed strips above/below the tag region show `↑ Ещё выше`
+  and `Ещё ниже ↓` whenever content remains in that direction, including before
+  the first scroll gesture. They do not depend on native scrollbar visibility
+  and do not cover tags. Both strips reserve space throughout scrolling so
+  showing/hiding a cue does not move content. Fit/empty clouds have no strips.
   The user can combine a smaller scale with scrolling; scale never changes
   automatically. In fallback, resizing may also rely on scrolling for coverage.
 - Each layout change rechecks in-place fit. When a covering set fits again

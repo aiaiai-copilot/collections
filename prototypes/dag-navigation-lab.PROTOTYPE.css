@@ -513,6 +513,40 @@ select:focus-visible {
   container-type: inline-size;
 }
 
+.cloud-viewport {
+  --scroll-cue-height: 20px;
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cloud-viewport--scroll {
+  padding-block: var(--scroll-cue-height);
+}
+
+.cloud-scroll-cue {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: var(--scroll-cue-height);
+  color: #365448;
+  background: #f3f6ed;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: var(--scroll-cue-height);
+  text-align: center;
+  pointer-events: none;
+}
+
+.cloud-scroll-cue[hidden] {
+  display: none;
+}
+
+.cloud-scroll-cue--up { top: 0; }
+.cloud-scroll-cue--down { bottom: 0; }
+
 .cloud-stage {
   display: flex;
   flex: 1;

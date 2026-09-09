@@ -746,6 +746,7 @@
       var stage = element.querySelector('.cloud-stage');
       var shell = element.querySelector('.cloud-shell');
       // Measure in-place fit from the top, independent of prior scrolling.
+      element.querySelector('.cloud-viewport').classList.remove('cloud-viewport--scroll');
       stage.classList.remove('cloud-stage--scroll');
       stage.scrollTop = 0;
       shell.style.width = cloud.width + '%';
@@ -778,9 +779,10 @@
     }
 
     function canScrollCloud(plan) {
-      var stage = element.querySelector('.cloud-stage');
+      var viewport = element.querySelector('.cloud-viewport');
       var shell = element.querySelector('.cloud-shell');
-      return plan.representable && stage.clientHeight >= 45 &&
+      var cueHeight = parseFloat(getComputedStyle(viewport).getPropertyValue('--scroll-cue-height'));
+      return plan.representable && viewport.clientHeight - 2 * cueHeight >= 45 &&
         shell.querySelector('.cloud-tools').getBoundingClientRect().bottom <=
           shell.getBoundingClientRect().bottom + 0.5;
     }
@@ -808,6 +810,10 @@
         top: Math.round(stage.scrollTop),
         max: Math.max(0, stage.scrollHeight - stage.clientHeight),
       };
+      element.querySelector('.cloud-scroll-cue--up').hidden =
+        cloudMode !== 'scroll' || stage.scrollTop <= 1;
+      element.querySelector('.cloud-scroll-cue--down').hidden =
+        cloudMode !== 'scroll' || stage.scrollTop >= cloudScroll.max - 1;
     }
 
     function showLayout(plan, progress) {
@@ -820,6 +826,7 @@
       if (plan.fits) scrollFallback = false;
       var available = plan.fits ? plan.entries : scrolling ? candidates : [];
       availableDirectionKeys = available.map(function (entry) { return entry.key; });
+      element.querySelector('.cloud-viewport').classList.toggle('cloud-viewport--scroll', scrolling);
       stage.classList.toggle('cloud-stage--scroll', scrolling);
       stage.setAttribute('aria-label', scrolling ? 'Облако тегов с вертикальной прокруткой' : 'Облако тегов');
       if (scrolling) stage.setAttribute('tabindex', '0');
@@ -1212,9 +1219,13 @@
         'px;--tag-scale:' +
         state.cloud.tagScale / 100 +
         '">' +
+        '<div class="cloud-viewport">' +
+        '<span class="cloud-scroll-cue cloud-scroll-cue--up" hidden>↑ Ещё выше</span>' +
         '<div class="cloud-stage" role="region" aria-label="Облако тегов">' +
         directionMarkup(derivedDirections) +
         '<p class="cloud-empty" hidden></p>' +
+        '</div>' +
+        '<span class="cloud-scroll-cue cloud-scroll-cue--down" hidden>Ещё ниже ↓</span>' +
         '</div>' +
         '<div class="cloud-tools">' +
         '<div class="scale-control" aria-label="Масштаб названий тегов">' +
