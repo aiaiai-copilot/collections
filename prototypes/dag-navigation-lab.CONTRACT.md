@@ -12,8 +12,9 @@ createDagNavigator(element, {
     items: [{ id, tags }],
   },
   initialState: {
+    mode: 'nodes' | 'free',
     location: { kind, tags, nodeId },
-    history: [{ kind, tags, nodeId }],
+    history: [{ kind, tags, nodeId, mode }],
     cloud: { width, height, tagScale },
   },
   onStateChange(state),
@@ -34,24 +35,28 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   normalized tag set.
 - `temporary` has `nodeId: null` and no saved node with exactly the same
   normalized tag set.
-- Tags are trimmed, deduplicated, and sorted before comparison.
+- Tags are trimmed, lowercased, deduplicated, and sorted before comparison.
 - `history` contains actual previously visited locations. It is not inferred
   from parents in the DAG.
 - `relevantCount` is derived from unique fixture items containing every tag in
   the current navigation set.
-- Downward `directions` are derived from every strict saved-node superset,
-  across the full remaining depth. Already selected tags are excluded.
-- Each cloud button represents one tag to add, not a saved node or its name.
-  The destination is the whole resulting set: an exact saved-node match shows
-  its name and ID above the selected tags; otherwise it is `temporary`.
-- For a current set F and each strict descendant N, at least one retained
-  direction t must belong to tags(N) minus F. Repeating this invariant at each
-  step preserves a path to every target, either in place or through scrolling.
+- `mode: nodes` visits only user nodes and `all`. Its cloud contains nearest
+  user-node supersets (roots at `all`); parent actions contain nearest subsets.
+  Each button shows the tags added together, not a collection name. Its
+  `targetTags` is the complete destination; `key` is independent of the label.
+- `mode: free` visits user and intermediate nodes (`temporary` is the legacy
+  wire name, not a denial that this is a conceptual DAG node). Its cloud adds
+  one tag from matching items or user-node descendants. A solid/dashed border
+  distinguishes user/intermediate destinations. Every such one-tag action is
+  retained; scrolling handles overflow. No powerset is materialized.
+- For every strict user descendant N, a retained target must be a subset of N.
+  Repeating this invariant preserves a path to every user target, in place or
+  through scrolling. It is not a claim to enumerate every intermediate node.
   Coverage is by node identity, independent of result count (including zero).
-- A shortcut may be hidden only if the remaining directions still cover every
-  target. The lab uses stable removal in reverse weight order, checking actual
-  button geometry after each removal. This is an inclusion-minimal cover when
-  fully reduced, not a claim of globally minimum tag count or rectangle area.
+- The previous stable cover-pruning helper is retained, but these two modes
+  have no removable shortcuts: each nearest user child is required to reach
+  itself, and free mode deliberately keeps every known one-tag action. This
+  stronger free-mode rule is an experimental choice, not a production decision.
 - `cloud.width`, `cloud.height`, and `cloud.tagScale` are independent. Normally,
   resize requests stop at a feasible boundary and scale requests that would
   break in-place coverage are rejected without resizing the cloud.
@@ -76,10 +81,9 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   changes presentation only, with no route entry or navigation event.
 - `insufficient-space` remains only for hosts too short to offer a usable
   tag region and fixed controls; scrolling cannot repair that geometry.
-- An empty-filter saved node at `all` cannot be reached by adding a tag. If
-  supplied in a fixture, the prototype reports `unrepresentable`; it never
-  silently excludes that node when calculating coverage. A separate entry
-  affordance for such nodes is still outside this iteration.
+- An empty-filter user node is explicitly represented as `∅ Пустой фильтр` in
+  node mode, separate from `all`. In free mode, tag addition still cannot reach
+  it: such a fixture reports `unrepresentable` instead of false full coverage.
 
 The cloud snapshot includes:
 
@@ -91,8 +95,9 @@ The cloud snapshot includes:
   visibleDirectionCount, availableDirectionCount, totalDirectionCount,
   scroll: { top, max },
   coverage: {
+    scope: 'user-nodes' | 'one-tag-refinements-and-user-nodes',
     status: 'complete' | 'insufficient-space' | 'unrepresentable',
-    totalNodeCount, coveredNodeIds, uncoveredNodeIds, retainedTags,
+    totalNodeCount, coveredNodeIds, uncoveredNodeIds, retainedTags, retainedDirectionKeys,
   },
   limit: null | { kind: 'size' | 'scale', requested },
 }
@@ -100,10 +105,34 @@ The cloud snapshot includes:
 
 Each direction exposes `coveredNodeIds`, `available` (rendered and reachable),
 and `visible` (fully inside the current tag viewport) for the inspector.
-`retainedTags` records the available set, or the failed covering plan in a
-blocked layout. `coverage.coveredNodeIds` includes coverage reachable through
+`retainedDirectionKeys` records available actions (or the failed plan in a
+blocked layout); `retainedTags` is their flattened tag delta.
+`coverage.coveredNodeIds` includes coverage reachable through
 scrolling, not just the currently visible tags. The UI counter shows available
 directions out of all candidates. Scroll changes update `onStateChange` only.
+
+## Two-mode experiment and manual input — 2026-09-09
+
+- Default is `nodes`; the intermediate and manual-input scenarios start in
+  `free`. A shareable `?mode=free|nodes` selects the starting mode when valid.
+  URL preserves scenario/mode, not the in-memory query or route.
+- Switching modes at `all` or a user node preserves tags, count and history.
+  At an intermediate node, requesting `nodes` opens an explicit entry chooser
+  (nearest broader/narrower user nodes, or `all`). Until selection, `free`
+  remains active and the query is unchanged. Cancel leaves it unchanged.
+- History entries carry their mode. Back restores the actual visited location
+  and its mode, including intermediate states; no history is silently skipped.
+- Selected tags are removable in `free`; in `nodes` they are read-only, with
+  a visible prompt to use free mode. Broader node buttons can remove a bundle.
+- Manual input belongs to `free`: comma or semicolon separates tags;
+  spaces inside a tag are preserved. Enter/button appends the normalized batch
+  atomically. Empty/duplicate-only input adds no history or navigation event.
+  Unknown tags are allowed as zero-result queries; no tag or collection is saved.
+  Suggestions use the existing fixture vocabulary, including item-only tags.
+- `tagInput: { draft, feedback }` and `pendingMode` are observable UI state.
+  Typing updates the inspector but not navigation/results. Submission updates
+  location, count, cloud and node kind immediately; results remain an outgoing
+  event only, without cards or an application results screen.
 
 ## Events
 
@@ -112,8 +141,11 @@ Every event contains `type`, an action-specific payload, and serializable
 
 | Event | Trigger and meaning |
 | --- | --- |
-| `refine` | Add one downward direction tag to the current set and visit the exact saved node or a temporary set. |
-| `broaden` | Remove one selected tag and visit the resulting wider context. This is a new semantic transition. |
+| `refine` | Add `addedTags` through a one-tag action or a user-node bundle. |
+| `broaden` | Remove `removedTags` through free filtering or a broader user-node transition. |
+| `filterInput` | Append a manually entered tag batch; payload includes `addedTags`. |
+| `modeChange` | Change mode without changing the current location or route. |
+| `modeEntry` | Explicitly select a user node or `all` when leaving an intermediate query; records the previous free location. |
 | `back` | Restore the most recent location from actual history. It does not choose a DAG parent. |
 | `all` | Visit the explicit top-level state outside the DAG from any state. |
 | `requestResults` | Emit `{ tags, nodeId, relevantCount }`; do not open or render application results. |
@@ -121,8 +153,8 @@ Every event contains `type`, an action-specific payload, and serializable
 | `cloudResize` | Request dimensions; emit `from`, `requested`, actual `to`, and `limited`. Pointer cancellation additionally emits `cancelled`. No route entry is added. |
 
 `back`, `broaden`, and `all` deliberately have different event types and can
-produce different locations from the same starting state. Every selected tag
-can be removed, including the final one. Removing the final tag visits `all`
+produce different locations from the same starting state. In free mode every
+selected tag can be removed, including the final one. Removing the final tag visits `all`
 with an empty set and no node ID; it still emits `broaden` with `removedTag`,
 not an explicit `all` action. The previous location remains in actual history
 and can be restored with `back`. No saved filter is modified, and no

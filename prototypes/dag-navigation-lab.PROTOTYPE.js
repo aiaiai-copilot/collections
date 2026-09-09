@@ -48,6 +48,7 @@
 
   function initialState(location, history, cloud) {
     return {
+      mode: location.kind === 'temporary' ? 'free' : 'nodes',
       location: location,
       history: history || [],
       cloud: Object.assign({ width: 100, height: 72, tagScale: 100 }, cloud || {}),
@@ -224,7 +225,7 @@
       id: 'roots',
       label: '1 · Несколько независимых корней',
       description:
-        'Старт во «Всё»: у графа несколько независимых корней. Облако строится по всей глубине, а не по одному выбранному дереву.',
+        'Сравните ближайшие пользовательские узлы и свободные уточнения на одном графе. Из «фильм» можно одним шагом добавить «анимация + япония» или исследовать промежуточный срез.',
       fixture: rootsFixture,
       initial: initialState(place('all', [], null), [], { width: 100, height: 76, tagScale: 100 }),
     },
@@ -232,7 +233,7 @@
       id: 'parents',
       label: '2 · Несколько непосредственных родителей',
       description:
-        '«Спокойные фильмы» посещены через «Фильмы». Назад вернёт к реальному маршруту; снятие тега «фильм» откроет другого родителя — «Спокойное».',
+        '«Спокойные фильмы» посещены через «Фильмы». Назад вернёт по маршруту; в разделе «Шире» можно выбрать другого родителя — {спокойное}.',
       fixture: parentsFixture,
       initial: initialState(
         place('node', ['фильм', 'спокойное'], 'calm-films'),
@@ -244,7 +245,7 @@
       id: 'deep',
       label: '3 · Глубокий маршрут и фактический возврат',
       description:
-        'Текущий узел имеет два широких родителя. Назад восстановит «Архив источников»; снятие «архив» откроет «Первичные источники».',
+        'Два непосредственных родителя: сравните «Шире» с фактическим возвратом. В свободном режиме можно снимать и добавлять отдельные теги.',
       fixture: { nodes: deepNodes, items: deepItems },
       initial: initialState(
         place(
@@ -269,9 +270,9 @@
     },
     {
       id: 'temporary',
-      label: '4 · Временный несохранённый набор',
+      label: '4 · Промежуточный узел и ручной ввод',
       description:
-        'Для набора {анимация, фильм} нет сохранённого узла. Идентичность остаётся временной, но счётчик и направления вычисляются по тем же правилам.',
+        'Свободный режим: {анимация, фильм} — промежуточный узел. Введите «короткий метр»: его два результата не сводятся к одной сохранённой фестивальной подборке. Добавьте «фестивальное» для точного совпадения.',
       fixture: temporaryFixture,
       initial: initialState(
         place('temporary', ['фильм', 'анимация'], null),
@@ -327,6 +328,17 @@
         { width: 100, height: 52, tagScale: 100 },
       ),
     },
+    {
+      id: 'manual',
+      label: '8 · Ручной фильтр между пользовательскими узлами',
+      description:
+        'Есть только {фильм} и {фильм, спокойное, вечер}. В свободном режиме введите «фильм, спокойное»: три результата вместо одного у узкой подборки. «документальное» встречается только у элементов; неизвестный тег даёт ноль без создания сущностей.',
+      fixture: {
+        nodes: sharedCultureNodes().filter(function (entry) { return ['films', 'evening-films'].includes(entry.id); }),
+        items: sharedCultureItems(),
+      },
+      initial: Object.assign(initialState(place('all', [], null), [], { height: 100 }), { mode: 'free' }),
+    },
   ];
 
   function clone(value) {
@@ -363,6 +375,7 @@
     while (!fits(retained)) {
       var removable = -1;
       for (var index = retained.length - 1; index >= 0; index -= 1) {
+        if (retained[index].required) continue;
         if (covers(retained.filter(function (_, i) { return i !== index; }))) {
           removable = index;
           break;
@@ -391,8 +404,8 @@
       }),
     );
     var state = clone(options.initialState);
-    var visibleDirectionTags = [];
-    var availableDirectionTags = [];
+    var visibleDirectionKeys = [];
+    var availableDirectionKeys = [];
     var cloudMode = 'fit';
     var scrollFallback = false;
     var cloudScroll = { top: 0, max: 0 };
@@ -401,10 +414,18 @@
     var coverage = null;
     var layoutLimit = null;
     var actualPixels = null;
+    var pendingMode = null;
+    var tagInput = { draft: '', feedback: '' };
+    var vocabulary = normalizeTags(fixture.nodes.concat(fixture.items).flatMap(function (entry) {
+      return entry.tags;
+    }));
 
     state.location.tags = normalizeTags(state.location.tags);
+    state.mode = state.location.kind === 'temporary' ? 'free' : state.mode || 'nodes';
     state.history = state.history.map(function (entry) {
-      return place(entry.kind, entry.tags, entry.nodeId);
+      return Object.assign(place(entry.kind, entry.tags, entry.nodeId), {
+        mode: entry.kind === 'temporary' ? 'free' : entry.mode || state.mode,
+      });
     });
 
     function exactNode(tags) {
@@ -435,14 +456,14 @@
             ? 'Всё'
             : saved
               ? saved.name
-              : 'Несохранённый набор',
+              : 'Промежуточный срез',
       };
     }
 
     function relevantCount(tags) {
-      return fixture.items.filter(function (entry) {
+      return new Set(fixture.items.filter(function (entry) {
         return isSubset(tags, entry.tags);
-      }).length;
+      }).map(function (entry) { return entry.id; })).size;
     }
 
     function descendantNodes() {
@@ -460,6 +481,28 @@
       var strictSupersets = descendantNodes();
       var candidates = new Map();
 
+      if (state.mode === 'nodes') {
+        return nearestChildren().map(function (entry) {
+          var added = entry.tags.filter(function (tag) { return !currentTags.includes(tag); });
+          var covered = strictSupersets.filter(function (target) {
+            return isSubset(entry.tags, target.tags);
+          });
+          return {
+            key: 'node:' + entry.id,
+            tag: added.join(' + '),
+            addedTags: added,
+            targetTags: entry.tags.slice(),
+            nodeId: entry.id,
+            kind: 'node',
+            relevantCount: relevantCount(entry.tags),
+            savedNodeCount: covered.length,
+            coveredNodeIds: covered.map(function (target) { return target.id; }),
+            available: availableDirectionKeys.includes('node:' + entry.id),
+            visible: visibleDirectionKeys.includes('node:' + entry.id),
+          };
+        }).sort(directionOrder);
+      }
+
       strictSupersets.forEach(function (entry) {
         entry.tags.forEach(function (tag) {
           if (currentTags.includes(tag)) {
@@ -472,27 +515,49 @@
         });
       });
 
+      // Item-only tags matter even when no user node represents the query.
+      fixture.items.filter(function (entry) { return isSubset(currentTags, entry.tags); })
+        .forEach(function (entry) {
+          entry.tags.forEach(function (tag) {
+            if (!currentTags.includes(tag) && !candidates.has(tag)) candidates.set(tag, new Set());
+          });
+        });
+
       var result = Array.from(candidates.entries()).map(function (entry) {
         var tag = entry[0];
         var targetTags = normalizeTags(currentTags.concat(tag));
+        var targetNode = exactNode(targetTags);
         return {
+          key: 'tag:' + tag,
           tag: tag,
+          addedTags: [tag],
+          targetTags: targetTags,
+          nodeId: targetNode ? targetNode.id : null,
+          kind: targetNode ? 'node' : 'temporary',
+          required: true,
           relevantCount: relevantCount(targetTags),
           savedNodeCount: entry[1].size,
           coveredNodeIds: Array.from(entry[1]),
-          available: availableDirectionTags.includes(tag),
-          visible: visibleDirectionTags.includes(tag),
+          available: availableDirectionKeys.includes('tag:' + tag),
+          visible: visibleDirectionKeys.includes('tag:' + tag),
         };
       });
 
-      result.sort(function (left, right) {
-        return (
-          right.relevantCount - left.relevantCount ||
-          right.savedNodeCount - left.savedNodeCount ||
-          left.tag.localeCompare(right.tag, 'ru')
-        );
+      return result.sort(directionOrder);
+    }
+
+    function directionOrder(left, right) {
+      return right.relevantCount - left.relevantCount ||
+        right.savedNodeCount - left.savedNodeCount || left.tag.localeCompare(right.tag, 'ru');
+    }
+
+    function nearestChildren() {
+      var descendants = descendantNodes();
+      return descendants.filter(function (candidate) {
+        return !descendants.some(function (other) {
+          return other.tags.length < candidate.tags.length && isSubset(other.tags, candidate.tags);
+        });
       });
-      return result;
     }
 
     function semanticParents() {
@@ -522,8 +587,13 @@
     function snapshot() {
       var derivedDirections = directions();
       return {
+        mode: state.mode,
+        pendingMode: pendingMode,
+        tagInput: clone(tagInput),
         location: describeLocation(state.location),
-        history: state.history.map(describeLocation),
+        history: state.history.map(function (entry) {
+          return Object.assign(describeLocation(entry), { mode: entry.mode });
+        }),
         semanticParents: semanticParents(),
         relevantCount: relevantCount(state.location.tags),
         cloud: {
@@ -531,7 +601,7 @@
           height: state.cloud.height,
           tagScale: state.cloud.tagScale,
           mode: cloudMode,
-          availableDirectionCount: availableDirectionTags.length,
+          availableDirectionCount: availableDirectionKeys.length,
           visibleDirectionCount: derivedDirections.filter(function (entry) {
             return entry.visible;
           }).length,
@@ -563,10 +633,13 @@
       }
     }
 
-    function visit(type, tags, payload) {
+    function visit(type, tags, payload, nextMode, targetNodeId) {
       var before = snapshot();
-      state.history.push(clone(state.location));
-      state.location = resolveLocation(tags);
+      state.history.push(Object.assign(clone(state.location), { mode: state.mode }));
+      state.location = targetNodeId ? place('node', tags, targetNodeId) : resolveLocation(tags);
+      if (nextMode) state.mode = nextMode;
+      pendingMode = null;
+      tagInput = { draft: '', feedback: '' };
       layoutLimit = null;
       render();
       emit(type, payload, before);
@@ -589,15 +662,15 @@
         location.kind === 'all'
           ? 'Верхний уровень · вне DAG'
           : location.kind === 'node'
-            ? 'Сохранённый узел'
-            : 'Временный навигационный набор';
+            ? '● Пользовательский узел'
+            : '◇ Промежуточный узел · без подборки';
       var idLine =
         location.kind === 'node'
           ? '<p class="navigator__node-id">id: ' + escapeHtml(location.nodeId) + '</p>'
           : '<p class="navigator__node-id">id: null</p>';
 
       return (
-        '<div class="navigator__identity">' +
+        '<div class="navigator__identity navigator__identity--' + location.kind + '">' +
         '<span class="navigator__kind">' +
         escapeHtml(kindLabel) +
         '</span>' +
@@ -615,6 +688,7 @@
       }
       return state.location.tags
         .map(function (tag) {
+          if (state.mode === 'nodes') return '<span class="selected-tag">' + escapeHtml(tag) + '</span>';
           var title = state.location.tags.length === 1
             ? 'Убрать последний тег и перейти во «Всё»'
             : 'Убрать тег и перейти к более широкому набору';
@@ -648,12 +722,14 @@
         .map(function (entry, index) {
           var weight = maximum === minimum ? 0.5 : (entry.relevantCount - minimum) / (maximum - minimum);
           return (
-            '<button class="direction" type="button" data-direction-index="' +
+            '<button class="direction direction--' + entry.kind + '" type="button" title="' +
+            escapeHtml((entry.kind === 'node' ? 'Пользовательский узел' : 'Промежуточный узел') +
+              ': {' + entry.targetTags.join(', ') + '}') + '" data-direction-index="' +
             index +
             '" style="--weight:' +
             weight.toFixed(3) +
             '">' +
-            escapeHtml(entry.tag) +
+            (entry.addedTags.length ? entry.addedTags.map(escapeHtml).join(' <span aria-hidden="true">+</span> ') : '∅ Пустой фильтр') +
             '<small aria-label="' +
             entry.relevantCount +
             ' релевантных элементов">' +
@@ -678,9 +754,9 @@
       var targets = descendantNodes();
       var buttons = Array.from(stage.querySelectorAll('.direction'));
       return chooseCoveredDirections(candidates, targets, function (retained) {
-        var tags = new Set(retained.map(function (entry) { return entry.tag; }));
+        var keys = new Set(retained.map(function (entry) { return entry.key; }));
         buttons.forEach(function (button, index) {
-          button.hidden = !tags.has(candidates[index].tag);
+          button.hidden = !keys.has(candidates[index].key);
         });
         var box = stage.getBoundingClientRect();
         var shellBox = shell.getBoundingClientRect();
@@ -717,13 +793,13 @@
       var stage = element.querySelector('.cloud-stage');
       var box = stage.getBoundingClientRect();
       var candidates = directions();
-      visibleDirectionTags = [];
+      visibleDirectionKeys = [];
       stage.querySelectorAll('.direction').forEach(function (button, index) {
         if (button.hidden) return;
         var bounds = button.getBoundingClientRect();
         if (bounds.top >= box.top - 0.5 && bounds.bottom <= box.bottom + 0.5 &&
             bounds.left >= box.left - 0.5 && bounds.right <= box.left + stage.clientWidth + 0.5) {
-          visibleDirectionTags.push(candidates[index].tag);
+          visibleDirectionKeys.push(candidates[index].key);
         }
       });
       cloudScroll = {
@@ -741,13 +817,13 @@
       cloudMode = plan.fits ? 'fit' : scrolling ? 'scroll' : 'blocked';
       if (plan.fits) scrollFallback = false;
       var available = plan.fits ? plan.entries : scrolling ? candidates : [];
-      availableDirectionTags = available.map(function (entry) { return entry.tag; });
+      availableDirectionKeys = available.map(function (entry) { return entry.key; });
       stage.classList.toggle('cloud-stage--scroll', scrolling);
       stage.setAttribute('aria-label', scrolling ? 'Облако тегов с вертикальной прокруткой' : 'Облако тегов');
       if (scrolling) stage.setAttribute('tabindex', '0');
       else stage.removeAttribute('tabindex');
       stage.querySelectorAll('.direction').forEach(function (button, index) {
-        button.hidden = !availableDirectionTags.includes(candidates[index].tag);
+        button.hidden = !availableDirectionKeys.includes(candidates[index].key);
       });
       var covered = targets.filter(function (target) {
         return available.some(function (entry) {
@@ -755,38 +831,35 @@
         });
       });
       coverage = {
+        scope: state.mode === 'nodes' ? 'user-nodes' : 'one-tag-refinements-and-user-nodes',
         status: plan.fits || scrolling ? 'complete' : plan.representable ? 'insufficient-space' : 'unrepresentable',
         totalNodeCount: targets.length,
         coveredNodeIds: covered.map(function (entry) { return entry.id; }),
         uncoveredNodeIds: targets.filter(function (entry) {
           return !covered.includes(entry);
         }).map(function (entry) { return entry.id; }),
-        retainedTags: (cloudMode === 'blocked' ? plan.entries : available).map(function (entry) { return entry.tag; }),
+        retainedDirectionKeys: (cloudMode === 'blocked' ? plan.entries : available).map(function (entry) { return entry.key; }),
+        retainedTags: normalizeTags((cloudMode === 'blocked' ? plan.entries : available).flatMap(function (entry) { return entry.addedTags; })),
       };
       var bounds = shell.getBoundingClientRect();
       actualPixels = { width: Math.round(bounds.width), height: Math.round(bounds.height) };
       var empty = stage.querySelector('.cloud-empty');
-      empty.hidden = (plan.fits || scrolling) && targets.length > 0;
+      empty.hidden = (plan.fits || scrolling) && candidates.length > 0;
       empty.textContent = !plan.representable
         ? 'Узел с пустым фильтром требует отдельного перехода.'
         : cloudMode === 'blocked'
           ? 'Для облака и его управления нужна большая высота экрана.'
-          : 'Сохранённых уточнений глубже этого набора нет.';
+          : state.mode === 'nodes' ? 'Пользовательских уточнений нет. Попробуйте свободный режим.'
+            : 'Известных уточнений нет. Можно ввести теги вручную или снять выбранные.';
       var status = element.querySelector('.cloud-status');
       status.dataset.status = coverage.status;
-      status.textContent = scrolling
-        ? state.cloud.tagScale > 75
-          ? '↕ Уменьшайте масштаб и прокручивайте облако. Все ветви доступны.'
-          : '↕ Прокрутите облако. Масштаб минимальный; все ветви доступны.'
-        : !plan.fits
-          ? 'Полное покрытие недоступно'
-          : layoutLimit && layoutLimit.kind === 'size'
-            ? 'Предел сжатия: все ветви остаются доступны'
-            : layoutLimit && layoutLimit.kind === 'scale'
-              ? 'Предел масштаба: все ветви остаются доступны'
-              : 'Все ветви доступны';
+      var guarantee = state.mode === 'nodes' ? 'Все пользовательские уточнения доступны.' : 'Все однотеговые уточнения доступны.';
+      status.textContent = !plan.fits && !scrolling ? 'Полное покрытие недоступно' :
+        !candidates.length ? 'Можно расширить набор или ввести другой фильтр.' :
+          scrolling ? '↕ Масштаб + прокрутка. ' + guarantee :
+            layoutLimit ? 'Предел сжатия / масштаба. ' + guarantee : guarantee;
       element.querySelector('[data-direction-count]').textContent =
-        availableDirectionTags.length + ' / ' + candidates.length;
+        availableDirectionKeys.length + ' / ' + candidates.length;
       element.querySelector('[data-scale="reset"]').textContent = state.cloud.tagScale + '%';
       element.querySelector('[data-scale="down"]').disabled = state.cloud.tagScale <= 75;
       element.querySelector('[data-scale="up"]').disabled = state.cloud.tagScale >= 175;
@@ -984,9 +1057,68 @@
       };
     }
 
+    function changeMode(mode) {
+      if (mode === state.mode) return;
+      if (mode === 'nodes' && state.location.kind === 'temporary') {
+        pendingMode = 'nodes';
+        render();
+        return;
+      }
+      var before = snapshot();
+      state.mode = mode;
+      pendingMode = null;
+      tagInput = { draft: '', feedback: '' };
+      layoutLimit = null;
+      render();
+      emit('modeChange', { from: before.mode, to: mode }, before);
+    }
+
+    function nodeChoiceMarkup(entry, attribute) {
+      return '<button type="button" class="node-choice" ' + attribute + '="' + escapeHtml(entry.id) +
+        '" title="' + escapeHtml('Перейти к {' + entry.tags.join(', ') + '}') + '">' +
+        (entry.tags.length ? entry.tags.map(escapeHtml).join(' ∩ ') : '∅ Пустой фильтр') + '</button>';
+    }
+
+    function parentsMarkup() {
+      if (state.mode !== 'nodes' || state.location.kind === 'all') return '';
+      var parents = semanticParents();
+      return '<section class="parents-panel" aria-label="Более широкие пользовательские узлы">' +
+        '<span class="navigator__section-label">Шире · пользовательские узлы</span>' +
+        '<div class="parent-choices">' + (parents.length ? parents.map(function (entry) {
+          return nodeChoiceMarkup(entry, 'data-parent');
+        }).join('') : '<span class="selected-empty">Корневой узел · выше только «Всё»</span>') + '</div></section>';
+    }
+
+    function manualMarkup() {
+      if (state.mode !== 'free') return '';
+      return '<form class="tag-input" aria-label="Ручной ввод тегов">' +
+        '<label for="manualTags">Добавить теги к срезу</label><div class="tag-input__row">' +
+        '<input id="manualTags" name="tags" type="text" autocomplete="off" list="tagVocabulary"' +
+        ' placeholder="Тег или теги через запятую" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
+        '<button type="submit" aria-label="Добавить введённые теги">+</button></div>' +
+        '<datalist id="tagVocabulary">' + vocabulary.filter(function (tag) { return !state.location.tags.includes(tag); })
+          .map(function (tag) { return '<option value="' + escapeHtml(tag) + '"></option>'; }).join('') + '</datalist>' +
+        '<p id="tagInputHint" role="status">' + escapeHtml(tagInput.feedback || 'Пробел — часть тега. Enter — добавить. Ничего не сохраняется.') + '</p>' +
+        '<span class="node-legend"><span class="node-legend__user">Пользовательский</span> · ' +
+        '<span class="node-legend__intermediate">Промежуточный</span></span></form>';
+    }
+
+    function modeEntryMarkup() {
+      if (!pendingMode) return '';
+      var parents = semanticParents();
+      var children = nearestChildren();
+      return '<dialog class="mode-entry" aria-labelledby="modeEntryTitle">' +
+        '<h3 id="modeEntryTitle">С какого пользовательского узла продолжить?</h3>' +
+        '<p>Текущий срез не сохранён. Выберите переход; автоматически теги не меняются.</p>' +
+        (parents.length ? '<h4>Ближайшие шире</h4>' + parents.map(function (entry) { return nodeChoiceMarkup(entry, 'data-mode-entry'); }).join('') : '') +
+        (children.length ? '<h4>Ближайшие уже</h4>' + children.map(function (entry) { return nodeChoiceMarkup(entry, 'data-mode-entry'); }).join('') : '') +
+        '<button type="button" class="node-choice" data-mode-all>Во «Всё»</button>' +
+        '<button type="button" class="nav-action" data-mode-cancel autofocus>Остаться в свободном режиме</button></dialog>';
+    }
+
     function render() {
-      visibleDirectionTags = [];
-      availableDirectionTags = [];
+      visibleDirectionKeys = [];
+      availableDirectionKeys = [];
       var derivedDirections = directions();
       var historyTarget = state.history.length
         ? describeLocation(state.history[state.history.length - 1]).name
@@ -1008,20 +1140,25 @@
         backButton +
         allButton +
         '</div>' +
+        '<div class="mode-switch" role="group" aria-label="Режим навигации">' +
+        '<button type="button" data-mode="nodes" aria-pressed="' + (state.mode === 'nodes') + '">Пользовательские узлы</button>' +
+        '<button type="button" data-mode="free" aria-pressed="' + (state.mode === 'free') + '">Свободный фильтр</button></div>' +
         identityMarkup(state.location) +
         '<section class="navigator__selected" aria-labelledby="selectedLabel">' +
         '<div class="selected-heading">' +
         '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
-        '<span class="selected-heading__hint">убрать тег = шире</span>' +
+        '<span class="selected-heading__hint">' + (state.mode === 'free' ? 'убрать тег = шире' : 'снять тег — в свободном режиме') + '</span>' +
         '</div>' +
         '<div class="selected-tags">' +
         selectedMarkup() +
         '</div>' +
         '</section>' +
+        parentsMarkup() +
+        manualMarkup() +
         '<section class="navigator__cloud-section" aria-labelledby="cloudLabel">' +
         '<div class="cloud-heading">' +
-        '<div><span class="navigator__section-label" id="cloudLabel">Направления вниз</span>' +
-        '<span class="cloud-heading__meta">добавить тег</span></div>' +
+        '<div><span class="navigator__section-label" id="cloudLabel">' + (state.mode === 'nodes' ? 'Ближайшие уточнения' : 'Добавить тег') + '</span>' +
+        '<span class="cloud-heading__meta">' + (state.mode === 'nodes' ? 'добавить весь набор' : 'пользовательские и промежуточные') + '</span></div>' +
         '<span class="cloud-heading__count" data-direction-count>0 / ' +
         derivedDirections.length +
         '</span>' +
@@ -1056,13 +1193,78 @@
         '</strong> релевантных элементов</span>' +
         '<button class="results-button" type="button" data-action="results">Показать результаты</button>' +
         '</footer>' +
-        '</section>';
+        '</section>' + modeEntryMarkup();
+
+      element.querySelectorAll('[data-mode]').forEach(function (button) {
+        button.addEventListener('click', function () { changeMode(button.dataset.mode); });
+      });
+
+      element.querySelectorAll('[data-parent]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          var target = nodeById.get(button.dataset.parent);
+          visit('broaden', target.tags, {
+            removedTags: state.location.tags.filter(function (tag) { return !target.tags.includes(tag); }),
+            nodeId: target.id,
+          }, null, target.id);
+        });
+      });
+
+      var form = element.querySelector('.tag-input');
+      if (form) {
+        var input = form.querySelector('input');
+        input.addEventListener('input', function () {
+          tagInput.draft = input.value;
+          tagInput.feedback = '';
+          form.querySelector('#tagInputHint').textContent = 'Пробел — часть тега. Enter — добавить. Ничего не сохраняется.';
+          notifyState();
+        });
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' && event.isComposing) event.preventDefault();
+        });
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          var typed = normalizeTags(input.value.split(/[,;\n]+/));
+          var added = typed.filter(function (tag) { return !state.location.tags.includes(tag); });
+          if (!added.length) {
+            tagInput.feedback = typed.length ? 'Эти теги уже выбраны.' : 'Введите хотя бы один тег.';
+            form.querySelector('#tagInputHint').textContent = tagInput.feedback;
+            notifyState();
+            return;
+          }
+          visit('filterInput', state.location.tags.concat(added), { addedTags: added });
+          element.querySelector('#manualTags').focus({ preventScroll: true });
+        });
+      }
+
+      var dialog = element.querySelector('.mode-entry');
+      if (dialog) {
+        function cancelEntry(event) {
+          if (event) event.preventDefault();
+          pendingMode = null;
+          dialog.close();
+          dialog.remove();
+          notifyState();
+          element.querySelector('[data-mode="nodes"]').focus({ preventScroll: true });
+        }
+        dialog.addEventListener('cancel', cancelEntry);
+        dialog.querySelector('[data-mode-cancel]').addEventListener('click', cancelEntry);
+        dialog.querySelector('[data-mode-all]').addEventListener('click', function () {
+          visit('modeEntry', [], { from: 'free', to: 'nodes', nodeId: null }, 'nodes');
+        });
+        dialog.querySelectorAll('[data-mode-entry]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var target = nodeById.get(button.dataset.modeEntry);
+            visit('modeEntry', target.tags, { from: 'free', to: 'nodes', nodeId: target.id }, 'nodes', target.id);
+          });
+        });
+        dialog.showModal();
+      }
 
       element.querySelectorAll('[data-direction-index]').forEach(function (button) {
         button.addEventListener('click', function () {
           var selected = derivedDirections[Number(button.dataset.directionIndex)];
           if (selected) {
-            visit('refine', state.location.tags.concat(selected.tag), { tag: selected.tag });
+            visit('refine', selected.targetTags, { addedTags: selected.addedTags, nodeId: selected.nodeId }, null, selected.nodeId);
           }
         });
       });
@@ -1078,7 +1280,7 @@
             state.location.tags.filter(function (tag) {
               return tag !== removedTag;
             }),
-            { removedTag: removedTag },
+            { removedTag: removedTag, removedTags: [removedTag] },
           );
         });
       });
@@ -1090,7 +1292,11 @@
         }
         var before = snapshot();
         var from = describeLocation(state.location);
-        state.location = state.history.pop();
+        var restored = state.history.pop();
+        state.location = place(restored.kind, restored.tags, restored.nodeId);
+        state.mode = restored.mode;
+        pendingMode = null;
+        tagInput = { draft: '', feedback: '' };
         layoutLimit = null;
         render();
         emit('back', { from: from, restored: describeLocation(state.location) }, before);
@@ -1200,10 +1406,16 @@
   function eventSummary(event) {
     var after = event.after.location.name;
     if (event.type === 'refine') {
-      return '+' + event.payload.tag + ' → ' + after;
+      return '+' + event.payload.addedTags.join(' + ') + ' → ' + after;
     }
     if (event.type === 'broaden') {
-      return '−' + event.payload.removedTag + ' → ' + after;
+      return '−' + event.payload.removedTags.join(' − ') + ' → ' + after;
+    }
+    if (event.type === 'filterInput') {
+      return 'ввод: ' + event.payload.addedTags.join(', ') + ' → ' + after;
+    }
+    if (event.type === 'modeChange' || event.type === 'modeEntry') {
+      return event.payload.from + ' → ' + event.payload.to + ' · ' + after;
     }
     if (event.type === 'back') {
       return 'route → ' + after;
@@ -1274,9 +1486,12 @@
 
   function updateState(snapshot) {
     stateInspector.textContent = JSON.stringify(snapshot, null, 2);
+    var url = new URL(window.location.href);
+    url.searchParams.set('mode', snapshot.mode);
+    window.history.replaceState(null, '', url);
   }
 
-  function setScenario(id, updateUrl) {
+  function setScenario(id, updateUrl, requestedMode) {
     var selected =
       SCENARIOS.find(function (scenario) {
         return scenario.id === id;
@@ -1290,9 +1505,11 @@
     renderLog();
     scenarioSelect.value = selected.id;
     scenarioNote.textContent = selected.description;
+    var start = clone(selected.initial);
+    if (['nodes', 'free'].includes(requestedMode) && start.location.kind !== 'temporary') start.mode = requestedMode;
     activeNavigator = createDagNavigator(host, {
       fixture: selected.fixture,
-      initialState: clone(selected.initial),
+      initialState: start,
       onStateChange: updateState,
       onEvent: handleEvent,
     });
@@ -1319,5 +1536,5 @@
   });
 
   var initialScenario = new URL(window.location.href).searchParams.get('scenario') || 'roots';
-  setScenario(initialScenario, false);
+  setScenario(initialScenario, false, new URL(window.location.href).searchParams.get('mode'));
 })();
