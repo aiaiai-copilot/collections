@@ -414,17 +414,16 @@
     var coverage = null;
     var layoutLimit = null;
     var actualPixels = null;
-    var pendingMode = null;
     var tagInput = { draft: '', feedback: '' };
     var vocabulary = normalizeTags(fixture.nodes.concat(fixture.items).flatMap(function (entry) {
       return entry.tags;
     }));
 
     state.location.tags = normalizeTags(state.location.tags);
-    state.mode = state.location.kind === 'temporary' ? 'free' : state.mode || 'nodes';
+    state.mode = state.mode || (state.location.kind === 'temporary' ? 'free' : 'nodes');
     state.history = state.history.map(function (entry) {
       return Object.assign(place(entry.kind, entry.tags, entry.nodeId), {
-        mode: entry.kind === 'temporary' ? 'free' : entry.mode || state.mode,
+        mode: entry.mode || state.mode,
       });
     });
 
@@ -588,7 +587,6 @@
       var derivedDirections = directions();
       return {
         mode: state.mode,
-        pendingMode: pendingMode,
         tagInput: Object.assign(clone(tagInput), {
           suggestions: state.mode === 'free' ? manualSuggestions() : [],
         }),
@@ -635,12 +633,10 @@
       }
     }
 
-    function visit(type, tags, payload, nextMode, targetNodeId) {
+    function visit(type, tags, payload, targetNodeId) {
       var before = snapshot();
       state.history.push(Object.assign(clone(state.location), { mode: state.mode }));
       state.location = targetNodeId ? place('node', tags, targetNodeId) : resolveLocation(tags);
-      if (nextMode) state.mode = nextMode;
-      pendingMode = null;
       tagInput = { draft: '', feedback: '' };
       layoutLimit = null;
       render();
@@ -690,7 +686,6 @@
       }
       return state.location.tags
         .map(function (tag) {
-          if (state.mode === 'nodes') return '<span class="selected-tag">' + escapeHtml(tag) + '</span>';
           var title = state.location.tags.length === 1
             ? 'Убрать последний тег и перейти во «Всё»'
             : 'Убрать тег и перейти к более широкому набору';
@@ -1068,17 +1063,12 @@
 
     function changeMode(mode) {
       if (mode === state.mode) return;
-      if (mode === 'nodes' && state.location.kind === 'temporary') {
-        pendingMode = 'nodes';
-        render();
-        return;
-      }
       var before = snapshot();
       state.mode = mode;
-      pendingMode = null;
       tagInput = { draft: '', feedback: '' };
       layoutLimit = null;
       render();
+      element.querySelector('[data-mode="' + mode + '"]').focus({ preventScroll: true });
       emit('modeChange', { from: before.mode, to: mode }, before);
     }
 
@@ -1095,7 +1085,9 @@
         '<span class="navigator__section-label">Шире · пользовательские узлы</span>' +
         '<div class="parent-choices">' + (parents.length ? parents.map(function (entry) {
           return nodeChoiceMarkup(entry, 'data-parent');
-        }).join('') : '<span class="selected-empty">Корневой узел · выше только «Всё»</span>') + '</div></section>';
+        }).join('') : '<span class="selected-empty">' +
+          (state.location.kind === 'node' ? 'Корневой узел' : 'Более широких пользовательских узлов нет') +
+          ' · выше только «Всё»</span>') + '</div></section>';
     }
 
     function manualSuggestions() {
@@ -1151,19 +1143,6 @@
         '<span class="node-legend__intermediate">Промежуточный</span></span></form>';
     }
 
-    function modeEntryMarkup() {
-      if (!pendingMode) return '';
-      var parents = semanticParents();
-      var children = nearestChildren();
-      return '<dialog class="mode-entry" aria-labelledby="modeEntryTitle">' +
-        '<h3 id="modeEntryTitle">С какого пользовательского узла продолжить?</h3>' +
-        '<p>Текущий срез не сохранён. Выберите переход; автоматически теги не меняются.</p>' +
-        (parents.length ? '<h4>Ближайшие шире</h4>' + parents.map(function (entry) { return nodeChoiceMarkup(entry, 'data-mode-entry'); }).join('') : '') +
-        (children.length ? '<h4>Ближайшие уже</h4>' + children.map(function (entry) { return nodeChoiceMarkup(entry, 'data-mode-entry'); }).join('') : '') +
-        '<button type="button" class="node-choice" data-mode-all>Во «Всё»</button>' +
-        '<button type="button" class="nav-action" data-mode-cancel autofocus>Остаться в свободном режиме</button></dialog>';
-    }
-
     function render() {
       visibleDirectionKeys = [];
       availableDirectionKeys = [];
@@ -1195,7 +1174,7 @@
         '<section class="navigator__selected" aria-labelledby="selectedLabel">' +
         '<div class="selected-heading">' +
         '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
-        '<span class="selected-heading__hint">' + (state.mode === 'free' ? 'убрать тег = шире' : 'снять тег — в свободном режиме') + '</span>' +
+        '<span class="selected-heading__hint">убрать тег = шире</span>' +
         '</div>' +
         '<div class="selected-tags">' +
         selectedMarkup() +
@@ -1245,7 +1224,7 @@
         '</strong> релевантных элементов</span>' +
         '<button class="results-button" type="button" data-action="results">Показать результаты</button>' +
         '</footer>' +
-        '</section>' + modeEntryMarkup();
+        '</section>';
 
       element.querySelectorAll('[data-mode]').forEach(function (button) {
         button.addEventListener('click', function () { changeMode(button.dataset.mode); });
@@ -1257,7 +1236,7 @@
           visit('broaden', target.tags, {
             removedTags: state.location.tags.filter(function (tag) { return !target.tags.includes(tag); }),
             nodeId: target.id,
-          }, null, target.id);
+          }, target.id);
         });
       });
 
@@ -1290,35 +1269,11 @@
         });
       }
 
-      var dialog = element.querySelector('.mode-entry');
-      if (dialog) {
-        function cancelEntry(event) {
-          if (event) event.preventDefault();
-          pendingMode = null;
-          dialog.close();
-          dialog.remove();
-          notifyState();
-          element.querySelector('[data-mode="nodes"]').focus({ preventScroll: true });
-        }
-        dialog.addEventListener('cancel', cancelEntry);
-        dialog.querySelector('[data-mode-cancel]').addEventListener('click', cancelEntry);
-        dialog.querySelector('[data-mode-all]').addEventListener('click', function () {
-          visit('modeEntry', [], { from: 'free', to: 'nodes', nodeId: null }, 'nodes');
-        });
-        dialog.querySelectorAll('[data-mode-entry]').forEach(function (button) {
-          button.addEventListener('click', function () {
-            var target = nodeById.get(button.dataset.modeEntry);
-            visit('modeEntry', target.tags, { from: 'free', to: 'nodes', nodeId: target.id }, 'nodes', target.id);
-          });
-        });
-        dialog.showModal();
-      }
-
       element.querySelectorAll('[data-direction-index]').forEach(function (button) {
         button.addEventListener('click', function () {
           var selected = derivedDirections[Number(button.dataset.directionIndex)];
           if (selected) {
-            visit('refine', selected.targetTags, { addedTags: selected.addedTags, nodeId: selected.nodeId }, null, selected.nodeId);
+            visit('refine', selected.targetTags, { addedTags: selected.addedTags, nodeId: selected.nodeId }, selected.nodeId);
           }
         });
       });
@@ -1349,7 +1304,6 @@
         var restored = state.history.pop();
         state.location = place(restored.kind, restored.tags, restored.nodeId);
         state.mode = restored.mode;
-        pendingMode = null;
         tagInput = { draft: '', feedback: '' };
         layoutLimit = null;
         render();
@@ -1468,7 +1422,7 @@
     if (event.type === 'filterInput') {
       return 'ввод: ' + event.payload.addedTags.join(', ') + ' → ' + after;
     }
-    if (event.type === 'modeChange' || event.type === 'modeEntry') {
+    if (event.type === 'modeChange') {
       return event.payload.from + ' → ' + event.payload.to + ' · ' + after;
     }
     if (event.type === 'back') {
@@ -1560,7 +1514,7 @@
     scenarioSelect.value = selected.id;
     scenarioNote.textContent = selected.description;
     var start = clone(selected.initial);
-    if (['nodes', 'free'].includes(requestedMode) && start.location.kind !== 'temporary') start.mode = requestedMode;
+    if (['nodes', 'free'].includes(requestedMode)) start.mode = requestedMode;
     activeNavigator = createDagNavigator(host, {
       fixture: selected.fixture,
       initialState: start,

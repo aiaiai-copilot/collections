@@ -40,8 +40,11 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   from parents in the DAG.
 - `relevantCount` is derived from unique fixture items containing every tag in
   the current navigation set.
-- `mode: nodes` visits only user nodes and `all`. Its cloud contains nearest
-  user-node supersets (roots at `all`); parent actions contain nearest subsets.
+- Both modes allow `all`, user nodes and intermediate current locations.
+  Removing tags does not change the mode or constrain the remaining tag set.
+- `mode: nodes` restricts suggested destinations to user nodes. Its cloud
+  contains nearest user-node supersets (roots at `all`); parent actions contain
+  nearest user-node subsets, also when the current location is intermediate.
   Each button shows the tags added together, not a collection name. Its
   `targetTags` is the complete destination; `key` is independent of the label.
 - `mode: free` visits user and intermediate nodes (`temporary` is the legacy
@@ -116,19 +119,21 @@ blocked layout); `retainedTags` is their flattened tag delta.
 scrolling, not just the currently visible tags. The UI counter shows available
 directions out of all candidates. Scroll changes update `onStateChange` only.
 
-## Two-mode experiment and manual input — 2026-09-09
+## Two-mode experiment and manual input — updated 2026-09-10
 
-- Default is `nodes`; the intermediate and manual-input scenarios start in
-  `free`. A shareable `?mode=free|nodes` selects the starting mode when valid.
+- Default is `nodes`; the intermediate and manual-input scenarios default to
+  `free`. A shareable `?mode=free|nodes` overrides either default, including
+  at an intermediate location.
   URL preserves scenario/mode, not the in-memory query or route.
-- Switching modes at `all` or a user node preserves tags, count and history.
-  At an intermediate node, requesting `nodes` opens an explicit entry chooser
-  (nearest broader/narrower user nodes, or `all`). Until selection, `free`
-  remains active and the query is unchanged. Cancel leaves it unchanged.
+- Switching modes at any location preserves tags, node identity, count and
+  history. It immediately changes the available actions, without a dialog
+  or an automatic transition to a user node.
 - History entries carry their mode. Back restores the actual visited location
   and its mode, including intermediate states; no history is silently skipped.
-- Selected tags are removable in `free`; in `nodes` they are read-only, with
-  a visible prompt to use free mode. Broader node buttons can remove a bundle.
+- Every selected tag is removable in both modes, including the last tag.
+  The resulting set may be intermediate, while `nodes` continues to offer
+  only user-node destinations. Removing the last tag visits `all` in the same
+  mode. Broader node buttons can still remove a bundle.
 - Manual input belongs to `free`: a space separates tags;
   an underscore remains inside one tag and stands for a word boundary
   (`короткий_метр`). Enter/button appends the normalized batch atomically.
@@ -145,7 +150,8 @@ directions out of all candidates. Scroll changes update `onStateChange` only.
   Zero-result user nodes remain navigable in the cloud: this restriction is
   only for input suggestions, not DAG coverage or arbitrary manual queries.
 - `tagInput: { draft, feedback, suggestions: [{tag, value, relevantCount}] }`
-  and `pendingMode` are observable UI state.
+  is observable UI state. The former `pendingMode` state and `modeEntry` event
+  are removed along with the entry chooser.
   Typing updates the inspector but not navigation/results. Submission updates
   location, count, cloud and node kind immediately; results remain an outgoing
   event only, without cards or an application results screen.
@@ -158,10 +164,9 @@ Every event contains `type`, an action-specific payload, and serializable
 | Event | Trigger and meaning |
 | --- | --- |
 | `refine` | Add `addedTags` through a one-tag action or a user-node bundle. |
-| `broaden` | Remove `removedTags` through free filtering or a broader user-node transition. |
+| `broaden` | Remove `removedTags` through selected tags in either mode or a broader user-node transition. |
 | `filterInput` | Append a manually entered tag batch; payload includes `addedTags`. |
 | `modeChange` | Change mode without changing the current location or route. |
-| `modeEntry` | Explicitly select a user node or `all` when leaving an intermediate query; records the previous free location. |
 | `back` | Restore the most recent location from actual history. It does not choose a DAG parent. |
 | `all` | Visit the explicit top-level state outside the DAG from any state. |
 | `requestResults` | Emit `{ tags, nodeId, relevantCount }`; do not open or render application results. |
@@ -169,7 +174,7 @@ Every event contains `type`, an action-specific payload, and serializable
 | `cloudResize` | Request dimensions; emit `from`, `requested`, actual `to`, and `limited`. Pointer cancellation additionally emits `cancelled`. No route entry is added. |
 
 `back`, `broaden`, and `all` deliberately have different event types and can
-produce different locations from the same starting state. In free mode every
+produce different locations from the same starting state. In either mode every
 selected tag can be removed, including the final one. Removing the final tag visits `all`
 with an empty set and no node ID; it still emits `broaden` with `removedTag`,
 not an explicit `all` action. The previous location remains in actual history
