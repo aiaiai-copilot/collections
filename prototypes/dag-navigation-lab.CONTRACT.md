@@ -42,6 +42,14 @@ selection, reset, the inspector, and the event log. `onStateChange` and
   the current navigation set.
 - Both modes allow `all`, user nodes and intermediate current locations.
   Removing tags does not change the mode or constrain the remaining tag set.
+- Overflowing selected tags have their own vertical scroll region, with the
+  same persistent `↑ Ещё выше` / `Ещё ниже ↓` cues as the cloud. The cues are
+  outside the scrollable content and never cover removal buttons. No cue space
+  is reserved when the selection fits. The usual panel budget stays 100px
+  (65px on short mobile viewports); cue strips use 20px (14px on short mobile).
+  A wrapped chip can grow that budget enough to remain readable, up to the
+  original tag-region height plus strips. Keyboard scrolling is available;
+  scrolling changes neither the filter nor its history, result count or mode.
 - `mode: nodes` restricts suggested destinations to user nodes. Its cloud
   contains nearest user-node supersets (roots at `all`); parent actions contain
   nearest user-node subsets, also when the current location is intermediate.

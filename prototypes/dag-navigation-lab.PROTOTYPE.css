@@ -405,15 +405,32 @@ select:focus-visible {
   font-size: 10px;
 }
 
+.selected-viewport {
+  --selected-height: 100px;
+  --scroll-cue-height: 20px;
+  position: relative;
+}
+
+.selected-viewport--scroll {
+  padding-block: var(--scroll-cue-height);
+}
+
+.selected-viewport--scroll .selected-tags {
+  max-height: calc(var(--selected-height) - 2 * var(--scroll-cue-height));
+}
+
 .selected-tags {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 6px;
   min-height: 36px;
-  max-height: 100px;
-  overflow: auto;
+  max-height: var(--selected-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   scrollbar-width: thin;
+  touch-action: pan-y;
 }
 
 .selected-tag {
@@ -509,7 +526,8 @@ select:focus-visible {
   padding-block: var(--scroll-cue-height);
 }
 
-.cloud-scroll-cue {
+.cloud-scroll-cue,
+.selected-scroll-cue {
   position: absolute;
   right: 0;
   left: 0;
@@ -523,12 +541,15 @@ select:focus-visible {
   pointer-events: none;
 }
 
-.cloud-scroll-cue[hidden] {
+.cloud-scroll-cue[hidden],
+.selected-scroll-cue[hidden] {
   display: none;
 }
 
-.cloud-scroll-cue--up { top: 0; }
-.cloud-scroll-cue--down { bottom: 0; }
+.cloud-scroll-cue--up,
+.selected-scroll-cue--up { top: 0; }
+.cloud-scroll-cue--down,
+.selected-scroll-cue--down { bottom: 0; }
 
 .cloud-stage {
   display: flex;
@@ -981,7 +1002,8 @@ select:focus-visible {
     font-size: 24px;
   }
 
-  .selected-tags {
-    max-height: 65px;
+  .selected-viewport {
+    --selected-height: 65px;
+    --scroll-cue-height: 14px;
   }
 }

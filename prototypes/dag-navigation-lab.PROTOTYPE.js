@@ -788,6 +788,39 @@
       return maximum > 0 ? stage.scrollTop / maximum : 0;
     }
 
+    function updateSelectedScrollCues() {
+      var list = element.querySelector('.selected-tags');
+      var maximum = list.scrollHeight - list.clientHeight;
+      element.querySelector('.selected-scroll-cue--up').hidden = maximum <= 1 || list.scrollTop <= 1;
+      element.querySelector('.selected-scroll-cue--down').hidden = maximum <= 1 || list.scrollTop >= maximum - 1;
+    }
+
+    function fitSelectedTags() {
+      var viewport = element.querySelector('.selected-viewport');
+      var list = element.querySelector('.selected-tags');
+      var maximum = list.scrollHeight - list.clientHeight;
+      var progress = maximum > 0 ? list.scrollTop / maximum : 0;
+      // Measure without cue strips first: a list that fits needs no reserved space.
+      viewport.classList.remove('selected-viewport--scroll');
+      list.style.minHeight = '';
+      var scrolling = list.scrollHeight > list.clientHeight + 1;
+      if (scrolling) {
+        // Keep a wrapped chip readable in full, even on the shortest viewport.
+        var tallestTag = 36;
+        list.querySelectorAll('.selected-tag').forEach(function (button) {
+          tallestTag = Math.max(tallestTag, Math.ceil(button.getBoundingClientRect().height));
+        });
+        var unreservedHeight = parseFloat(getComputedStyle(viewport).getPropertyValue('--selected-height'));
+        list.style.minHeight = Math.min(tallestTag, unreservedHeight) + 'px';
+      }
+      viewport.classList.toggle('selected-viewport--scroll', scrolling);
+      list.setAttribute('aria-label', scrolling ? 'Выбранные теги с вертикальной прокруткой' : 'Выбранные теги');
+      if (scrolling) list.setAttribute('tabindex', '0');
+      else list.removeAttribute('tabindex');
+      list.scrollTop = progress * Math.max(0, list.scrollHeight - list.clientHeight);
+      updateSelectedScrollCues();
+    }
+
     function updateVisibleDirections() {
       var stage = element.querySelector('.cloud-stage');
       var box = stage.getBoundingClientRect();
@@ -912,6 +945,7 @@
         cancelAnimationFrame(resizeFrame);
       }
       resizeFrame = requestAnimationFrame(function () {
+        fitSelectedTags();
         fitDirections();
         notifyState();
         resizeFrame = null;
@@ -1176,8 +1210,12 @@
         '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
         '<span class="selected-heading__hint">убрать тег = шире</span>' +
         '</div>' +
-        '<div class="selected-tags">' +
+        '<div class="selected-viewport">' +
+        '<span class="selected-scroll-cue selected-scroll-cue--up" hidden>↑ Ещё выше</span>' +
+        '<div class="selected-tags" role="region" aria-label="Выбранные теги">' +
         selectedMarkup() +
+        '</div>' +
+        '<span class="selected-scroll-cue selected-scroll-cue--down" hidden>Ещё ниже ↓</span>' +
         '</div>' +
         '</section>' +
         parentsMarkup() +
@@ -1361,12 +1399,15 @@
         }
       });
 
+      element.querySelector('.selected-tags').addEventListener('scroll', updateSelectedScrollCues, { passive: true });
+
       element.querySelector('.cloud-stage').addEventListener('scroll', function () {
         if (cloudMode !== 'scroll') return;
         updateVisibleDirections();
         notifyState();
       }, { passive: true });
 
+      fitSelectedTags();
       fitDirections();
       notifyState();
     }
