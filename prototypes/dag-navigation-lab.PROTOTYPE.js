@@ -1421,6 +1421,7 @@
 
     return {
       getState: snapshot,
+      refreshLayout: scheduleFit,
       destroy: function () {
         window.removeEventListener('resize', handleWindowResize);
         if (resizeFrame !== null) {
@@ -1435,6 +1436,10 @@
   }
 
   window.createDagNavigator = createDagNavigator;
+  // A separate throwaway host can reuse the component and fixtures without
+  // mounting the isolated laboratory's inspector or scenario controls.
+  window.dagNavigationScenarios = clone(SCENARIOS);
+  if (!document.getElementById('navigatorHost')) return;
 
   var scenarioSelect = document.getElementById('scenarioSelect');
   var scenarioNote = document.getElementById('scenarioNote');

@@ -26,6 +26,13 @@ The component owns navigation state in memory. The laboratory owns scenario
 selection, reset, the inspector, and the event log. `onStateChange` and
 `getState()` expose one serializable snapshot for those technical tools.
 
+The throwaway mount also returns `refreshLayout()` for an external host whose
+container changes size, and `destroy()` for scenario replacement. The script
+exposes a copy of fixtures as `window.dagNavigationScenarios`; without a
+`#navigatorHost` it exports the component but does not mount the isolated lab.
+The separate `dag-results-panel.PROTOTYPE.html` host uses this seam. Its own
+CSS hides the explicit results footer; the control lab keeps it unchanged.
+
 ## State invariants
 
 - `location.kind` is exactly one of `all`, `node`, or `temporary`.

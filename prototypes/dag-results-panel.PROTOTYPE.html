@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Результаты и выезжающий DAG-фильтр — PROTOTYPE</title>
+    <link rel="stylesheet" href="./dag-navigation-lab.PROTOTYPE.css?v=selected-scroll-cues" />
+    <link rel="stylesheet" href="./dag-results-panel.PROTOTYPE.css?v=results-panel-2" />
+  </head>
+  <body class="results-experiment">
+    <!-- THROWAWAY: one agreed results-first layout. No application UI or backend. -->
+    <header class="experiment-tools">
+      <span>UI LAB <small>· результаты + фильтр</small></span>
+      <label>Сценарий <select id="hostScenario"></select></label>
+      <button id="restartHost" type="button" title="Перезапустить сценарий">↺</button>
+    </header>
+
+    <main class="results-workspace" id="resultsWorkspace">
+      <section class="results-surface" aria-label="Постоянная панель результатов">
+        <header class="results-heading">
+          <div><span class="eyebrow">Синтетические элементы</span><h1>Результаты <span id="totalCount">0</span></h1></div>
+        </header>
+        <p id="filterSummary" class="filter-summary" aria-live="polite"></p>
+        <div class="result-list-scroll">
+          <p class="result-range" id="resultRange" role="status"></p>
+          <ol class="result-list" id="resultList" aria-label="Найденные элементы"></ol>
+          <p id="emptyResults" class="empty-results" hidden>Совпадений нет. Откройте фильтр и снимите теги или измените набор.</p>
+        </div>
+        <footer class="results-toolbar">
+        <nav class="result-pagination" aria-label="Страницы результатов">
+          <button id="previousPage" type="button" aria-label="Предыдущая страница">←</button>
+          <span id="pageStatus"></span>
+          <button id="nextPage" type="button" aria-label="Следующая страница">→</button>
+        </nav>
+        <button id="openFilter" type="button" aria-expanded="false" aria-controls="filterDrawer">Фильтр</button>
+        </footer>
+      </section>
+
+      <aside class="filter-drawer" id="filterDrawer" aria-label="Панель DAG-фильтра" aria-hidden="true" data-open="false" inert>
+        <header class="drawer-heading" id="drawerGrip">
+          <span class="drawer-grip" aria-hidden="true"></span>
+          <div><h2>Фильтр <span id="drawerCount">0</span></h2><small>Результаты обновляются сразу</small></div>
+          <button id="closeFilter" type="button" aria-label="Скрыть фильтр" title="Скрыть, не отменяя фильтр">↓</button>
+        </header>
+        <div class="drawer-body" id="drawerBody" tabindex="0" role="region" aria-label="Содержимое панели фильтра">
+          <div id="drawerNavigator"></div>
+        </div>
+        <p class="drawer-scroll-cue" id="drawerScrollCue" aria-hidden="true"></p>
+      </aside>
+    </main>
+
+    <details class="host-inspector">
+      <summary>Технический снимок и события · ничего не сохраняется</summary>
+      <p>Контрольный <a href="./dag-navigation-lab.PROTOTYPE.html">изолированный навигатор</a> остаётся отдельной страницей.</p>
+      <pre id="hostState"></pre>
+    </details>
+    <script src="./dag-navigation-lab.PROTOTYPE.js?v=host-seam-1"></script>
+    <script src="./dag-results-panel.PROTOTYPE.js?v=results-panel-2"></script>
+  </body>
+</html>
