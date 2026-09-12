@@ -8,13 +8,17 @@
   var mount = document.getElementById('drawerNavigator');
   var workspace = document.getElementById('resultsWorkspace');
   var openButton = document.getElementById('openFilter');
+  var resultScroll = document.querySelector('.result-list-scroll');
+  var resultList = document.getElementById('resultList');
   var snapshot = null;
   var navigator = null;
   var fixture = null;
   var scenarioId = '';
   var panelOpen = false;
   var page = 1;
-  var pageSize = 5;
+  var pageRanges = [];
+  var resultLayout = { width: 0, height: 0 };
+  var resultFrame = null;
   var queryKey = null;
   var matches = [];
   var events = [];
@@ -25,10 +29,12 @@
   }
 
   function inspect() {
+    var range = currentRange();
     document.getElementById('hostState').textContent = JSON.stringify({
       scenario: scenarioId,
-      host: { panelOpen: panelOpen, page: page, pageSize: pageSize, total: matches.length,
-        visibleIds: matches.slice((page - 1) * pageSize, page * pageSize).map(function (entry) { return entry.id; }) },
+      host: { panelOpen: panelOpen, page: page, pageCount: pageRanges.length, total: matches.length,
+        visibleCount: range.end - range.start, pageRanges: pageRanges,
+        visibleIds: matches.slice(range.start, range.end).map(function (entry) { return entry.id; }) },
       navigator: snapshot,
       events: events,
     }, null, 2);
@@ -40,32 +46,69 @@
     inspect();
   }
 
-  function renderResults() {
-    var pages = Math.max(1, Math.ceil(matches.length / pageSize));
-    page = Math.min(page, pages);
-    var start = (page - 1) * pageSize;
-    var visible = matches.slice(start, start + pageSize);
+  function currentRange() {
+    return pageRanges[page - 1] || { start: 0, end: 0 };
+  }
+
+  function resultMarkup(entry, index) {
+    return '<li class="result-row" data-result-id="' + escape(entry.id) + '"><span class="result-number">' +
+      (index + 1) + '</span><div><h2>Элемент ' + escape(entry.id) + '</h2><div class="result-tags">' +
+      entry.tags.map(function (tag) {
+        return snapshot.location.tags.includes(tag) ? '<mark>' + escape(tag) + '</mark>' : '<span>' + escape(tag) + '</span>';
+      }).join('') + '</div></div></li>';
+  }
+
+  function layoutResults(resetPage) {
+    var anchor = resetPage ? 0 : currentRange().start;
     document.getElementById('totalCount').textContent = matches.length;
     document.getElementById('drawerCount').textContent = '· ' + matches.length;
     var summary = document.getElementById('filterSummary');
     summary.textContent = snapshot.location.tags.length ? 'Фильтр: ' + snapshot.location.tags.join(' ∩ ') : 'Все элементы · фильтр не задан';
     summary.title = summary.textContent;
-    document.getElementById('resultRange').textContent = matches.length
-      ? (start + 1) + '–' + Math.min(start + pageSize, matches.length) + ' из ' + matches.length
-      : '0 результатов';
-    document.getElementById('resultList').innerHTML = visible.map(function (entry, index) {
-      return '<li class="result-row" data-result-id="' + escape(entry.id) + '"><span class="result-number">' +
-        (start + index + 1) + '</span><div><h2>Элемент ' + escape(entry.id) + '</h2><div class="result-tags">' +
-        entry.tags.map(function (tag) {
-          return snapshot.location.tags.includes(tag) ? '<mark>' + escape(tag) + '</mark>' : '<span>' + escape(tag) + '</span>';
-        }).join('') + '</div></div></li>';
-    }).join('');
     document.getElementById('emptyResults').hidden = matches.length !== 0;
-    document.getElementById('pageStatus').textContent = matches.length ? page + ' / ' + pages : '0 / 0';
-    document.getElementById('pageStatus').setAttribute('aria-label', matches.length ? 'Страница ' + page + ' из ' + pages : 'Нет страниц');
+    document.getElementById('resultRange').textContent = matches.length ? '1–' + matches.length + ' из ' + matches.length : '0 результатов';
+
+    // Small synthetic fixtures: measure real wrapped rows, then render just the
+    // requested page before the browser paints. The overlay never reduces this
+    // results viewport. A single oversized row keeps scrolling as a fallback.
+    resultScroll.scrollTop = 0;
+    resultList.innerHTML = matches.map(resultMarkup).join('');
+    var viewport = resultScroll.getBoundingClientRect();
+    var available = resultScroll.clientHeight - (resultList.getBoundingClientRect().top - viewport.top);
+    var start = 0;
+    var used = 0;
+    pageRanges = [];
+    Array.from(resultList.children).forEach(function (row, index) {
+      var height = row.getBoundingClientRect().height;
+      if (index > start && used + height > available + 0.5) {
+        pageRanges.push({ start: start, end: index });
+        start = index;
+        used = 0;
+      }
+      used += height;
+    });
+    if (matches.length) pageRanges.push({ start: start, end: matches.length });
+    // Resizing keeps the previously first visible element on the current page;
+    // changing the applied tags, in contrast, always starts at the first result.
+    page = Math.max(1, pageRanges.findIndex(function (range) { return range.start <= anchor && anchor < range.end; }) + 1);
+    resultLayout = { width: viewport.width, height: viewport.height };
+    renderResults();
+  }
+
+  function renderResults() {
+    page = Math.max(1, Math.min(page, pageRanges.length));
+    var range = currentRange();
+    document.getElementById('resultRange').textContent = matches.length
+      ? (range.start + 1) + '–' + range.end + ' из ' + matches.length
+      : '0 результатов';
+    resultList.innerHTML = matches.slice(range.start, range.end).map(function (entry, index) {
+      return resultMarkup(entry, range.start + index);
+    }).join('');
+    document.getElementById('pageStatus').textContent = matches.length ? page + ' / ' + pageRanges.length : '0 / 0';
+    document.getElementById('pageStatus').setAttribute('aria-label', matches.length ? 'Страница ' + page + ' из ' + pageRanges.length : 'Нет страниц');
     document.getElementById('previousPage').disabled = page === 1 || !matches.length;
-    document.getElementById('nextPage').disabled = page === pages || !matches.length;
-    document.querySelector('.result-list-scroll').scrollTop = 0;
+    document.getElementById('nextPage').disabled = page === pageRanges.length || !matches.length;
+    resultScroll.scrollTop = 0;
     inspect();
   }
 
@@ -81,7 +124,7 @@
         seen.add(entry.id);
         return true;
       });
-      renderResults();
+      layoutResults(true);
     }
     var url = new URL(location.href);
     url.searchParams.set('mode', next.mode);
@@ -217,6 +260,17 @@
     updatePanelCue();
   });
   resize.observe(body);
+  var resultsResize = new ResizeObserver(function () {
+    if (!snapshot) return;
+    var rect = resultScroll.getBoundingClientRect();
+    if (rect.width === resultLayout.width && rect.height === resultLayout.height) return;
+    if (resultFrame !== null) cancelAnimationFrame(resultFrame);
+    resultFrame = requestAnimationFrame(function () {
+      resultFrame = null;
+      layoutResults(false);
+    });
+  });
+  resultsResize.observe(resultScroll);
   var params = new URL(location.href).searchParams;
   setScenario(params.get('scenario') || 'roots', params.get('mode'));
   if (params.get('panel') === 'open') setPanel(true, 'initial');
