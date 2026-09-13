@@ -655,6 +655,7 @@
     }
 
     function identityMarkup(location) {
+      if (location.kind === 'temporary') return '';
       var described = describeLocation(location);
       var idLine =
         location.kind === 'node'
@@ -1208,9 +1209,9 @@
         '</section>' +
         '</div>' +
         manualMarkup() +
-        '<section class="navigator__cloud-section" aria-labelledby="cloudLabel">' +
+        '<section class="navigator__cloud-section" aria-label="' + (state.mode === 'nodes' ? 'Уточнения' : 'Добавить тег') + '">' +
         '<div class="cloud-heading">' +
-        '<span class="navigator__section-label" id="cloudLabel">' + (state.mode === 'nodes' ? 'Ближайшие уточнения' : 'Добавить тег') + '</span>' +
+        (state.mode === 'free' ? '<span class="navigator__section-label">Добавить тег</span>' : '') +
         '<span class="cloud-heading__count" data-direction-count>0 / ' +
         derivedDirections.length +
         '</span>' +

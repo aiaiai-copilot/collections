@@ -522,6 +522,7 @@ select:focus-visible {
 }
 
 .cloud-heading__count {
+  margin-left: auto;
   color: #3f5047;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
