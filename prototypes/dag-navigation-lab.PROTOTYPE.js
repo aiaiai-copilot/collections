@@ -656,12 +656,6 @@
 
     function identityMarkup(location) {
       var described = describeLocation(location);
-      var kindLabel =
-        location.kind === 'all'
-          ? 'Верхний уровень · вне DAG'
-          : location.kind === 'node'
-            ? '● Пользовательский узел'
-            : '◇ Промежуточный узел · без подборки';
       var idLine =
         location.kind === 'node'
           ? '<p class="navigator__node-id">id: ' + escapeHtml(location.nodeId) + '</p>'
@@ -669,9 +663,6 @@
 
       return (
         '<div class="navigator__identity navigator__identity--' + location.kind + '">' +
-        '<span class="navigator__kind">' +
-        escapeHtml(kindLabel) +
-        '</span>' +
         '<h2>' +
         escapeHtml(described.name) +
         '</h2>' +
@@ -720,8 +711,7 @@
           var weight = maximum === minimum ? 0.5 : (entry.relevantCount - minimum) / (maximum - minimum);
           return (
             '<button class="direction direction--' + entry.kind + '" type="button" title="' +
-            escapeHtml((entry.kind === 'node' ? 'Пользовательский узел' : 'Промежуточный узел') +
-              ': {' + entry.targetTags.join(', ') + '}') + '" data-direction-index="' +
+            escapeHtml('{' + entry.targetTags.join(', ') + '}') + '" data-direction-index="' +
             index +
             '" style="--weight:' +
             weight.toFixed(3) +
@@ -1115,7 +1105,7 @@
     function parentsMarkup() {
       if (state.mode !== 'nodes' || state.location.kind === 'all') return '';
       var parents = semanticParents();
-      return '<section class="parents-panel" aria-label="Уровень выше · пользовательские узлы">' +
+      return '<section class="parents-panel" aria-label="Уровень выше">' +
         '<div class="level-up-heading"><svg class="level-up-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
         '<path d="M19 19h-8a4 4 0 0 1-4-4V5M3 9l4-4 4 4"/></svg>' +
         '<span class="navigator__section-label">Уровень выше</span></div>' +
@@ -1162,21 +1152,19 @@
 
     function manualHint() {
       return tagInput.feedback || (manualSuggestions().length
-        ? 'Пробел разделяет теги. _ объединяет слова в теге. Enter — добавить.'
+        ? ''
         : 'Подходящих подсказок нет. Ручной ввод доступен.');
     }
 
     function manualMarkup() {
       if (state.mode !== 'free') return '';
       return '<form class="tag-input" aria-label="Ручной ввод тегов">' +
-        '<label for="manualTags">Добавить теги к срезу</label><div class="tag-input__row">' +
+        '<div class="tag-input__row">' +
         '<input id="manualTags" name="tags" type="text" autocomplete="off" list="tagVocabulary"' +
-        ' placeholder="Теги через пробел" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
+        ' placeholder="Теги через пробел" aria-label="Добавить теги к срезу" aria-describedby="tagInputHint" value="' + escapeHtml(tagInput.draft) + '">' +
         '<button type="submit" aria-label="Добавить введённые теги">+</button></div>' +
         '<datalist id="tagVocabulary">' + suggestionMarkup() + '</datalist>' +
-        '<p id="tagInputHint" role="status">' + escapeHtml(manualHint()) + '</p>' +
-        '<span class="node-legend"><span class="node-legend__user">Пользовательский</span> · ' +
-        '<span class="node-legend__intermediate">Промежуточный</span></span></form>';
+        '<p id="tagInputHint" role="status">' + escapeHtml(manualHint()) + '</p></form>';
     }
 
     function render() {
@@ -1209,10 +1197,10 @@
         '<button type="button" data-mode="free" aria-pressed="' + (state.mode === 'free') + '">Свободный фильтр</button></div>' +
         identityMarkup(state.location) +
         '<div class="navigator__context' + (parents ? ' navigator__context--split' : '') + '">' +
+        parents +
         '<section class="navigator__selected" aria-labelledby="selectedLabel">' +
         '<div class="selected-heading">' +
         '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
-        '<span class="selected-heading__hint">убрать тег = шире</span>' +
         '</div>' +
         '<div class="selected-viewport">' +
         '<span class="selected-scroll-cue selected-scroll-cue--up" hidden>↑ Ещё выше</span>' +
@@ -1222,13 +1210,11 @@
         '<span class="selected-scroll-cue selected-scroll-cue--down" hidden>Ещё ниже ↓</span>' +
         '</div>' +
         '</section>' +
-        parents +
         '</div>' +
         manualMarkup() +
         '<section class="navigator__cloud-section" aria-labelledby="cloudLabel">' +
         '<div class="cloud-heading">' +
-        '<div><span class="navigator__section-label" id="cloudLabel">' + (state.mode === 'nodes' ? 'Ближайшие уточнения' : 'Добавить тег') + '</span>' +
-        '<span class="cloud-heading__meta">' + (state.mode === 'nodes' ? 'добавить весь набор' : 'пользовательские и промежуточные') + '</span></div>' +
+        '<span class="navigator__section-label" id="cloudLabel">' + (state.mode === 'nodes' ? 'Ближайшие уточнения' : 'Добавить тег') + '</span>' +
         '<span class="cloud-heading__count" data-direction-count>0 / ' +
         derivedDirections.length +
         '</span>' +

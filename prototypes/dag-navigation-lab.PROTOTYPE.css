@@ -241,7 +241,6 @@ select:focus-visible {
 }
 
 .navigator__identity {
-  min-height: 62px;
   margin-bottom: 10px;
   flex-shrink: 0;
 }
@@ -314,13 +313,6 @@ select:focus-visible {
   margin: 0 0 12px;
 }
 
-.tag-input label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 11px;
-  font-weight: 750;
-}
-
 .tag-input__row {
   display: flex;
   gap: 6px;
@@ -347,8 +339,7 @@ select:focus-visible {
   font-size: 22px;
 }
 
-.tag-input p,
-.node-legend {
+.tag-input p {
   display: block;
   margin-top: 5px !important;
   color: var(--muted);
@@ -356,12 +347,9 @@ select:focus-visible {
   line-height: 1.3;
 }
 
-.node-legend__user { border-bottom: 1px solid var(--forest); }
-.node-legend__intermediate { border-bottom: 1px dashed #9a805f; }
+#tagInputHint:empty { display: none; }
 
-.navigator__kind,
-.navigator__section-label,
-.cloud-heading__meta {
+.navigator__section-label {
   display: block;
   color: var(--muted);
   font-size: 10px;
@@ -371,7 +359,7 @@ select:focus-visible {
 }
 
 .navigator__identity h2 {
-  margin-top: 5px;
+  margin-top: 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 29px;
   font-weight: 500;
@@ -410,24 +398,21 @@ select:focus-visible {
   margin-bottom: 0;
 }
 
-.navigator__context > .parents-panel {
+.navigator__context--split > .navigator__selected {
   padding-left: 12px;
   border-left: 1px solid #d4ddd1;
 }
 
 .navigator__context--split .selected-heading {
-  min-height: 32px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 4px;
+  min-height: 16px;
+  line-height: 16px;
 }
 
 .level-up-heading {
   display: flex;
   align-items: flex-start;
   gap: 5px;
-  min-height: 32px;
+  min-height: 16px;
 }
 
 .level-up-heading .navigator__section-label {
@@ -458,11 +443,6 @@ select:focus-visible {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
-}
-
-.selected-heading__hint {
-  color: #77827b;
-  font-size: 10px;
 }
 
 .selected-viewport {
@@ -1054,7 +1034,6 @@ select:focus-visible {
   }
 
   .navigator__identity {
-    min-height: 59px;
     margin-bottom: 8px;
   }
 

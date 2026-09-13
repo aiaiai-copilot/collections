@@ -63,9 +63,10 @@
   function layoutResults(resetPage) {
     var anchor = resetPage ? 0 : currentRange().start;
     document.getElementById('totalCount').textContent = matches.length;
-    document.getElementById('drawerCount').textContent = '· ' + matches.length;
+    document.getElementById('drawerCount').textContent = matches.length;
+    document.getElementById('drawerTitle').setAttribute('aria-label', 'Результатов: ' + matches.length);
     var summary = document.getElementById('filterSummary');
-    summary.textContent = snapshot.location.tags.length ? 'Фильтр: ' + snapshot.location.tags.join(' ∩ ') : 'Все элементы · фильтр не задан';
+    summary.textContent = snapshot.location.tags.length ? snapshot.location.tags.join(' ∩ ') : 'Все элементы';
     summary.title = summary.textContent;
     document.getElementById('emptyResults').hidden = matches.length !== 0;
     document.getElementById('resultRange').textContent = matches.length ? '1–' + matches.length + ' из ' + matches.length : '0 результатов';
@@ -164,7 +165,7 @@
     var maximum = body.scrollHeight - body.clientHeight;
     var cue = document.getElementById('drawerScrollCue');
     cue.textContent = maximum > cue.clientHeight + 1
-      ? (body.scrollTop < maximum - 1 ? 'Прокрутите фильтр ниже ↓' : '↑ Фильтр продолжается выше') : '';
+      ? (body.scrollTop < maximum - 1 ? '↓' : '↑') : '';
   }
 
   function setPanel(open, reason) {
@@ -176,7 +177,6 @@
     drawer.inert = !open;
     drawer.setAttribute('aria-hidden', String(!open));
     openButton.setAttribute('aria-expanded', String(open));
-    openButton.textContent = 'Фильтр';
     if (open) {
       (lastPanelFocus && lastPanelFocus.isConnected ? lastPanelFocus : document.getElementById('closeFilter')).focus({ preventScroll: true });
       navigator.refreshLayout();
