@@ -4,6 +4,7 @@
   var scenarios = window.dagNavigationScenarios;
   var select = document.getElementById('hostScenario');
   var drawer = document.getElementById('filterDrawer');
+  var grip = document.getElementById('drawerGrip');
   var body = document.getElementById('drawerBody');
   var mount = document.getElementById('drawerNavigator');
   var workspace = document.getElementById('resultsWorkspace');
@@ -23,6 +24,7 @@
   var matches = [];
   var events = [];
   var lastPanelFocus = null;
+  var swipeStart = null;
 
   function escape(text) {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -167,6 +169,7 @@
 
   function setPanel(open, reason) {
     if (panelOpen === open) return;
+    resetDrawerDrag();
     if (!open && drawer.contains(document.activeElement)) lastPanelFocus = document.activeElement;
     panelOpen = open;
     drawer.dataset.open = String(open);
@@ -185,6 +188,7 @@
   }
 
   function setScenario(id, mode) {
+    resetDrawerDrag();
     var selected = scenarios.find(function (entry) { return entry.id === id; }) || scenarios[0];
     if (navigator) navigator.destroy();
     navigator = null;
@@ -239,21 +243,52 @@
     });
   });
 
-  var swipeStart = null;
-  var grip = document.getElementById('drawerGrip');
+  function resetDrawerDrag() {
+    if (!swipeStart) return;
+    var id = swipeStart.id;
+    swipeStart = null;
+    delete drawer.dataset.dragging;
+    drawer.style.removeProperty('--drawer-drag-y');
+    if (grip.hasPointerCapture(id)) grip.releasePointerCapture(id);
+  }
+
   grip.addEventListener('pointerdown', function (event) {
-    if (innerWidth > 720 || event.target.closest('button')) return;
-    swipeStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    if (!panelOpen || swipeStart || innerWidth > 720 || event.button !== 0 ||
+        !event.isPrimary || event.target.closest('button')) return;
+    // Catch a returning panel where it is now, without jumping to its origin.
+    var restTop = workspace.getBoundingClientRect().top + workspace.clientTop + drawer.offsetTop;
+    var offset = Math.max(0, drawer.getBoundingClientRect().top - restTop);
+    swipeStart = { id: event.pointerId, x: event.clientX, y: event.clientY, offset: offset };
+    drawer.style.setProperty('--drawer-drag-y', offset + 'px');
+    drawer.dataset.dragging = 'true';
     grip.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  grip.addEventListener('pointermove', function (event) {
+    if (!swipeStart || swipeStart.id !== event.pointerId) return;
+    var offset = Math.max(0, Math.min(drawer.offsetHeight, swipeStart.offset + event.clientY - swipeStart.y));
+    drawer.style.setProperty('--drawer-drag-y', offset + 'px');
   });
   grip.addEventListener('pointerup', function (event) {
     if (!swipeStart || swipeStart.id !== event.pointerId) return;
     var dx = event.clientX - swipeStart.x;
     var dy = event.clientY - swipeStart.y;
-    swipeStart = null;
-    if (dy > 55 && dy > Math.abs(dx)) setPanel(false, 'swipe');
+    var offset = Math.max(0, swipeStart.offset + dy);
+    var threshold = Math.min(120, Math.max(64, drawer.offsetHeight * 0.25));
+    var close = offset >= threshold && dy > Math.abs(dx);
+    resetDrawerDrag();
+    if (close) setPanel(false, 'swipe');
+    else record('panelDragReturn', { reason: 'below-threshold-or-direction', offset: Math.round(offset) });
   });
-  grip.addEventListener('pointercancel', function () { swipeStart = null; });
+  ['pointercancel', 'lostpointercapture'].forEach(function (type) {
+    grip.addEventListener(type, function (event) {
+      if (!swipeStart || swipeStart.id !== event.pointerId) return;
+      resetDrawerDrag();
+      record('panelDragReturn', { reason: type });
+    });
+  });
+  window.addEventListener('blur', resetDrawerDrag);
+  window.addEventListener('resize', resetDrawerDrag);
 
   var resize = new ResizeObserver(function () {
     if (navigator) navigator.refreshLayout();
