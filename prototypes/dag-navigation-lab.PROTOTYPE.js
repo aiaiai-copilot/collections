@@ -233,7 +233,7 @@
       id: 'parents',
       label: '2 · Несколько непосредственных родителей',
       description:
-        '«Спокойные фильмы» посещены через «Фильмы». Назад вернёт по маршруту; в разделе «Шире» можно выбрать другого родителя — {спокойное}.',
+        '«Спокойные фильмы» посещены через «Фильмы». Назад вернёт по маршруту; в разделе «Уровень выше» можно выбрать другого родителя — {спокойное}.',
       fixture: parentsFixture,
       initial: initialState(
         place('node', ['фильм', 'спокойное'], 'calm-films'),
@@ -245,7 +245,7 @@
       id: 'deep',
       label: '3 · Глубокий маршрут и фактический возврат',
       description:
-        'Два непосредственных родителя: сравните «Шире» с фактическим возвратом. В свободном режиме можно снимать и добавлять отдельные теги.',
+        'Два непосредственных родителя: сравните «Уровень выше» с фактическим возвратом. В свободном режиме можно снимать и добавлять отдельные теги.',
       fixture: { nodes: deepNodes, items: deepItems },
       initial: initialState(
         place(
@@ -1115,8 +1115,10 @@
     function parentsMarkup() {
       if (state.mode !== 'nodes' || state.location.kind === 'all') return '';
       var parents = semanticParents();
-      return '<section class="parents-panel" aria-label="Более широкие пользовательские узлы">' +
-        '<span class="navigator__section-label">Шире · пользовательские узлы</span>' +
+      return '<section class="parents-panel" aria-label="Уровень выше · пользовательские узлы">' +
+        '<div class="level-up-heading"><svg class="level-up-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M19 19h-8a4 4 0 0 1-4-4V5M3 9l4-4 4 4"/></svg>' +
+        '<span class="navigator__section-label">Уровень выше</span></div>' +
         '<div class="parent-choices">' + (parents.length ? parents.map(function (entry) {
           return nodeChoiceMarkup(entry, 'data-parent');
         }).join('') : '<span class="selected-empty">' +
@@ -1194,6 +1196,7 @@
         state.location.kind === 'all'
           ? '<span aria-hidden="true"></span>'
           : '<button class="nav-action nav-action--all" type="button" data-action="all">Всё</button>';
+      var parents = parentsMarkup();
 
       element.innerHTML =
         '<section class="navigator" aria-label="Изолированный DAG-навигатор">' +
@@ -1205,6 +1208,7 @@
         '<button type="button" data-mode="nodes" aria-pressed="' + (state.mode === 'nodes') + '">Пользовательские узлы</button>' +
         '<button type="button" data-mode="free" aria-pressed="' + (state.mode === 'free') + '">Свободный фильтр</button></div>' +
         identityMarkup(state.location) +
+        '<div class="navigator__context' + (parents ? ' navigator__context--split' : '') + '">' +
         '<section class="navigator__selected" aria-labelledby="selectedLabel">' +
         '<div class="selected-heading">' +
         '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
@@ -1218,7 +1222,8 @@
         '<span class="selected-scroll-cue selected-scroll-cue--down" hidden>Ещё ниже ↓</span>' +
         '</div>' +
         '</section>' +
-        parentsMarkup() +
+        parents +
+        '</div>' +
         manualMarkup() +
         '<section class="navigator__cloud-section" aria-labelledby="cloudLabel">' +
         '<div class="cloud-heading">' +

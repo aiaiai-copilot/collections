@@ -391,6 +391,66 @@ select:focus-visible {
   flex-shrink: 0;
 }
 
+.navigator__context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 15px;
+  flex: none;
+}
+
+.navigator__context--split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.navigator__context > .navigator__selected,
+.navigator__context > .parents-panel {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.navigator__context > .parents-panel {
+  padding-left: 12px;
+  border-left: 1px solid #d4ddd1;
+}
+
+.navigator__context--split .selected-heading {
+  min-height: 32px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.level-up-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-height: 32px;
+}
+
+.level-up-heading .navigator__section-label {
+  line-height: 16px;
+}
+
+.level-up-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.navigator__context .parent-choices {
+  margin-top: 8px;
+  max-height: none;
+  overflow: visible;
+}
+
 .selected-heading,
 .cloud-heading {
   display: flex;

@@ -60,9 +60,9 @@
 #drawerNavigator .navigator__identity { min-height: 38px; margin-bottom: 8px; }
 #drawerNavigator .navigator__identity h2 { font-size: 22px; }
 #drawerNavigator .navigator__actions, #drawerNavigator .mode-switch { margin-bottom: 8px; }
-#drawerNavigator .navigator__selected { margin-bottom: 10px; }
+#drawerNavigator .navigator__context { margin-bottom: 10px; }
 #drawerNavigator .selected-viewport { --selected-height: 72px; --scroll-cue-height: 14px; }
-#drawerNavigator .parents-panel, #drawerNavigator .tag-input { margin-bottom: 8px; }
+#drawerNavigator .tag-input { margin-bottom: 8px; }
 .host-inspector { max-width: 1128px; margin: 10px auto; padding: 0 10px; color: #5a6d5e; font-size: 11px; }
 .host-inspector summary { cursor: pointer; }
 .host-inspector pre { overflow: auto; max-height: 480px; background: #15251d; color: #d0dec9; padding: 14px; border-radius: 10px; }
