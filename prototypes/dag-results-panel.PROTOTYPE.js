@@ -9,6 +9,7 @@
   var mount = document.getElementById('drawerNavigator');
   var workspace = document.getElementById('resultsWorkspace');
   var openButton = document.getElementById('openFilter');
+  var modeSelect = document.getElementById('filterMode');
   var resultScroll = document.querySelector('.result-list-scroll');
   var resultList = document.getElementById('resultList');
   var snapshot = null;
@@ -117,6 +118,12 @@
 
   function receiveState(next) {
     snapshot = next;
+    modeSelect.value = next.mode;
+    var selectionName = next.location.kind === 'temporary'
+      ? next.location.tags.join(' ∩ ') : next.location.name;
+    document.getElementById('resultSelectionName').textContent = selectionName;
+    document.querySelector('.results-heading h1').title = selectionName;
+    document.getElementById('filterSummary').hidden = next.location.kind !== 'node' || !next.location.tags.length;
     var nextKey = JSON.stringify(next.location.tags);
     if (nextKey !== queryKey) {
       queryKey = nextKey;
@@ -219,6 +226,7 @@
     select.appendChild(option);
   });
   select.addEventListener('change', function () { setScenario(select.value); });
+  modeSelect.addEventListener('change', function () { navigator.setMode(modeSelect.value); });
   document.getElementById('restartHost').addEventListener('click', function () { setScenario(scenarioId); });
   openButton.addEventListener('click', function () { setPanel(!panelOpen, 'button'); });
   document.getElementById('closeFilter').addEventListener('click', function () { setPanel(false, 'close'); });
@@ -254,7 +262,7 @@
 
   grip.addEventListener('pointerdown', function (event) {
     if (!panelOpen || swipeStart || innerWidth > 720 || event.button !== 0 ||
-        !event.isPrimary || event.target.closest('button')) return;
+        !event.isPrimary || event.target.closest('button, select')) return;
     // Catch a returning panel where it is now, without jumping to its origin.
     var restTop = workspace.getBoundingClientRect().top + workspace.clientTop + drawer.offsetTop;
     var offset = Math.max(0, drawer.getBoundingClientRect().top - restTop);

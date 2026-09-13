@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light" />
     <title>Результаты и выезжающий DAG-фильтр — PROTOTYPE</title>
     <link rel="stylesheet" href="./dag-navigation-lab.PROTOTYPE.css?v=less-labels" />
-    <link rel="stylesheet" href="./dag-results-panel.PROTOTYPE.css?v=quiet-ui" />
+    <link rel="stylesheet" href="./dag-results-panel.PROTOTYPE.css?v=compact-mode" />
   </head>
   <body class="results-experiment">
     <!-- THROWAWAY: one agreed results-first layout. No application UI or backend. -->
@@ -19,7 +19,7 @@
     <main class="results-workspace" id="resultsWorkspace">
       <section class="results-surface" aria-label="Постоянная панель результатов">
         <header class="results-heading">
-          <div><span class="eyebrow">Синтетические элементы</span><h1>Результаты <span id="totalCount">0</span></h1></div>
+          <h1><span id="resultSelectionName">Всё</span><span class="result-total">(<span id="totalCount">0</span>)</span></h1>
         </header>
         <p id="filterSummary" class="filter-summary" aria-live="polite"></p>
         <div class="result-list-scroll">
@@ -46,6 +46,13 @@
             <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z" /></svg>
             <span id="drawerCount">0</span>
           </h2>
+          <div class="drawer-mode">
+            <select id="filterMode" aria-label="Режим навигации">
+              <option value="nodes">Узлы</option>
+              <option value="free">Свободно</option>
+            </select>
+            <span class="drawer-mode__arrow" aria-hidden="true">▾</span>
+          </div>
           <button id="closeFilter" type="button" aria-label="Скрыть фильтр" title="Скрыть, не отменяя фильтр">↓</button>
         </header>
         <div class="drawer-body" id="drawerBody" tabindex="0" role="region" aria-label="Содержимое панели фильтра">
@@ -60,7 +67,7 @@
       <p>Контрольный <a href="./dag-navigation-lab.PROTOTYPE.html">изолированный навигатор</a> остаётся отдельной страницей.</p>
       <pre id="hostState"></pre>
     </details>
-    <script src="./dag-navigation-lab.PROTOTYPE.js?v=less-labels"></script>
-    <script src="./dag-results-panel.PROTOTYPE.js?v=quiet-ui"></script>
+    <script src="./dag-navigation-lab.PROTOTYPE.js?v=compact-mode"></script>
+    <script src="./dag-results-panel.PROTOTYPE.js?v=compact-mode"></script>
   </body>
 </html>

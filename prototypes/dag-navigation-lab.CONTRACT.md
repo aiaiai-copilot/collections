@@ -26,12 +26,18 @@ The component owns navigation state in memory. The laboratory owns scenario
 selection, reset, the inspector, and the event log. `onStateChange` and
 `getState()` expose one serializable snapshot for those technical tools.
 
-The throwaway mount also returns `refreshLayout()` for an external host whose
-container changes size, and `destroy()` for scenario replacement. The script
+The throwaway mount also returns `setMode('nodes' | 'free')` for an external
+mode control, `refreshLayout()` for an external host whose container changes
+size, and `destroy()` for scenario replacement. `setMode` uses the same
+transition as the internal switch, emits `modeChange`, and does not move focus
+into the component; invalid or already active values are ignored. The script
 exposes a copy of fixtures as `window.dagNavigationScenarios`; without a
 `#navigatorHost` it exports the component but does not mount the isolated lab.
 The separate `dag-results-panel.PROTOTYPE.html` host uses this seam. Its own
-CSS hides the explicit results footer; the control lab keeps it unchanged.
+CSS hides the explicit results footer and internal mode strip. The host puts
+its compact native mode selector in the drawer header and synchronizes it from
+every state snapshot, including history/scenario changes. The control lab
+keeps its internal switch and results footer unchanged.
 
 ## State invariants
 

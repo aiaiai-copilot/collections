@@ -1086,14 +1086,14 @@
       };
     }
 
-    function changeMode(mode) {
-      if (mode === state.mode) return;
+    function changeMode(mode, focusControl) {
+      if ((mode !== 'nodes' && mode !== 'free') || mode === state.mode) return;
       var before = snapshot();
       state.mode = mode;
       tagInput = { draft: '', feedback: '' };
       layoutLimit = null;
       render();
-      element.querySelector('[data-mode="' + mode + '"]').focus({ preventScroll: true });
+      if (focusControl !== false) element.querySelector('[data-mode="' + mode + '"]').focus({ preventScroll: true });
       emit('modeChange', { from: before.mode, to: mode }, before);
     }
 
@@ -1409,6 +1409,7 @@
 
     return {
       getState: snapshot,
+      setMode: function (mode) { changeMode(mode, false); },
       refreshLayout: scheduleFit,
       destroy: function () {
         window.removeEventListener('resize', handleWindowResize);
