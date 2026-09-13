@@ -880,11 +880,11 @@
             : 'Известных уточнений нет. Можно ввести теги вручную или снять выбранные.';
       var status = element.querySelector('.cloud-status');
       status.dataset.status = coverage.status;
-      var guarantee = state.mode === 'nodes' ? 'Все пользовательские уточнения доступны.' : 'Все однотеговые уточнения доступны.';
-      status.textContent = !plan.fits && !scrolling ? 'Полное покрытие недоступно' :
+      var guarantee = state.mode === 'nodes' ? '' : 'Все однотеговые уточнения доступны.';
+      status.textContent = (!plan.fits && !scrolling ? 'Полное покрытие недоступно' :
         !candidates.length ? 'Можно расширить набор или ввести другой фильтр.' :
           scrolling ? '↕ Масштаб + прокрутка. ' + guarantee :
-            layoutLimit ? 'Предел сжатия / масштаба. ' + guarantee : guarantee;
+            layoutLimit ? 'Предел сжатия / масштаба. ' + guarantee : guarantee).trim();
       element.querySelector('[data-direction-count]').textContent =
         availableDirectionKeys.length + ' / ' + candidates.length;
       element.querySelector('[data-scale="reset"]').textContent = state.cloud.tagScale + '%';
@@ -1106,14 +1106,13 @@
       if (state.mode !== 'nodes' || state.location.kind === 'all') return '';
       var parents = semanticParents();
       return '<section class="parents-panel" aria-label="Уровень выше">' +
-        '<div class="level-up-heading"><svg class="level-up-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-        '<path d="M19 19h-8a4 4 0 0 1-4-4V5M3 9l4-4 4 4"/></svg>' +
-        '<span class="navigator__section-label">Уровень выше</span></div>' +
-        '<div class="parent-choices">' + (parents.length ? parents.map(function (entry) {
+        '<div class="parent-path"><div class="parent-choices">' + (parents.length ? parents.map(function (entry) {
           return nodeChoiceMarkup(entry, 'data-parent');
         }).join('') : '<span class="selected-empty">' +
           (state.location.kind === 'node' ? 'Корневой узел' : 'Более широких пользовательских узлов нет') +
-          ' · выше только «Всё»</span>') + '</div></section>';
+          ' · выше только «Всё»</span>') + '</div>' +
+        (parents.length ? '<svg class="level-up-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+          '<path d="m5 15 7-7 7 7"/></svg>' : '') + '</div></section>';
     }
 
     function manualSuggestions() {
@@ -1198,10 +1197,7 @@
         identityMarkup(state.location) +
         '<div class="navigator__context' + (parents ? ' navigator__context--split' : '') + '">' +
         parents +
-        '<section class="navigator__selected" aria-labelledby="selectedLabel">' +
-        '<div class="selected-heading">' +
-        '<span class="navigator__section-label" id="selectedLabel">Выбрано</span>' +
-        '</div>' +
+        '<section class="navigator__selected" aria-label="Выбрано">' +
         '<div class="selected-viewport">' +
         '<span class="selected-scroll-cue selected-scroll-cue--up" hidden>↑ Ещё выше</span>' +
         '<div class="selected-tags" role="region" aria-label="Выбранные теги">' +

@@ -403,20 +403,13 @@ select:focus-visible {
   border-left: 1px solid #d4ddd1;
 }
 
-.navigator__context--split .selected-heading {
-  min-height: 16px;
-  line-height: 16px;
-}
-
-.level-up-heading {
+.parent-path {
   display: flex;
-  align-items: flex-start;
-  gap: 5px;
-  min-height: 16px;
-}
-
-.level-up-heading .navigator__section-label {
-  line-height: 16px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .level-up-icon {
@@ -431,12 +424,11 @@ select:focus-visible {
 }
 
 .navigator__context .parent-choices {
-  margin-top: 8px;
+  margin-top: 0;
   max-height: none;
   overflow: visible;
 }
 
-.selected-heading,
 .cloud-heading {
   display: flex;
   align-items: baseline;
@@ -521,6 +513,8 @@ select:focus-visible {
   font-size: 11px;
   line-height: 16px;
 }
+
+.navigator .cloud-status:empty { display: none; }
 
 .cloud-status[data-status="insufficient-space"],
 .cloud-status[data-status="unrepresentable"] {
