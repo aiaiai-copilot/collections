@@ -3,6 +3,10 @@
 > THROWAWAY contract for the isolated UI prototype. It records the smallest
 > state/event boundary being tested; it is not a production API.
 
+The post-acceptance [public-interface draft](../docs/concepts/selection-hierarchy/dag-navigator-contract.DRAFT.md)
+separates verified behavior from proposed interfaces and unresolved decisions.
+This file continues to describe the throwaway implementation, not that proposal.
+
 ## Mount
 
 ```js
