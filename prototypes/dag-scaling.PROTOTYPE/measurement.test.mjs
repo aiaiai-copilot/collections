@@ -35,6 +35,26 @@ test('next scale keeps vocabulary, saved filters and exact fractional selections
   assert.deepEqual(totals, [100000, 10000, 1000, 1, 0]);
 });
 
+test('wider vocabulary changes only the bounded vocabulary axis and preserves the control fixture', () => {
+  const control = makeMeasurementFixture({ count: 10000, seed: 23 });
+  assert.deepEqual(makeMeasurementFixture({ count: 10000, seed: 23, vocabulary: 1000 }), control);
+  const wide = makeMeasurementFixture({ count: 10000, seed: 23, vocabulary: 10000 });
+  assert.notEqual(wide.revision, control.revision);
+  assert.deepEqual(wide.nodes, control.nodes);
+  assert.deepEqual(wide.items.map(item => item.id), control.items.map(item => item.id));
+  assert.ok(wide.items.every(item => new Set(item.tags).size === 10));
+  const vocabulary = new Set(wide.items.flatMap(item => item.tags));
+  assert.ok(vocabulary.size > 9000 && vocabulary.size <= 10000);
+  assert.ok(vocabulary.has('тег_9999'));
+  const totals = measurementRequests().filter(q => q.request.mode === 'nodes').map(q =>
+    wide.items.filter(item => q.request.tags.every(tag => item.tags.includes(tag))).length);
+  assert.deepEqual(totals, [10000, 1000, 100, 1, 0]);
+  for (const vocabulary of [0, 999, 10001, NaN, '10000']) {
+    assert.throws(() => makeMeasurementFixture({ count: 100, seed: 23, vocabulary }), RangeError);
+  }
+  assert.throws(() => makeMeasurementFixture({ count: 100000, seed: 23, vocabulary: 10000 }), RangeError);
+});
+
 test('isolated job verifies complete answers then records full reads, source stages and payloads', async () => {
   const config = { count: 100, seed: 23, samples: 1 };
   const verified = await runMeasuredJob({ ...config, candidate: 'verify' });
@@ -112,4 +132,23 @@ test('bounded windows preserve complete answers while selecting only requested s
     await assert.rejects(runMeasuredJob({ ...config, candidate: 'verify', queryNames }), /invalid query window/);
   }
   await assert.rejects(runMeasuredJob({ ...config, candidate: 'index', expected: { 'nodes/all': 'only-one' } }), /verified full-answer/);
+});
+
+test('measurement job verifies a wide complete response without truncation and rejects combined expansion before execution', async () => {
+  const job = { count: 100, seed: 23, vocabulary: 10000, samples: 1, queryNames: ['free/all'] };
+  const verified = await runMeasuredJob({ ...job, candidate: 'verify' });
+  assert.equal(verified.status, 'ok');
+  assert.ok(verified.result.fixture.vocabulary > 900);
+  const measured = await runMeasuredJob({ ...job, candidate: 'index', expected: verified.result.answers });
+  assert.equal(measured.status, 'ok');
+  const sample = measured.result.queries[0].samples[0];
+  assert.equal(sample.total, 100);
+  // Free/all includes the entire observed item vocabulary plus any saved-only tags.
+  assert.ok(sample.transitions >= measured.result.fixture.vocabulary);
+  assert.equal(sample.countBatch, sample.transitions + 1);
+  assert.equal(sample.pageItems, 20);
+  assert.equal(sample.answerSHA256, verified.result.answers['free/all']);
+  for (const config of [{ count: 100000, vocabulary: 10000 }, { vocabulary: 10001 }, { vocabulary: null }]) {
+    await assert.rejects(runMeasuredJob({ ...job, ...config, candidate: 'verify' }), /unsupported vocabulary profile/);
+  }
 });

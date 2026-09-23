@@ -19,6 +19,8 @@ export async function runMeasuredJob(job, options = {}) {
       !Number.isSafeInteger(job.count) || job.count < 100 || job.count > 100000 ||
       !Number.isSafeInteger(job.seed) || job.seed < 0 || job.seed > 0xffffffff ||
       !Number.isSafeInteger(job.samples) || job.samples < 1 || job.samples > 20) throw new RangeError('invalid pilot job');
+  const vocabulary = job.vocabulary === undefined ? 1000 : job.vocabulary;
+  if (![1000, 10000].includes(vocabulary) || (vocabulary > 1000 && job.count > 10000)) throw new RangeError('unsupported vocabulary profile');
   const available = measurementRequests().map(query => query.name);
   const queryNames = job.queryNames === undefined ? available : job.queryNames;
   if (!Array.isArray(queryNames) || !queryNames.length || new Set(queryNames).size !== queryNames.length ||
@@ -82,6 +84,6 @@ export async function runMeasuredJob(job, options = {}) {
         ...(result ? { result } : { completed }), ...(failure ? { failure } : {}),
       });
     });
-    child.send({ ...job, queryNames });
+    child.send({ ...job, vocabulary, queryNames });
   });
 }
