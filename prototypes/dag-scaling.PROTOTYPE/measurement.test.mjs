@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { makeMeasurementFixture, measurementRequests } from './measurement-fixture.mjs';
 import { runMeasuredJob } from './measurement-runner.mjs';
 
@@ -15,10 +16,23 @@ test('pilot profile has exact cardinalities, reproducible data and controlled se
   const totals = measurementRequests().filter(q => q.request.mode === 'nodes').map(q =>
     fixture.items.filter(item => q.request.tags.every(tag => item.tags.includes(tag))).length);
   assert.deepEqual(totals, [10000, 1000, 100, 1, 0]);
-  for (const count of [0, 99, 10001, 1.5, NaN]) {
+  assert.equal(createHash('sha256').update(JSON.stringify(fixture)).digest('hex'), 'b177382e70ca141d0a0423124f8e9e73a22a67d9f4263f4a376e9a3dd1ac116d');
+  for (const count of [0, 99, 100001, 1.5, NaN]) {
     assert.throws(() => makeMeasurementFixture({ count, seed: 23 }), RangeError);
   }
   assert.throws(() => makeMeasurementFixture({ count: 100, seed: -1 }), RangeError);
+});
+
+test('next scale keeps vocabulary, saved filters and exact fractional selections fixed', () => {
+  const fixture = makeMeasurementFixture({ count: 100000, seed: 47 });
+  assert.equal(fixture.items.length, 100000);
+  assert.equal(new Set(fixture.items.map(item => item.id)).size, 100000);
+  assert.ok(fixture.items.every(item => new Set(item.tags).size === 10));
+  assert.equal(new Set(fixture.items.flatMap(item => item.tags)).size, 1000);
+  assert.deepEqual(fixture.nodes, makeMeasurementFixture({ count: 100, seed: 23 }).nodes);
+  const totals = measurementRequests().filter(q => q.request.mode === 'nodes').map(q =>
+    fixture.items.filter(item => q.request.tags.every(tag => item.tags.includes(tag))).length);
+  assert.deepEqual(totals, [100000, 10000, 1000, 1, 0]);
 });
 
 test('isolated job verifies complete answers then records full reads, source stages and payloads', async () => {
@@ -68,7 +82,7 @@ test('resource budgets fail closed and are reported, never silently discarded', 
   const output = await runMeasuredJob(job, { workerURL, limits: { outputBytes: 1 } });
   assert.equal(output.status, 'output-limit');
   await assert.rejects(runMeasuredJob(job, { readRss: async () => { throw new Error('unavailable'); } }), /unavailable/);
-  await assert.rejects(runMeasuredJob({ ...job, count: 10001 }), /invalid pilot job/);
+  await assert.rejects(runMeasuredJob({ ...job, count: 100001 }), /invalid pilot job/);
   await assert.rejects(runMeasuredJob(job, { limits: { wallMs: 120001 } }), /invalid wallMs/);
   await assert.rejects(runMeasuredJob({ ...job, candidate: 'index' }), /verified full-answer/);
 });
@@ -79,4 +93,23 @@ test('incorrect complete-answer digest stops measurement with an explicit error'
   assert.equal(outcome.status, 'worker-failed');
   assert.match(outcome.failure.message, /full answer differs/);
   assert.deepEqual(outcome.completed, []);
+});
+
+test('bounded windows preserve complete answers while selecting only requested scenarios', async () => {
+  const config = { count: 100, seed: 23, samples: 1, queryNames: ['free/one-item', 'nodes/all'] };
+  const verified = await runMeasuredJob({ ...config, candidate: 'verify' });
+  assert.equal(verified.status, 'ok');
+  assert.deepEqual(Object.keys(verified.result.answers), config.queryNames);
+  const measured = await runMeasuredJob({ ...config, candidate: 'index', expected: verified.result.answers });
+  assert.equal(measured.status, 'ok');
+  assert.deepEqual(measured.result.queries.map(q => q.name), config.queryNames);
+  assert.deepEqual(measured.result.queries.map(q => q.first.total), [1, 100]);
+  // New upper scale is exercised with a cheap zero-match read; oracle remains complete.
+  const large = await runMeasuredJob({ ...config, count: 100000, candidate: 'verify', queryNames: ['nodes/absent'] });
+  assert.equal(large.status, 'ok');
+  assert.equal(large.result.fixture.items, 100000);
+  for (const queryNames of [[], ['unknown'], ['nodes/all', 'nodes/all'], 'nodes/all']) {
+    await assert.rejects(runMeasuredJob({ ...config, candidate: 'verify', queryNames }), /invalid query window/);
+  }
+  await assert.rejects(runMeasuredJob({ ...config, candidate: 'index', expected: { 'nodes/all': 'only-one' } }), /verified full-answer/);
 });

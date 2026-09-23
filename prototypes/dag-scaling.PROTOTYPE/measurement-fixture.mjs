@@ -1,8 +1,8 @@
-// PROTOTYPE: bounded first pilot, not a general load generator.
+// PROTOTYPE: bounded 10k -> 100k step, not a general load generator.
 const tag = i => `тег_${String(i).padStart(4, '0')}`;
 
 export function makeMeasurementFixture({ count = 10000, seed = 23 } = {}) {
-  if (!Number.isSafeInteger(count) || count < 100 || count > 10000) throw new RangeError('pilot count: 100..10000');
+  if (!Number.isSafeInteger(count) || count < 100 || count > 100000) throw new RangeError('pilot count: 100..100000');
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('seed must be uint32');
   let state = seed;
   const random = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 2 ** 32; };

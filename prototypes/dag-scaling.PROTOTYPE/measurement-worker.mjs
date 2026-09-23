@@ -78,7 +78,9 @@ async function run(job) {
   const buildMs = performance.now() - buildStart;
   const afterBuild = memory();
   const answers = {}, queries = [];
-  for (const query of measurementRequests()) {
+  const available = new Map(measurementRequests().map(query => [query.name, query]));
+  for (const name of job.queryNames) {
+    const query = available.get(name);
     if (job.candidate === 'verify') {
       await phase(`verify/${query.name}`);
       const expected = readNavigation(source, query.request);

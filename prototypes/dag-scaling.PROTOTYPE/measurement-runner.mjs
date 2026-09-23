@@ -2,6 +2,7 @@
 import { fork, execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { measurementRequests } from './measurement-fixture.mjs';
 const exec = promisify(execFile);
 const worker = new URL('./measurement-worker.mjs', import.meta.url);
 const MiB = 1024 ** 2;
@@ -15,10 +16,14 @@ export async function readRss(pid) {
 
 export async function runMeasuredJob(job, options = {}) {
   if (!['verify', 'scan', 'index'].includes(job.candidate) ||
-      !Number.isSafeInteger(job.count) || job.count < 100 || job.count > 10000 ||
+      !Number.isSafeInteger(job.count) || job.count < 100 || job.count > 100000 ||
       !Number.isSafeInteger(job.seed) || job.seed < 0 || job.seed > 0xffffffff ||
       !Number.isSafeInteger(job.samples) || job.samples < 1 || job.samples > 20) throw new RangeError('invalid pilot job');
-  if (job.candidate !== 'verify' && (!job.expected || Object.keys(job.expected).length !== 10)) {
+  const available = measurementRequests().map(query => query.name);
+  const queryNames = job.queryNames === undefined ? available : job.queryNames;
+  if (!Array.isArray(queryNames) || !queryNames.length || new Set(queryNames).size !== queryNames.length ||
+      queryNames.some(name => !available.includes(name))) throw new RangeError('invalid query window');
+  if (job.candidate !== 'verify' && (!job.expected || queryNames.some(name => typeof job.expected[name] !== 'string' || !job.expected[name]))) {
     throw new Error('verified full-answer digests required');
   }
   const limits = { wallMs: 120000, stepMs: 30000, rssBytes: 6 * 1024 ** 3, outputBytes: 10 * MiB, ...options.limits };
@@ -77,6 +82,6 @@ export async function runMeasuredJob(job, options = {}) {
         ...(result ? { result } : { completed }), ...(failure ? { failure } : {}),
       });
     });
-    child.send(job);
+    child.send({ ...job, queryNames });
   });
 }

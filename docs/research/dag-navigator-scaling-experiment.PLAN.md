@@ -2,8 +2,9 @@
 
 Дата: 2026-09-23. Статус: план исследовательского эксперимента;
 [малый этап корректности реализован](../../prototypes/dag-scaling.PROTOTYPE/README.md),
-[первый ограниченный профиль 10k измерен](dag-navigator-scaling-pilot-10k.md).
-Остальная шкала и этап хранилища ещё не выполнены.
+[первый ограниченный профиль 10k измерен](dag-navigator-scaling-pilot-10k.md),
+[рост 10k → 100k проверен на трёх seed](dag-navigator-scaling-growth-100k.md).
+Остальные оси/ступени шкалы и этап хранилища ещё не выполнены.
 Не выбор backend продукта, не OpenAPI и не SLA.
 Основание: [структурные границы](dag-navigator-scaling-envelope.md),
 [исследование свежести](dag-navigator-freshness-scalability.md) и
