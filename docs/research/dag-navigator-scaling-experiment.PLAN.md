@@ -5,6 +5,8 @@
 [первый ограниченный профиль 10k измерен](dag-navigator-scaling-pilot-10k.md),
 [рост 10k → 100k проверен на трёх seed](dag-navigator-scaling-growth-100k.md),
 [рост словаря 1000 → 10k при N=10k измерен](dag-navigator-scaling-width-10k.md).
+2026-09-24: [подготовлен протокол допуска миллионной ступени](dag-navigator-million-admission.PLAN.md),
+композиция полного эталона проверена на малых данных; миллион ещё не запускался.
 Остальные оси/ступени шкалы и этап хранилища ещё не выполнены.
 Не выбор backend продукта, не OpenAPI и не SLA.
 Основание: [структурные границы](dag-navigator-scaling-envelope.md),
