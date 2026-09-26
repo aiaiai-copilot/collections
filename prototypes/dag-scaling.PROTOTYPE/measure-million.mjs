@@ -8,10 +8,12 @@ import os from 'node:os';
 import { runMillionJob, admission } from './million-runner.mjs';
 import { prepareOracle } from './million-oracle.mjs';
 import { measurementRequests } from './measurement-fixture.mjs';
+import { millionSchedule } from './million-schedule.mjs';
 
 const [mode, filename] = process.argv.slice(2);
-assert.ok(['smoke', 'run'].includes(mode) && /^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.jsonl$/.test(filename ?? '') && process.argv.length === 4,
-  'Usage: node measure-million.mjs <smoke|run> <new-file.jsonl>');
+assert.ok(['smoke', 'run', 'finish89'].includes(mode) && /^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.jsonl$/.test(filename ?? '') && process.argv.length === 4,
+  'Usage: node measure-million.mjs <smoke|run|finish89> <new-file.jsonl>');
+const schedule = millionSchedule(mode);
 const directory = new URL('./', import.meta.url), root = fileURLToPath(new URL('../../', directory));
 const file = await open(new URL(`results/${filename}`, directory), 'wx');
 const deadline = Date.now() + 20 * 60 * 1000;
@@ -83,11 +85,11 @@ try {
   for (const name of (await readdir(directory)).filter(n => n.endsWith('.mjs')).sort()) {
     codeSHA256[name] = createHash('sha256').update(await readFile(new URL(name, directory))).digest('hex');
   }
-  await append({ type: 'header', protocol: 'partition-million-v1', mode,
+  await append({ type: 'header', protocol: 'partition-million-v2-exit-observation', mode, schedule,
     baseCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), codeSHA256,
     host: { platform: os.platform(), release: os.release(), arch: os.arch(), node: process.version, cpu: os.cpus()[0]?.model, logicalCPUs: os.cpus().length, totalMemory: os.totalmem() },
     profile: { ...(mode === 'smoke' ? { gates: [113], series: [], seeds: [23], runs: 1, samples: 1 }
-      : { gates: [100000, 250000, 500000], series: [100000, 1000000], seeds: [23, 47, 89], runs: 3, samples: 5 }), tagsPerItem: 10, vocabulary: 1000, savedNodes: 100 },
+      : { gates: [100000, 250000, 500000], series: [100000, 1000000], seeds: mode === 'finish89' ? [89] : [23, 47, 89], runs: 3, samples: 5 }), tagsPerItem: 10, vocabulary: 1000, savedNodes: 100 },
     policy: { worker: 'one; empty environment; old space 4096 MiB; step 30s; wall 120s; RSS watchdog 6GiB',
       coordinator: 'RSS watchdog 256MiB; oracle whole-query 120s; whole series 20min; output 10MiB',
       gate: '1.25 reserve, projected phase/OS RSS <=4GiB and whole step <=20s',
@@ -95,18 +97,20 @@ try {
       metadata: 'streamed same fixture JSON checksum; input retained in index worker; no forced GC',
       read: 'same full read, copying and stage timers; hashing/JSON excluded; first + warmup + 5 samples',
       evidence: 'partition response payloads checked live; audit digests/identities saved; index measurements saved in full',
+      observation: 'RSS failure checks owned child OS exit state; code-zero close plus result required; live child and coordinator failures stop; audit retained',
       network: 'none; no API, DSN, .env, database or server', interference: 'interactive host, not CPU-pinned' } });
-  if (mode === 'smoke') await point(113, 23, 'smoke', 1, 1);
-  else {
-    let previous;
-    for (const count of [100000, 250000, 500000]) {
-      if (previous) { const gate = admission(previous, count); await append({ type: 'admission', ...gate }); assert.ok(gate.allowed, 'resource admission refused'); }
-      previous = await point(count, 23, 'gate', 1, 1);
+  let previous, admittedMillion = false;
+  for (const task of schedule) {
+    if (task.stage === 'gate' && previous) {
+      const gate = admission(previous, task.count); await append({ type: 'admission', ...gate });
+      assert.ok(gate.allowed, 'resource admission refused');
     }
-    const gate = admission(previous, 1000000); await append({ type: 'admission', ...gate }); assert.ok(gate.allowed, 'million admission refused');
-    for (const [i, seed] of [23, 47, 89].entries()) {
-      for (const count of i === 1 ? [1000000, 100000] : [100000, 1000000]) await point(count, seed, 'series', 5, 3);
+    if (task.stage === 'series' && !admittedMillion) {
+      const gate = admission(previous, 1000000); await append({ type: 'admission', ...gate });
+      assert.ok(gate.allowed, 'million admission refused'); admittedMillion = true;
     }
+    const result = await point(task.count, task.seed, task.stage, task.samples, task.runs);
+    if (task.stage === 'gate') previous = result;
   }
   await append({ type: 'complete' });
 } catch (error) {
