@@ -45,6 +45,12 @@ export async function runMillionJob(job, options = {}) {
     assert.ok(job.queryNames.every(name => names.includes(name) && /^[a-f0-9]{64}$/.test(job.expected?.[name])));
     assert.ok(Number.isInteger(job.samples) && job.samples >= 1 && job.samples <= 5);
   }
+  return runObservedJob(job, { ...options, workerURL: options.workerURL ?? new URL('./million-worker.mjs', import.meta.url) });
+}
+
+// Shared supervision only; each profile's caller must validate its own job first.
+export async function runObservedJob(job, options) {
+  assert.ok(options.workerURL instanceof URL, 'an explicit worker is required');
   const maxima = { stepMs: 30000, wallMs: 120000, rssBytes: 6 * 1024 ** 3, ownerBytes: 256 * 1024 ** 2, outputBytes: 10 * 1024 ** 2 };
   const limits = { ...maxima, ...options.limits };
   for (const [key, max] of Object.entries(maxima)) assert.ok(Number.isSafeInteger(limits[key]) && limits[key] > 0 && limits[key] <= max, `invalid ${key}`);
@@ -55,7 +61,7 @@ export async function runMillionJob(job, options = {}) {
   if (initialOwnerRSS > limits.ownerBytes) return { status: 'coordinator-rss-limit', ownerRSS: initialOwnerRSS, phases: [] };
   return new Promise(resolve => {
     const start = performance.now();
-    const child = fork(fileURLToPath(options.workerURL ?? new URL('./million-worker.mjs', import.meta.url)), [], {
+    const child = fork(fileURLToPath(options.workerURL), [], {
       execArgv: ['--max-old-space-size=4096'], env: {}, silent: true,
     });
     let reason, result, failure, phase = 'startup', phaseStart = start, phaseMemory;
