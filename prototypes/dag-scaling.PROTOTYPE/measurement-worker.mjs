@@ -8,18 +8,21 @@ import { makeMeasurementFixture, measurementRequests } from './measurement-fixtu
 
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const send = message => new Promise((resolve, reject) => process.send(message, error => error ? reject(error) : resolve()));
-const phase = name => send({ type: 'phase', name });
+const phase = name => send({ type: 'phase', name, memory: memory() });
 const memory = () => process.memoryUsage();
 
 function fixtureInfo(fixture) {
   const frequencies = new Map();
   for (const item of fixture.items) for (const tag of item.tags) frequencies.set(tag, (frequencies.get(tag) ?? 0) + 1);
   const sorted = [...frequencies.values()].sort((a, b) => a - b);
+  const lengths = fixture.nodes.map(node => node.tags.length).sort((a, b) => a - b);
   return {
     sha256: hash(fixture), jsonBytes: Buffer.byteLength(JSON.stringify(fixture)),
     items: fixture.items.length, nodes: fixture.nodes.length, vocabulary: frequencies.size,
     assignments: sorted.reduce((sum, n) => sum + n, 0),
     tagFrequency: { min: sorted[0], median: (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.floor(sorted.length / 2)]) / 2, max: sorted.at(-1) },
+    nodeAssignments: lengths.reduce((sum, n) => sum + n, 0),
+    filterLength: { min: lengths[0], median: (lengths[Math.floor((lengths.length - 1) / 2)] + lengths[Math.floor(lengths.length / 2)]) / 2, max: lengths.at(-1) },
   };
 }
 
@@ -77,8 +80,9 @@ async function run(job) {
   const second = job.candidate === 'verify' ? createIndexSource(fixture) : null;
   const buildMs = performance.now() - buildStart;
   const afterBuild = memory();
+  const preparationId = `${fixture.revision}/pid-${process.pid}`;
   const answers = {}, queries = [];
-  const available = new Map(measurementRequests().map(query => [query.name, query]));
+  const available = new Map(measurementRequests(job).map(query => [query.name, query]));
   for (const name of job.queryNames) {
     const query = available.get(name);
     if (job.candidate === 'verify') {
@@ -97,17 +101,21 @@ async function run(job) {
         await phase(`sample-${i}/${query.name}`);
         samples.push(measure(source, query.request, job.expected[query.name]));
       }
-      const value = { ...query, first, samples };
+      const value = { ...query, first, samples,
+        ...(job.grouped ? { preparationId, firstContext: queries.length === 0 ? 'first-in-group' : 'after-prior-queries' } : {}) };
       queries.push(value);
       await send({ type: 'completed', value });
     }
   }
   await phase('metadata');
+  const info = fixtureInfo(fixture);
+  if (job.expectedFixtureSHA256) assert.equal(info.sha256, job.expectedFixtureSHA256, 'fixture differs from verification');
   // Input remains alive through the experiment. RSS includes input + source snapshot,
   // indexes, returned answers and normal GC; it is NOT the isolated index size.
   return {
     candidate: job.candidate, node: process.version, execArgv: process.execArgv,
-    fixture: fixtureInfo(fixture), generationMs, buildMs,
+    fixture: info, generationMs, buildMs,
+    ...(job.grouped ? { preparationId } : {}),
     memory: { baseline, afterGeneration, afterBuild, end: memory() },
     ...(job.candidate === 'verify' ? { answers } : { queries }),
   };

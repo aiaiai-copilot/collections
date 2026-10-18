@@ -1,0 +1,11 @@
+{
+  "status": "selected-not-measured",
+  "selectionSeed": 27092026,
+  "dataSeed": 23,
+  "algorithm": "LCG: state=(imul(state,1664525)+1013904223)>>>0, u=state/2^32. For N,V,M in that order: flip=u<0.5 selects halves [1,0] else [0,1]; draw S2 then S4, round(exp(log(lo)+(half+u)/2*log(hi/lo))). Finally draw k without replacement from [2,10,30], S2 then S4.",
+  "ranges": { "count": [10000,100000], "vocabulary": [1000,10000], "savedNodes": [100,1000], "tagsPerItem": [2,10,30] },
+  "profiles": [
+    { "id": "S2", "family": "wide-baseline", "count": 10503, "vocabulary": 6079, "savedNodes": 178, "tagsPerItem": 10 },
+    { "id": "S4", "family": "wide-correlated", "count": 36990, "vocabulary": 2733, "savedNodes": 367, "tagsPerItem": 30 }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "exploration-S2-v1", "seed": 23, "catalog": "wide",
+  "vocabulary": 6079, "savedNodes": 178, "tagsPerItem": 10, "distribution": "uniform",
+  "steps": [
+    { "count": 100, "role": "smoke", "runs": 1, "samples": 1 },
+    { "count": 1000, "role": "admission-R3", "runs": 1, "samples": 1 },
+    { "count": 10503, "role": "exploration-S2", "runs": 3, "samples": 5 }
+  ],
+  "queryNames": ["nodes/all", "free/all", "nodes/ten-percent", "free/ten-percent"]
+}

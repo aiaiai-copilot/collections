@@ -1,0 +1,12 @@
+{
+  "id": "catalog-S3-v1",
+  "seed": 23,
+  "catalog": "chains",
+  "tagsPerItem": 10,
+  "steps": [
+    { "count": 100, "role": "smoke", "runs": 1, "samples": 1 },
+    { "count": 1000, "role": "admission-R2", "runs": 1, "samples": 1 },
+    { "count": 10000, "role": "anchor-S3", "runs": 3, "samples": 5 }
+  ],
+  "queryNames": ["nodes/all", "free/all", "nodes/joined", "free/joined", "nodes/deep-empty", "free/deep-empty"]
+}

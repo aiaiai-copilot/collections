@@ -67,7 +67,7 @@ export async function runObservedJob(job, options) {
     let reason, result, failure, phase = 'startup', phaseStart = start, phaseMemory;
     let stepTimer, closed = false, polling = false, rssMax = 0, ownerRSS = initialOwnerRSS, outputBytes = 0;
     let activePoll = Promise.resolve(), exit;
-    const phases = [], observationIssues = [];
+    const phases = [], observationIssues = [], completed = [];
     const stop = value => { if (!reason) { reason = value; if (!closed) child.kill('SIGKILL'); } };
     const step = () => { clearTimeout(stepTimer); stepTimer = setTimeout(() => stop('step-timeout'), limits.stepMs); };
     const countOutput = n => { outputBytes += n; if (outputBytes > limits.outputBytes) stop('output-limit'); };
@@ -110,6 +110,7 @@ export async function runObservedJob(job, options) {
         phase = message.name; phaseMemory = message.memory; phaseStart = now; step();
       }
       if (message.type === 'result') result = message.value;
+      if (message.type === 'completed') completed.push(message.value);
       if (message.type === 'failure') failure = message.value;
     });
     child.on('error', error => { failure = { message: error.message }; });
@@ -122,7 +123,7 @@ export async function runObservedJob(job, options) {
       resolve({ status: reason ?? (code === 0 && result ? 'ok' : 'worker-failed'), code, signal, phase,
         elapsedMs: performance.now() - start, phases, limits, rssMax, ownerRSS, outputBytes,
         exit, observationIssues,
-        ...(result ? { result } : {}), ...(failure ? { failure } : {}) });
+        ...(result ? { result } : { completed }), ...(failure ? { failure } : {}) });
     });
     child.send(job);
   });

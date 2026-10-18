@@ -1,0 +1,10 @@
+{
+  "id": "exploration-S4-v1", "seed": 23, "catalog": "wide",
+  "vocabulary": 2733, "savedNodes": 367, "tagsPerItem": 30, "distribution": "clustered",
+  "steps": [
+    { "count": 100, "role": "smoke", "runs": 1, "samples": 1 },
+    { "count": 2000, "role": "admission-R4", "runs": 1, "samples": 1 },
+    { "count": 36990, "role": "exploration-S4", "runs": 3, "samples": 5 }
+  ],
+  "queryNames": ["nodes/all", "free/all", "nodes/ten-percent", "free/ten-percent"]
+}

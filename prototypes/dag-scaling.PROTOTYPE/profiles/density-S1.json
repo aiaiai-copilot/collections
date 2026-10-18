@@ -1,0 +1,11 @@
+{
+  "id": "density-S1-v1",
+  "seed": 23,
+  "tagsPerItem": 30,
+  "steps": [
+    { "count": 100, "role": "smoke", "runs": 1, "samples": 1 },
+    { "count": 10000, "role": "admission-R1", "runs": 1, "samples": 1 },
+    { "count": 100000, "role": "anchor-S1", "runs": 3, "samples": 5 }
+  ],
+  "queryNames": ["nodes/all", "free/all", "nodes/ten-percent", "free/ten-percent"]
+}
