@@ -1,28 +1,29 @@
 # Реестр проектных документов
 
-Дата: 2026-10-16. Служебный перечень; не новый набор требований.
-Начало содержательного чтения — [Идея продукта](product-design.md),
+Дата: 2026-10-22. Служебный перечень; не новый набор требований.
+Начало содержательного чтения — [Идея продукта «Коллекции и подборки»](product-design.md),
 обзор связей — [иерархия документов](README.md#иерархия-документов).
 
 ## Охват и правила чтения
 
-В реестре 141 проектный Markdown-файл, включая сам реестр.
+В реестре 142 проектных Markdown-файла, включая сам реестр.
 Код, данные измерений, внешние зависимости и внутренние файлы Git не включены.
-После первоначальной сверки добавлены связующий документ навигации,
-реестр и отдельно сохранённые архивные редакции. Число действующих
-содержательных узлов осталось равным 19.
+Действующий содержательный корпус включает 20 документов и два корня:
+идею продукта «Коллекции и подборки» и самостоятельную Теговую платформу,
+которую использует приложение.
 
 Роль документа и статус его утверждения — разные признаки. Имя файла
 DRAFT или PROPOSAL не отменяет уже принятые разделы и не утверждает остальные.
-Иерархия задана полем «Родитель» и обратными ссылками, а не каталогами файлов.
+Корни представляют самостоятельные продукты; положение дочерних документов
+задано полем «Родитель» и обратными ссылками, а не каталогами файлов.
 Ссылки на основания сохраняют происхождение решений, но не создают вторую
 действующую версию правила. Неуточнённые вопросы остаются неуточнёнными.
 
-## Содержательное дерево — 19
+## Содержательные документы — 20
 
-Действующая структура продукта, расширений и контрактов. Действующие правила отделены от открытых вопросов. Исторические редакции и снятые варианты находятся вне дерева.
+Структура продуктов, расширений и контрактов. Степень завершённости спецификаций указана в [статусе документов](README.md#готовность-документов). Исторические редакции и снятые варианты находятся вне действующей иерархии.
 
-- [Предметная модель основы продукта](../../CONTEXT.md) — `CONTEXT.md`; родитель: «Идея продукта».
+- [Предметная модель основы продукта](../../CONTEXT.md) — `CONTEXT.md`; родитель: «Идея продукта „Коллекции и подборки“».
 - [Согласованная сборка и публикация результатов: проект контракта](../concepts/selection-hierarchy/coherent-result-contract.DRAFT.md) — `docs/concepts/selection-hierarchy/coherent-result-contract.DRAFT.md`; родитель: «Навигация и получение результатов».
 - [Составной интерфейс: действия, аргументы и итоги](../concepts/selection-hierarchy/dag-navigator-actions.DRAFT.md) — `docs/concepts/selection-hierarchy/dag-navigator-actions.DRAFT.md`; родитель: «Верхнеуровневый интерфейс Навигатора».
 - [Навигатор: компактная модель поведения](../concepts/selection-hierarchy/dag-navigator-behavior-model.DRAFT.md) — `docs/concepts/selection-hierarchy/dag-navigator-behavior-model.DRAFT.md`; родитель: «Верхнеуровневый интерфейс Навигатора».
@@ -34,13 +35,14 @@ DRAFT или PROPOSAL не отменяет уже принятые раздел
 - [Общий контракт истории посещений](../concepts/selection-hierarchy/navigation-history-contract.DRAFT.md) — `docs/concepts/selection-hierarchy/navigation-history-contract.DRAFT.md`; родитель: «Навигация и получение результатов».
 - [Общий контракт выдачи результатов](../concepts/selection-hierarchy/results-view-contract.DRAFT.md) — `docs/concepts/selection-hierarchy/results-view-contract.DRAFT.md`; родитель: «Навигация и получение результатов».
 - [Ручной ввод тегов](../concepts/selection-hierarchy/tag-input-contract.DRAFT.md) — `docs/concepts/selection-hierarchy/tag-input-contract.DRAFT.md`; родитель: «Навигация и получение результатов».
-- [Сравнение элементов](comparison.md) — `docs/product/comparison.md`; родитель: «Идея продукта».
+- [Сравнение элементов](comparison.md) — `docs/product/comparison.md`; родитель: «Идея продукта „Коллекции и подборки“».
 - [Продолжение работы](comparison/continuation.md) — `docs/product/comparison/continuation.md`; родитель: «Сравнение элементов».
-- [Спецификация MVP](mvp-scope.md) — `docs/product/mvp-scope.md`; родитель: «Идея продукта».
+- [Спецификация MVP](mvp-scope.md) — `docs/product/mvp-scope.md`; родитель: «Идея продукта „Коллекции и подборки“».
 - [Технический проект MVP](mvp-technical-design.md) — `docs/product/mvp-technical-design.md`; родитель: «Спецификация MVP».
-- [Навигация и получение результатов](navigation-and-results.md) — `docs/product/navigation-and-results.md`; родитель: «Идея продукта».
-- [Идея продукта](product-design.md) — `docs/product/product-design.md`.
-- [Глоссарий тегов](tag-glossary.md) — `docs/product/tag-glossary.md`; родитель: «Идея продукта».
+- [Навигация и получение результатов](navigation-and-results.md) — `docs/product/navigation-and-results.md`; родитель: «Идея продукта „Коллекции и подборки“».
+- [Идея продукта «Коллекции и подборки»](product-design.md) — `docs/product/product-design.md`.
+- [Теговая платформа](tag-platform.md) — `docs/product/tag-platform.md`; самостоятельный продуктовый корень, используемый приложением «Коллекции и подборки».
+- [Глоссарий тегов](tag-glossary.md) — `docs/product/tag-glossary.md`; родитель: «Идея продукта „Коллекции и подборки“».
 
 ## Альтернативная предметная модель — 1
 
@@ -166,7 +168,7 @@ DRAFT или PROPOSAL не отменяет уже принятые раздел
 - [Интерфейс прежнего продуктового прототипа](../archive/collection-interface.PROTOTYPE.md) — `docs/archive/collection-interface.PROTOTYPE.md`.
 - [DAG navigator lab: minimal contract](../../prototypes/dag-navigation-lab.CONTRACT.md) — `prototypes/dag-navigation-lab.CONTRACT.md`.
 - [Вычислительный стенд — PROTOTYPE](../../prototypes/dag-scaling.PROTOTYPE/README.md) — `prototypes/dag-scaling.PROTOTYPE/README.md`.
-- [Прототипы «Коллекций»](../../prototypes/README.md) — `prototypes/README.md`.
+- [Прототипы продукта «Коллекции и подборки»](../../prototypes/README.md) — `prototypes/README.md`.
 - [Референсы из `to-ili-eto`](../../references/legacy.md) — `references/legacy.md`.
 
 ## Служебные указатели, правила и состояние работы — 9
@@ -175,13 +177,13 @@ DRAFT или PROPOSAL не отменяет уже принятые раздел
 
 - [Project workflow](../../AGENTS.md) — `AGENTS.md`.
 - [Экспресс-бэклог](../../BACKLOG.md) — `BACKLOG.md`.
-- [Контексты продукта «Коллекции»](../../CONTEXT-MAP.md) — `CONTEXT-MAP.md`.
+- [Контексты продукта «Коллекции и подборки»](../../CONTEXT-MAP.md) — `CONTEXT-MAP.md`.
 - [Issue tracker: Local Markdown](../agents/issue-tracker.md) — `docs/agents/issue-tracker.md`.
 - [Реестр проектных документов](document-register.md) — `docs/product/document-register.md`.
 - [Проектирование продукта: документы и текущая работа](README.md) — `docs/product/README.md`.
 - [Оценка применимости DAG-навигатора](../../GLOSSARY.md) — `GLOSSARY.md`.
 - [HANDOFF](../../HANDOFF.md) — `HANDOFF.md`.
-- [Коллекции](../../README.md) — `README.md`.
+- [Коллекции и подборки](../../README.md) — `README.md`.
 
 ## Архивные редакции вне действующей иерархии — 12
 
